@@ -1,0 +1,30 @@
+export const FANORONA_RULES = [
+  'Tablero de 9×5. Las blancas empiezan. Gana quien captura todas las piezas rivales.',
+  'Las piezas se mueven un paso por las líneas. En puntos fuertes también en diagonal.',
+  'Si hay captura posible, es obligatoria. Si no, se hace un movimiento paika.',
+  'Acercamiento: te movés hacia una pieza rival que queda en la misma línea.',
+  'Alejamiento: te alejás de una pieza rival que estaba junto a la tuya.',
+  'Se capturan todas las rivales consecutivas en esa línea, hasta un hueco o una pieza propia.',
+  'Si un paso permite las dos capturas, hay que elegir una. No se pueden hacer las dos.',
+  'Después de capturar podés seguir con la misma pieza, cambiando de dirección y sin repetir casilla.',
+]
+
+export const MORRIS_RULES = [
+  'Cada jugador tiene 9 piezas. Las blancas empiezan.',
+  'Primero se colocan, de a una, en intersecciones vacías.',
+  'Tres piezas propias alineadas forman un molino y permiten sacar una pieza rival.',
+  'No se puede sacar una pieza que está en un molino, salvo que todas las rivales lo estén.',
+  'Cuando ya no quedan piezas por colocar, se mueve una pieza a un punto vecino por las líneas.',
+  'Si te quedan 3 piezas, podés volar: ir a cualquier intersección vacía.',
+  'Gana quien deja al rival con 2 piezas o sin movimientos legales.',
+]
+
+export const MINESWEEPER_RULES = [
+  'Estilo Windows 7. El primer clic siempre es un vacío: abre esa casilla y las ocho vecinas.',
+  'Clic izquierdo abre. Clic derecho pone o saca una bandera. El signo de pregunta es opcional.',
+  'Un número indica cuántas minas tocan esa casilla (incluso en diagonal).',
+  'Doble clic o clic izquierdo y derecho a la vez sobre un número abre el resto (chording).',
+  'Si el chording no coincide con las banderas, no pasa nada. Si las banderas están mal puestas, perdés.',
+  'Pista señala una jugada deducible. Tras perder podés repetir el mismo tablero.',
+  'Principiante 9×9 / 10 minas, Intermedio 16×16 / 40, Experto 30×16 / 99.',
+]
