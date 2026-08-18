@@ -129,6 +129,17 @@ h2 {
 .score.is-active {
   border-color: var(--gold);
   background: rgba(228, 180, 90, 0.08);
+  animation: scorePulse 2.2s ease-in-out infinite;
+}
+
+@keyframes scorePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(228, 180, 90, 0.28);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(228, 180, 90, 0);
+  }
 }
 
 .score strong,
@@ -273,6 +284,23 @@ h2 {
   stroke: #ffb4a2;
 }
 
+.node.is-mill-glow {
+  animation: millRingGlow 600ms ease-out;
+}
+
+@keyframes millRingGlow {
+  0% {
+    stroke: var(--gold);
+    stroke-width: 6;
+    fill: rgba(228, 180, 90, 0.4);
+  }
+  100% {
+    stroke: #2d190c;
+    stroke-width: 1.5;
+    fill: #6d4320;
+  }
+}
+
 .hit {
   fill: transparent;
   cursor: pointer;
@@ -292,9 +320,52 @@ h2 {
   transform: translateY(-6px) scale(1.05);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .stone-bob {
-    transition: none;
+.stone-wrap {
+  transition: transform 280ms cubic-bezier(0.34, 1.1, 0.4, 1);
+}
+
+.stone-anim {
+  animation: stonePlace 220ms ease-out;
+  transform-origin: 0 -4px;
+}
+
+.stone-anim.is-capturing {
+  animation: captureFade 250ms ease-in forwards;
+}
+
+.stone-anim.is-mill-glow {
+  animation: stoneMillGlow 600ms ease-out;
+}
+
+@keyframes stonePlace {
+  from {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes captureFade {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.25);
+    opacity: 0;
+  }
+}
+
+@keyframes stoneMillGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(228, 180, 90, 0));
+  }
+  40% {
+    filter: drop-shadow(0 0 10px rgba(228, 180, 90, 0.85));
   }
 }
 
@@ -309,6 +380,19 @@ h2 {
 
 .stone.is-last circle:nth-of-type(1) {
   stroke: #f4d9a6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score.is-active,
+  .node.is-mill-glow,
+  .stone-bob,
+  .stone-wrap,
+  .stone-anim,
+  .stone-anim.is-capturing,
+  .stone-anim.is-mill-glow {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 .capture-choice {

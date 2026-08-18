@@ -45,8 +45,8 @@ export function Home({ onSelect }: HomeProps) {
           </svg>
           <div>
             <p className="eyebrow">Molino</p>
-            <h2>Molino de nueve</h2>
-            <p>Colocá, alineá de a tres y sacá las piezas rivales.</p>
+            <h2>Molino</h2>
+            <p>Colocá, alineá de a tres y sacá las piezas rivales. A 6, 9 o 12 piezas.</p>
           </div>
         </button>
 

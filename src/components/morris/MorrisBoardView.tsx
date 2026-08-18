@@ -1,12 +1,20 @@
-import { GRID_SIZE, POINTS } from '../../morris'
-import type { MorrisBoard } from '../../morris'
+import { GRID_SIZE } from '../../morris'
+import type { MorrisVariant } from '../../morris'
 import { keyOf, samePoint } from '../../shared/point'
 import type { Point } from '../../shared/point'
+import type { Player } from '../../shared/types'
 import { Stone, StoneDefs } from '../Board/Stone'
 
 const PAD = 56
 const GAP = 78
 const SIZE = PAD * 2 + GAP * (GRID_SIZE - 1)
+
+type BoardStone = {
+  id: number
+  point: Point
+  player: Player
+  capturing?: boolean
+}
 
 function toSvg(point: Point): { x: number; y: number } {
   return {
@@ -16,11 +24,13 @@ function toSvg(point: Point): { x: number; y: number } {
 }
 
 type MorrisBoardViewProps = {
-  board: MorrisBoard
+  variant: MorrisVariant
+  stones: BoardStone[]
   selected: Point | null
   targets: Point[]
   movableFrom: Point[]
   lastPoint: Point | null
+  millGlow: Point[] | null
   pendingRemoval: boolean
   disabled: boolean
   onSelect: (point: Point) => void
@@ -31,53 +41,20 @@ function isListed(list: Point[], point: Point): boolean {
 }
 
 export function MorrisBoardView({
-  board,
+  variant,
+  stones,
   selected,
   targets,
   movableFrom,
   lastPoint,
+  millGlow,
   pendingRemoval,
   disabled,
   onSelect,
 }: MorrisBoardViewProps) {
-  const squares: Array<[Point, Point, Point, Point]> = [
-    [
-      { x: 0, y: 0 },
-      { x: 6, y: 0 },
-      { x: 6, y: 6 },
-      { x: 0, y: 6 },
-    ],
-    [
-      { x: 1, y: 1 },
-      { x: 5, y: 1 },
-      { x: 5, y: 5 },
-      { x: 1, y: 5 },
-    ],
-    [
-      { x: 2, y: 2 },
-      { x: 4, y: 2 },
-      { x: 4, y: 4 },
-      { x: 2, y: 4 },
-    ],
-  ]
-
-  const spokes: Array<[Point, Point]> = [
-    [
-      { x: 3, y: 0 },
-      { x: 3, y: 2 },
-    ],
-    [
-      { x: 3, y: 4 },
-      { x: 3, y: 6 },
-    ],
-    [
-      { x: 0, y: 3 },
-      { x: 2, y: 3 },
-    ],
-    [
-      { x: 4, y: 3 },
-      { x: 6, y: 3 },
-    ],
+  const lines: Array<readonly [Point, Point]> = [
+    ...variant.mills.map((mill) => [mill[0], mill[2]] as const),
+    ...(variant.extraAdjacency ?? []),
   ]
 
   return (
@@ -119,48 +96,65 @@ export function MorrisBoardView({
       />
 
       <g className="board-lines">
-        {squares.map((square, index) => {
-          const path = [...square, square[0]].map((point, i) => {
-            const pos = toSvg(point)
-            return `${i === 0 ? 'M' : 'L'} ${pos.x} ${pos.y}`
-          })
-          return <path key={index} d={`${path.join(' ')} Z`} fill="none" />
-        })}
-        {spokes.map(([from, to]) => {
+        {lines.map(([from, to]) => {
           const a = toSvg(from)
           const b = toSvg(to)
-          return <line key={`${from.x}-${from.y}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
+          return <line key={`${keyOf(from)}-${keyOf(to)}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
         })}
       </g>
 
-      {POINTS.map((point) => {
-        const pos = toSvg(point)
-        const occupant = board[keyOf(point)] ?? null
-        const selectedHere = selected ? samePoint(selected, point) : false
-        const targetHere = isListed(targets, point)
-        const movable = occupant !== null && isListed(movableFrom, point)
-        const lastMoved = lastPoint ? samePoint(lastPoint, point) : false
+      <g className="node-layer">
+        {variant.points.map((point) => {
+          const pos = toSvg(point)
+          const targetHere = isListed(targets, point)
+          const glowHere = millGlow ? isListed(millGlow, point) : false
 
-        return (
-          <g key={keyOf(point)} transform={`translate(${pos.x}, ${pos.y})`} className="intersection">
-            <circle
-              r={targetHere ? 14 : 7}
-              className={`node ${targetHere ? (pendingRemoval ? 'is-captured' : 'is-target') : ''}`}
-            />
-            {occupant ? (
-              <Stone
-                player={occupant}
-                selected={selectedHere}
-                movable={movable && !selectedHere}
-                lastMoved={lastMoved}
+          return (
+            <g key={keyOf(point)} transform={`translate(${pos.x}, ${pos.y})`}>
+              <circle
+                r={targetHere ? 14 : 7}
+                className={`node ${targetHere ? (pendingRemoval ? 'is-captured' : 'is-target') : ''} ${glowHere ? 'is-mill-glow' : ''}`}
               />
-            ) : null}
-            <circle r="28" className="hit" onClick={() => onSelect(point)}>
-              <title>{`${point.x},${point.y}`}</title>
-            </circle>
-          </g>
-        )
-      })}
+            </g>
+          )
+        })}
+      </g>
+
+      <g className="piece-layer">
+        {stones.map((stone) => {
+          const pos = toSvg(stone.point)
+          const selectedHere = selected ? samePoint(selected, stone.point) : false
+          const movable = isListed(movableFrom, stone.point)
+          const lastMoved = lastPoint ? samePoint(lastPoint, stone.point) : false
+          const glowHere = millGlow ? isListed(millGlow, stone.point) : false
+
+          return (
+            <g key={stone.id} className="stone-wrap" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
+              <g className={`stone-anim ${stone.capturing ? 'is-capturing' : ''} ${glowHere ? 'is-mill-glow' : ''}`}>
+                <Stone
+                  player={stone.player}
+                  selected={selectedHere}
+                  movable={movable && !selectedHere}
+                  lastMoved={lastMoved}
+                />
+              </g>
+            </g>
+          )
+        })}
+      </g>
+
+      <g className="hit-layer">
+        {variant.points.map((point) => {
+          const pos = toSvg(point)
+          return (
+            <g key={keyOf(point)} transform={`translate(${pos.x}, ${pos.y})`}>
+              <circle r="28" className="hit" onClick={() => onSelect(point)}>
+                <title>{`${point.x},${point.y}`}</title>
+              </circle>
+            </g>
+          )
+        })}
+      </g>
     </svg>
   )
 }

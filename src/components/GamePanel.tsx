@@ -1,5 +1,11 @@
+import { difficultyLabel } from '../shared/difficulty'
 import { playerLabel } from '../shared/player'
 import type { Difficulty, GameMode, Player, Winner } from '../shared/types'
+
+type VariantOption = {
+  id: string
+  label: string
+}
 
 type GamePanelProps = {
   eyebrow: string
@@ -9,11 +15,17 @@ type GamePanelProps = {
   current: Player
   mode: GameMode
   difficulty: Difficulty
+  difficulties?: Difficulty[]
+  humanColor?: Player
+  onHumanColor?: (color: Player) => void
   winner: Winner
   canEndTurn?: boolean
   canUndo: boolean
   counts: { white: number; black: number }
   countDetail?: (player: Player, onBoard: number) => string
+  variantOptions?: VariantOption[]
+  variant?: string
+  onVariant?: (id: string) => void
   onEndTurn?: () => void
   onUndo: () => void
   onReset: () => void
@@ -31,11 +43,17 @@ export function GamePanel({
   current,
   mode,
   difficulty,
+  difficulties = ['easy', 'medium', 'hard'],
+  humanColor = 'white',
+  onHumanColor,
   winner,
   canEndTurn = false,
   canUndo,
   counts,
   countDetail,
+  variantOptions,
+  variant,
+  onVariant,
   onEndTurn,
   onUndo,
   onReset,
@@ -46,6 +64,9 @@ export function GamePanel({
 }: GamePanelProps) {
   const detail = (player: Player, onBoard: number) =>
     countDetail ? countDetail(player, onBoard) : `${onBoard} piezas`
+
+  const sideLabel = (color: Player) =>
+    mode === 'cpu' && color !== humanColor ? 'Computadora' : playerLabel(color)
 
   return (
     <aside className="panel">
@@ -63,18 +84,36 @@ export function GamePanel({
         <div className={`score ${current === 'white' && !winner ? 'is-active' : ''}`}>
           <span className="swatch white" />
           <div>
-            <strong>Blancas</strong>
+            <strong>{sideLabel('white')}</strong>
             <span>{detail('white', counts.white)}</span>
           </div>
         </div>
         <div className={`score ${current === 'black' && !winner ? 'is-active' : ''}`}>
           <span className="swatch black" />
           <div>
-            <strong>{mode === 'cpu' ? 'Computadora' : playerLabel('black')}</strong>
+            <strong>{sideLabel('black')}</strong>
             <span>{detail('black', counts.black)}</span>
           </div>
         </div>
       </div>
+
+      {variantOptions && onVariant ? (
+        <div className="field">
+          <span>Tablero</span>
+          <div className="segmented">
+            {variantOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={variant === option.id ? 'is-on' : ''}
+                onClick={() => onVariant(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="field">
         <span>Modo</span>
@@ -96,31 +135,42 @@ export function GamePanel({
         </div>
       </div>
 
+      {mode === 'cpu' && onHumanColor ? (
+        <div className="field">
+          <span>Jugás con</span>
+          <div className="segmented">
+            <button
+              type="button"
+              className={humanColor === 'white' ? 'is-on' : ''}
+              onClick={() => onHumanColor('white')}
+            >
+              Blancas
+            </button>
+            <button
+              type="button"
+              className={humanColor === 'black' ? 'is-on' : ''}
+              onClick={() => onHumanColor('black')}
+            >
+              Negras
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {mode === 'cpu' ? (
         <div className="field">
           <span>Dificultad</span>
           <div className="segmented">
-            <button
-              type="button"
-              className={difficulty === 'easy' ? 'is-on' : ''}
-              onClick={() => onDifficulty('easy')}
-            >
-              Fácil
-            </button>
-            <button
-              type="button"
-              className={difficulty === 'medium' ? 'is-on' : ''}
-              onClick={() => onDifficulty('medium')}
-            >
-              Media
-            </button>
-            <button
-              type="button"
-              className={difficulty === 'hard' ? 'is-on' : ''}
-              onClick={() => onDifficulty('hard')}
-            >
-              Difícil
-            </button>
+            {difficulties.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={difficulty === option ? 'is-on' : ''}
+                onClick={() => onDifficulty(option)}
+              >
+                {difficultyLabel(option)}
+              </button>
+            ))}
           </div>
         </div>
       ) : null}

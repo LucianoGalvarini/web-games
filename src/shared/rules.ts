@@ -9,15 +9,22 @@ export const FANORONA_RULES = [
   'Después de capturar podés seguir con la misma pieza, cambiando de dirección y sin repetir casilla.',
 ]
 
-export const MORRIS_RULES = [
-  'Cada jugador tiene 9 piezas. Las blancas empiezan.',
-  'Primero se colocan, de a una, en intersecciones vacías.',
-  'Tres piezas propias alineadas forman un molino y permiten sacar una pieza rival.',
-  'No se puede sacar una pieza que está en un molino, salvo que todas las rivales lo estén.',
-  'Cuando ya no quedan piezas por colocar, se mueve una pieza a un punto vecino por las líneas.',
-  'Si te quedan 3 piezas, podés volar: ir a cualquier intersección vacía.',
-  'Gana quien deja al rival con 2 piezas o sin movimientos legales.',
-]
+import type { MorrisVariant } from '../morris/variants'
+
+export function morrisRulesFor(variant: MorrisVariant): string[] {
+  const rules = [
+    `Cada jugador tiene ${variant.piecesPerPlayer} piezas. Las blancas empiezan.`,
+    'Primero se colocan, de a una, en intersecciones vacías.',
+    'Tres piezas propias alineadas forman un molino y permiten sacar una pieza rival.',
+    'No se puede sacar una pieza que está en un molino, salvo que todas las rivales lo estén.',
+    'Cuando ya no quedan piezas por colocar, se mueve una pieza a un punto vecino por las líneas.',
+  ]
+  if (variant.flyingEnabled) {
+    rules.push('Si te quedan 3 piezas, podés volar: ir a cualquier intersección vacía.')
+  }
+  rules.push('Gana quien deja al rival con 2 piezas o sin movimientos legales.')
+  return rules
+}
 
 export const MINESWEEPER_RULES = [
   'Estilo Windows 7. El primer clic siempre es un vacío: abre esa casilla y las ocho vecinas.',

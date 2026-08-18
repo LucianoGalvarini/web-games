@@ -1,20 +1,20 @@
 import { keyOf } from '../shared/point'
-import { PIECES_PER_PLAYER, POINTS } from './constants'
 import type { Hands, MorrisBoard, MorrisPosition } from './types'
+import type { MorrisVariant } from './variants'
 
-export function createEmptyBoard(): MorrisBoard {
+export function createEmptyBoard(variant: MorrisVariant): MorrisBoard {
   const board: MorrisBoard = {}
-  for (const point of POINTS) {
+  for (const point of variant.points) {
     board[keyOf(point)] = null
   }
   return board
 }
 
-export function createInitialPosition(): MorrisPosition {
+export function createInitialPosition(variant: MorrisVariant): MorrisPosition {
   return {
-    board: createEmptyBoard(),
+    board: createEmptyBoard(variant),
     current: 'white',
-    inHand: { white: PIECES_PER_PLAYER, black: PIECES_PER_PLAYER },
+    inHand: { white: variant.piecesPerPlayer, black: variant.piecesPerPlayer },
     pendingRemoval: false,
   }
 }
@@ -27,10 +27,10 @@ export function cloneHands(inHand: Hands): Hands {
   return { white: inHand.white, black: inHand.black }
 }
 
-export function serializePosition(position: MorrisPosition): string {
-  const grid = POINTS.map((point) => {
+export function serializePosition(variant: MorrisVariant, position: MorrisPosition): string {
+  const grid = variant.points.map((point) => {
     const cell = position.board[keyOf(point)]
     return cell === 'white' ? 'W' : cell === 'black' ? 'B' : '.'
   }).join('')
-  return `${position.current}:${position.pendingRemoval ? 'R' : '-'}:${position.inHand.white}${position.inHand.black}:${grid}`
+  return `${variant.id}:${position.current}:${position.pendingRemoval ? 'R' : '-'}:${position.inHand.white}${position.inHand.black}:${grid}`
 }
