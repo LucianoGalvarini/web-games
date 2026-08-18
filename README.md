@@ -1,6 +1,6 @@
-# Fanorona y Molino de nueve
+# Juegos de mesa
 
-Dos juegos de tablero en React y TypeScript. Al abrir la app se elige cuál jugar. Fanorona (Fanoron-Tsivy, 9×5) y Molino de nueve (Nine Men's Morris) conviven con la misma interfaz de modos (dos jugadores o CPU).
+Una mesa de clásicos para el navegador. Al abrir se elige Fanorona, Molino de nueve o Buscaminas. Fanorona y Molino comparten modos de dos jugadores o CPU; Buscaminas se juega en solitario.
 
 ## Cómo ejecutarlo
 

@@ -8,7 +8,7 @@ export function Home({ onSelect }: HomeProps) {
   return (
     <div className="app home">
       <header className="home-header">
-        <p className="eyebrow">Tablero</p>
+        <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
         <p className="lede">Tres clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
