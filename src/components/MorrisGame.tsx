@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMorris } from '../hooks/useMorris'
 import { VARIANT_ORDER, VARIANTS } from '../morris'
-import { playerLabel } from '../shared/player'
+import { isCpuTurn, playerLabel } from '../shared/player'
 import { resultEyebrow, resultTitle, resultVariant } from '../shared/result'
 import { morrisRulesFor } from '../shared/rules'
 import type { GameMode, Player, Winner } from '../shared/types'
@@ -44,7 +44,7 @@ function statusText(
   if (flying) {
     return `Turno de ${playerLabel(current).toLowerCase()}. Con 3 piezas podés volar a cualquier vacío.`
   }
-  if (mode === 'cpu' && current !== humanColor) {
+  if (isCpuTurn(mode, current, humanColor)) {
     return 'Turno de la computadora.'
   }
   return `Turno de ${playerLabel(current).toLowerCase()}. Mové una pieza por las líneas.`

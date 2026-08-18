@@ -14,6 +14,7 @@ import {
   winnerOf,
 } from '../morris'
 import type { MorrisMove, MorrisPosition, MorrisVariantId } from '../morris'
+import { isCpuTurn } from '../shared/player'
 import { samePoint } from '../shared/point'
 import type { Point } from '../shared/point'
 import type { Difficulty, GameMode, Player, Winner } from '../shared/types'
@@ -47,7 +48,7 @@ export function useMorris() {
   const [position, setPosition] = useState<MorrisPosition>(() => createInitialPosition(VARIANTS[DEFAULT_VARIANT]))
   const [selected, setSelected] = useState<Point | null>(null)
   const [winner, setWinner] = useState<Winner>(null)
-  const [mode, setMode] = useState<GameMode>('local')
+  const [mode, setMode] = useState<GameMode>('cpu')
   const [humanColor, setHumanColor] = useState<Player>('white')
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [thinking, setThinking] = useState(false)
@@ -213,7 +214,7 @@ export function useMorris() {
       if (winner || thinking) {
         return
       }
-      if (mode === 'cpu' && position.current !== humanColor) {
+      if (isCpuTurn(mode, position.current, humanColor)) {
         return
       }
 
@@ -315,7 +316,7 @@ export function useMorris() {
 
   useEffect(() => clearAnimationTimers, [clearAnimationTimers])
 
-  const aiTurnActive = mode === 'cpu' && position.current !== humanColor && !winner
+  const aiTurnActive = isCpuTurn(mode, position.current, humanColor) && !winner
 
   useEffect(() => {
     if (!aiTurnActive) {

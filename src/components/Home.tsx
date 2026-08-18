@@ -10,7 +10,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Tres clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Cuatro clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -76,6 +76,40 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">Clásico</p>
             <h2>Buscaminas</h2>
             <p>Primer clic vacío, chording y pista. Sin la apertura a ciegas de XP.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('sudoku')}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="22" y="4" width="46" height="42" rx="4" fill="#8f5e32" />
+            {Array.from({ length: 9 }, (_, row) =>
+              Array.from({ length: 9 }, (_, col) => (
+                <rect
+                  key={`${row}-${col}`}
+                  x={25 + col * 4.4}
+                  y={7 + row * 4.4}
+                  width="4"
+                  height="4"
+                  fill={row === 2 && col === 4 ? '#5b3918' : '#e4d3b4'}
+                  stroke="#8f5e32"
+                  strokeWidth="0.3"
+                />
+              )),
+            )}
+            <text x="34.2" y="14.6" fontSize="3.4" fill="#1a120c" fontFamily="Outfit, sans-serif" fontWeight="700">
+              5
+            </text>
+            <text x="47.4" y="23.4" fontSize="3.4" fill="#1a120c" fontFamily="Outfit, sans-serif" fontWeight="700">
+              2
+            </text>
+            <text x="56.2" y="41" fontSize="3.4" fill="#1a120c" fontFamily="Outfit, sans-serif" fontWeight="700">
+              9
+            </text>
+          </svg>
+          <div>
+            <p className="eyebrow">Números</p>
+            <h2>Sudoku</h2>
+            <p>Anotaciones, pistas lógicas y tableros de solución única.</p>
           </div>
         </button>
       </div>

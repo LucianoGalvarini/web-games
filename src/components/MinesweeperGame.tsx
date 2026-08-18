@@ -37,21 +37,12 @@ export function MinesweeperGame({ onBack }: MinesweeperGameProps) {
   return (
     <div className="app">
       <div className="shell minesweeper-shell">
-        <aside className="panel">
+        <aside className="panel panel-controls">
           <header className="panel-header">
             <p className="eyebrow">Clásico</p>
             <h1>Buscaminas</h1>
             <p className="lede">Primer clic vacío, chording y pista. Misma mesa de madera que Fanorona y Molino.</p>
           </header>
-
-          <div className="ms-readouts">
-            <div className="ms-digit">{game.mineCountLabel}</div>
-            <div className="ms-digit">{game.timeLabel}</div>
-          </div>
-
-          <div className="status-card">
-            <p>{hintText}</p>
-          </div>
 
           <div className="field">
             <span>Dificultad</span>
@@ -66,21 +57,6 @@ export function MinesweeperGame({ onBack }: MinesweeperGameProps) {
                   {PRESETS[id].label}
                 </button>
               ))}
-            </div>
-          </div>
-
-          <div className="scores">
-            <div className="score">
-              <div>
-                <strong>{game.preset.cols}×{game.preset.rows}</strong>
-                <span>{game.preset.mines} minas</span>
-              </div>
-            </div>
-            <div className="score">
-              <div>
-                <strong>Mejor tiempo</strong>
-                <span>{formatBest(game.best[game.difficulty])}</span>
-              </div>
             </div>
           </div>
 
@@ -125,6 +101,32 @@ export function MinesweeperGame({ onBack }: MinesweeperGameProps) {
             onPress={game.setPressed}
           />
         </main>
+
+        <aside className="panel panel-stats">
+          <div className="ms-readouts">
+            <div className="ms-digit">{game.mineCountLabel}</div>
+            <div className="ms-digit">{game.timeLabel}</div>
+          </div>
+
+          <div className="status-card">
+            <p>{hintText}</p>
+          </div>
+
+          <div className="scores">
+            <div className="score">
+              <div>
+                <strong>{game.preset.cols}×{game.preset.rows}</strong>
+                <span>{game.preset.mines} minas</span>
+              </div>
+            </div>
+            <div className="score">
+              <div>
+                <strong>Mejor tiempo</strong>
+                <span>{formatBest(game.best[game.difficulty])}</span>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
 
       <RulesModal open={rulesOpen} rules={MINESWEEPER_RULES} onClose={() => setRulesOpen(false)} />

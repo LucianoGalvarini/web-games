@@ -3,6 +3,7 @@ import { FanoronaGame } from './components/FanoronaGame'
 import { Home } from './components/Home'
 import { MinesweeperGame } from './components/MinesweeperGame'
 import { MorrisGame } from './components/MorrisGame'
+import { SudokuGame } from './components/SudokuGame'
 import type { GameId } from './shared/types'
 
 export default function App() {
@@ -20,5 +21,9 @@ export default function App() {
     return <MorrisGame onBack={() => setGame(null)} />
   }
 
-  return <MinesweeperGame onBack={() => setGame(null)} />
+  if (game === 'minesweeper') {
+    return <MinesweeperGame onBack={() => setGame(null)} />
+  }
+
+  return <SudokuGame onBack={() => setGame(null)} />
 }

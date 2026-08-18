@@ -13,6 +13,7 @@ import {
   startChain,
 } from '../game'
 import type { Board, ChainState, Difficulty, GameMode, Move, Player, Point, Winner } from '../game'
+import { isCpuTurn } from '../shared/player'
 
 type Snapshot = {
   board: Board
@@ -30,6 +31,7 @@ export function useFanorona() {
   const [pendingChoice, setPendingChoice] = useState<Move[] | null>(null)
   const [winner, setWinner] = useState<Winner>(null)
   const [mode, setMode] = useState<GameMode>('cpu')
+  const [humanColor, setHumanColor] = useState<Player>('white')
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [thinking, setThinking] = useState(false)
   const [hoverTarget, setHoverTarget] = useState<Point | null>(null)
@@ -197,7 +199,7 @@ export function useFanorona() {
       if (winner || thinking) {
         return
       }
-      if (mode === 'cpu' && current === 'black') {
+      if (isCpuTurn(mode, current, humanColor)) {
         return
       }
       if (pendingChoice) {
@@ -228,7 +230,7 @@ export function useFanorona() {
 
       setSelected(null)
     },
-    [winner, thinking, mode, current, pendingChoice, selected, selectedMoves, chain, moves, playMove],
+    [winner, thinking, mode, current, humanColor, pendingChoice, selected, selectedMoves, chain, moves, playMove],
   )
 
   const chooseCapture = useCallback(
@@ -280,7 +282,7 @@ export function useFanorona() {
     setHoverTarget(null)
   }, [thinking, history])
 
-  const resetGame = useCallback((nextMode = mode) => {
+  const resetGame = useCallback((nextMode = mode, nextHumanColor = humanColor) => {
     const initial = createInitialBoard()
     setBoard(initial)
     setCurrent('white')
@@ -294,7 +296,8 @@ export function useFanorona() {
     setHistory([])
     setPositions([serializePosition(initial, 'white')])
     setMode(nextMode)
-  }, [mode])
+    setHumanColor(nextHumanColor)
+  }, [mode, humanColor])
 
   const changeMode = useCallback(
     (nextMode: GameMode) => {
@@ -303,7 +306,14 @@ export function useFanorona() {
     [resetGame],
   )
 
-  const aiTurnActive = mode === 'cpu' && current === 'black' && !winner
+  const changeHumanColor = useCallback(
+    (nextHumanColor: Player) => {
+      resetGame(mode, nextHumanColor)
+    },
+    [resetGame, mode],
+  )
+
+  const aiTurnActive = isCpuTurn(mode, current, humanColor) && !winner
 
   useEffect(() => {
     if (!aiTurnActive) {
@@ -320,7 +330,7 @@ export function useFanorona() {
           return
         }
 
-        const turn = chooseAiTurn(boardRef.current, 'black', difficultyRef.current)
+        const turn = chooseAiTurn(boardRef.current, currentRef.current, difficultyRef.current)
         if (turn.length === 0) {
           setThinking(false)
           return
@@ -360,6 +370,7 @@ export function useFanorona() {
     pendingChoice,
     winner,
     mode,
+    humanColor,
     difficulty,
     thinking,
     hoverTarget,
@@ -380,6 +391,7 @@ export function useFanorona() {
     undo,
     resetGame,
     changeMode,
+    changeHumanColor,
     setDifficulty,
     setHoverTarget,
   }

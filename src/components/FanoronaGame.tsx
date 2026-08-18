@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { playerLabel } from '../game'
 import type { GameMode, Player, Winner } from '../game'
 import { useFanorona } from '../hooks/useFanorona'
+import { isCpuTurn } from '../shared/player'
 import { FANORONA_RULES } from '../shared/rules'
 import { resultEyebrow, resultTitle, resultVariant } from '../shared/result'
 import { BoardView } from './Board/BoardView'
@@ -18,6 +19,7 @@ function statusText(
   winner: Winner,
   current: Player,
   mode: GameMode,
+  humanColor: Player,
   thinking: boolean,
   mustCapture: boolean,
   canEndTurn: boolean,
@@ -37,7 +39,7 @@ function statusText(
   if (mustCapture) {
     return `Turno de ${playerLabel(current).toLowerCase()}. La captura es obligatoria.`
   }
-  if (mode === 'cpu' && current === 'black') {
+  if (isCpuTurn(mode, current, humanColor)) {
     return 'Turno de la computadora.'
   }
   return `Turno de ${playerLabel(current).toLowerCase()}. Movimiento paika.`
@@ -68,6 +70,7 @@ export function FanoronaGame({ onBack }: FanoronaGameProps) {
             game.winner,
             game.current,
             game.mode,
+            game.humanColor,
             game.thinking,
             game.mustCapture,
             game.canEndTurn,
@@ -75,6 +78,8 @@ export function FanoronaGame({ onBack }: FanoronaGameProps) {
           current={game.current}
           mode={game.mode}
           difficulty={game.difficulty}
+          humanColor={game.humanColor}
+          onHumanColor={game.changeHumanColor}
           winner={game.winner}
           canEndTurn={game.canEndTurn}
           canUndo={game.canUndo}
@@ -116,10 +121,10 @@ export function FanoronaGame({ onBack }: FanoronaGameProps) {
       <RulesModal open={rulesOpen} rules={FANORONA_RULES} onClose={() => setRulesOpen(false)} />
       <ResultOverlay
         open={Boolean(game.winner)}
-        eyebrow={resultEyebrow(game.winner, game.mode)}
-        title={resultTitle(game.winner, game.mode)}
+        eyebrow={resultEyebrow(game.winner, game.mode, game.humanColor)}
+        title={resultTitle(game.winner, game.mode, game.humanColor)}
         detail={resultDetail(game.winner, game.counts)}
-        variant={resultVariant(game.winner, game.mode)}
+        variant={resultVariant(game.winner, game.mode, game.humanColor)}
         onRematch={() => game.resetGame()}
         onMenu={onBack}
       />

@@ -1,5 +1,5 @@
 import { difficultyLabel } from '../shared/difficulty'
-import { playerLabel } from '../shared/player'
+import { isCpuTurn, playerLabel } from '../shared/player'
 import type { Difficulty, GameMode, Player, Winner } from '../shared/types'
 
 type VariantOption = {
@@ -66,134 +66,138 @@ export function GamePanel({
     countDetail ? countDetail(player, onBoard) : `${onBoard} piezas`
 
   const sideLabel = (color: Player) =>
-    mode === 'cpu' && color !== humanColor ? 'Computadora' : playerLabel(color)
+    isCpuTurn(mode, color, humanColor) ? 'Computadora' : playerLabel(color)
 
   return (
-    <aside className="panel">
-      <header className="panel-header">
-        <p className="eyebrow">{eyebrow}</p>
-        <h1>{title}</h1>
-        <p className="lede">{lede}</p>
-      </header>
+    <>
+      <aside className="panel panel-controls">
+        <header className="panel-header">
+          <p className="eyebrow">{eyebrow}</p>
+          <h1>{title}</h1>
+          <p className="lede">{lede}</p>
+        </header>
 
-      <div className="status-card">
-        <p>{status}</p>
-      </div>
-
-      <div className="scores">
-        <div className={`score ${current === 'white' && !winner ? 'is-active' : ''}`}>
-          <span className="swatch white" />
-          <div>
-            <strong>{sideLabel('white')}</strong>
-            <span>{detail('white', counts.white)}</span>
+        {variantOptions && onVariant ? (
+          <div className="field">
+            <span>Tablero</span>
+            <div className="segmented">
+              {variantOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={variant === option.id ? 'is-on' : ''}
+                  onClick={() => onVariant(option.id)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className={`score ${current === 'black' && !winner ? 'is-active' : ''}`}>
-          <span className="swatch black" />
-          <div>
-            <strong>{sideLabel('black')}</strong>
-            <span>{detail('black', counts.black)}</span>
-          </div>
-        </div>
-      </div>
-
-      {variantOptions && onVariant ? (
-        <div className="field">
-          <span>Tablero</span>
-          <div className="segmented">
-            {variantOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={variant === option.id ? 'is-on' : ''}
-                onClick={() => onVariant(option.id)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="field">
-        <span>Modo</span>
-        <div className="segmented">
-          <button
-            type="button"
-            className={mode === 'local' ? 'is-on' : ''}
-            onClick={() => onMode('local')}
-          >
-            Dos jugadores
-          </button>
-          <button
-            type="button"
-            className={mode === 'cpu' ? 'is-on' : ''}
-            onClick={() => onMode('cpu')}
-          >
-            Contra CPU
-          </button>
-        </div>
-      </div>
-
-      {mode === 'cpu' && onHumanColor ? (
-        <div className="field">
-          <span>Jugás con</span>
-          <div className="segmented">
-            <button
-              type="button"
-              className={humanColor === 'white' ? 'is-on' : ''}
-              onClick={() => onHumanColor('white')}
-            >
-              Blancas
-            </button>
-            <button
-              type="button"
-              className={humanColor === 'black' ? 'is-on' : ''}
-              onClick={() => onHumanColor('black')}
-            >
-              Negras
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {mode === 'cpu' ? (
-        <div className="field">
-          <span>Dificultad</span>
-          <div className="segmented">
-            {difficulties.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className={difficulty === option ? 'is-on' : ''}
-                onClick={() => onDifficulty(option)}
-              >
-                {difficultyLabel(option)}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="actions">
-        {canEndTurn && onEndTurn ? (
-          <button type="button" className="btn btn-gold" onClick={onEndTurn}>
-            Terminar turno
-          </button>
         ) : null}
-        <button type="button" className="btn" onClick={onUndo} disabled={!canUndo}>
-          Deshacer
-        </button>
-        <button type="button" className="btn" onClick={onReset}>
-          Nueva partida
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={onRules}>
-          Cómo se juega
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={onBack}>
-          Elegir juego
-        </button>
-      </div>
-    </aside>
+
+        <div className="field">
+          <span>Modo</span>
+          <div className="segmented">
+            <button
+              type="button"
+              className={mode === 'local' ? 'is-on' : ''}
+              onClick={() => onMode('local')}
+            >
+              Dos jugadores
+            </button>
+            <button
+              type="button"
+              className={mode === 'cpu' ? 'is-on' : ''}
+              onClick={() => onMode('cpu')}
+            >
+              Contra CPU
+            </button>
+          </div>
+        </div>
+
+        {mode === 'cpu' && onHumanColor ? (
+          <div className="field">
+            <span>Jugás con</span>
+            <div className="segmented">
+              <button
+                type="button"
+                className={humanColor === 'white' ? 'is-on' : ''}
+                onClick={() => onHumanColor('white')}
+              >
+                Blancas
+              </button>
+              <button
+                type="button"
+                className={humanColor === 'black' ? 'is-on' : ''}
+                onClick={() => onHumanColor('black')}
+              >
+                Negras
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {mode === 'cpu' ? (
+          <div className="field">
+            <span>Dificultad</span>
+            <div className="segmented">
+              {difficulties.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={difficulty === option ? 'is-on' : ''}
+                  onClick={() => onDifficulty(option)}
+                >
+                  {difficultyLabel(option)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="actions">
+          {canEndTurn && onEndTurn ? (
+            <button type="button" className="btn btn-gold" onClick={onEndTurn}>
+              Terminar turno
+            </button>
+          ) : null}
+          <button type="button" className="btn" onClick={onUndo} disabled={!canUndo}>
+            Deshacer
+          </button>
+          <button type="button" className="btn" onClick={onReset}>
+            Nueva partida
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={onRules}>
+            Cómo se juega
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={onBack}>
+            Elegir juego
+          </button>
+        </div>
+      </aside>
+
+      <aside className="panel panel-stats">
+        <div className="status-card">
+          <p>{status}</p>
+        </div>
+
+        <div className="scores">
+          <div className={`score ${current === 'white' && !winner ? 'is-active' : ''}`}>
+            <span className="swatch white" />
+            <div>
+              <strong>{sideLabel('white')}</strong>
+              <span>{detail('white', counts.white)}</span>
+            </div>
+          </div>
+          <div className={`score ${current === 'black' && !winner ? 'is-active' : ''}`}>
+            <span className="swatch black" />
+            <div>
+              <strong>{sideLabel('black')}</strong>
+              <span>{detail('black', counts.black)}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
   )
 }

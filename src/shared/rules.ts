@@ -35,3 +35,13 @@ export const MINESWEEPER_RULES = [
   'Pista señala una jugada deducible. Tras perder podés repetir el mismo tablero.',
   'Principiante 9×9 / 10 minas, Intermedio 16×16 / 40, Experto 30×16 / 99.',
 ]
+
+export const SUDOKU_RULES = [
+  'Cada fila, cada columna y cada bloque de 3×3 debe tener los números del 1 al 9, sin repetir.',
+  'Las casillas oscuras son pistas fijas. Las demás las llenás vos.',
+  'Anotar (N) marca candidatos en lápiz. Autocompletar notas calcula todos los legales.',
+  'Pista señala un único obvio (casilla o número forzado). Tocá de nuevo para llenarla.',
+  'Revelar casilla completa la seleccionada, o la primera vacía si no hay selección.',
+  'Los conflictos de fila, columna o bloque se marcan en rojo. El teclado acepta 1-9, flechas y borrar.',
+  'Fácil ~40 pistas, Media ~32, Difícil ~27, Experta ~23. Cada tablero tiene solución única.',
+]

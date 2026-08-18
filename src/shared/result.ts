@@ -1,4 +1,5 @@
 import type { GameMode, Player, Winner } from './types'
+import { isCpuTurn } from './player'
 
 export type ResultVariant = 'win' | 'loss' | 'draw'
 
@@ -22,7 +23,7 @@ export function resultEyebrow(winner: Winner, mode: GameMode, humanColor: Player
   if (winner === 'draw') {
     return 'Partida terminada'
   }
-  if (mode === 'cpu' && winner !== humanColor) {
+  if (isCpuTurn(mode, winner, humanColor)) {
     return 'Derrota'
   }
   return 'Victoria'
@@ -32,7 +33,7 @@ export function resultVariant(winner: Winner, mode: GameMode, humanColor: Player
   if (!winner || winner === 'draw') {
     return 'draw'
   }
-  if (mode === 'cpu' && winner !== humanColor) {
+  if (isCpuTurn(mode, winner, humanColor)) {
     return 'loss'
   }
   return 'win'
