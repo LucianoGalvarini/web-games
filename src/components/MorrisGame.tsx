@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useMorris } from '../hooks/useMorris'
+import { VARIANT_ORDER, VARIANTS } from '../morris'
 import { playerLabel } from '../shared/player'
 import { resultEyebrow, resultTitle, resultVariant } from '../shared/result'
-import { MORRIS_RULES } from '../shared/rules'
+import { morrisRulesFor } from '../shared/rules'
 import type { GameMode, Player, Winner } from '../shared/types'
 import { GamePanel } from './GamePanel'
 import { ResultOverlay } from './ResultOverlay'
 import { RulesModal } from './RulesModal'
 import { MorrisBoardView } from './morris/MorrisBoardView'
+
+const VARIANT_OPTIONS = VARIANT_ORDER.map((id) => ({ id, label: VARIANTS[id].label }))
 
 type MorrisGameProps = {
   onBack: () => void
@@ -17,6 +20,7 @@ function statusText(
   winner: Winner,
   current: Player,
   mode: GameMode,
+  humanColor: Player,
   thinking: boolean,
   placing: boolean,
   pendingRemoval: boolean,
@@ -40,7 +44,7 @@ function statusText(
   if (flying) {
     return `Turno de ${playerLabel(current).toLowerCase()}. Con 3 piezas podés volar a cualquier vacío.`
   }
-  if (mode === 'cpu' && current === 'black') {
+  if (mode === 'cpu' && current !== humanColor) {
     return 'Turno de la computadora.'
   }
   return `Turno de ${playerLabel(current).toLowerCase()}. Mové una pieza por las líneas.`
@@ -65,12 +69,13 @@ export function MorrisGame({ onBack }: MorrisGameProps) {
       <div className="shell">
         <GamePanel
           eyebrow="Molino"
-          title="Molino de nueve"
+          title={game.variantConfig.label}
           lede="Formá molinos de tres y dejá al rival sin piezas o sin jugadas."
           status={statusText(
             game.winner,
             game.current,
             game.mode,
+            game.humanColor,
             game.thinking,
             game.placing,
             game.pendingRemoval,
@@ -79,6 +84,9 @@ export function MorrisGame({ onBack }: MorrisGameProps) {
           current={game.current}
           mode={game.mode}
           difficulty={game.difficulty}
+          difficulties={['easy', 'medium', 'hard', 'perfect']}
+          humanColor={game.humanColor}
+          onHumanColor={game.changeHumanColor}
           winner={game.winner}
           canUndo={game.canUndo}
           counts={game.counts}
@@ -89,6 +97,9 @@ export function MorrisGame({ onBack }: MorrisGameProps) {
             }
             return `${onBoard} en tablero`
           }}
+          variantOptions={VARIANT_OPTIONS}
+          variant={game.variant}
+          onVariant={(id) => game.changeVariant(id as (typeof VARIANT_ORDER)[number])}
           onUndo={game.undo}
           onReset={() => game.resetGame()}
           onMode={game.changeMode}
@@ -99,11 +110,13 @@ export function MorrisGame({ onBack }: MorrisGameProps) {
 
         <main className="table morris-table">
           <MorrisBoardView
-            board={game.board}
+            variant={game.variantConfig}
+            stones={game.stones}
             selected={game.selected}
             targets={game.targets}
             movableFrom={game.movableFrom}
             lastPoint={game.lastPoint}
+            millGlow={game.millGlow}
             pendingRemoval={game.pendingRemoval}
             disabled={game.thinking || Boolean(game.winner)}
             onSelect={game.selectPoint}
@@ -111,13 +124,13 @@ export function MorrisGame({ onBack }: MorrisGameProps) {
         </main>
       </div>
 
-      <RulesModal open={rulesOpen} rules={MORRIS_RULES} onClose={() => setRulesOpen(false)} />
+      <RulesModal open={rulesOpen} rules={morrisRulesFor(game.variantConfig)} onClose={() => setRulesOpen(false)} />
       <ResultOverlay
         open={Boolean(game.winner)}
-        eyebrow={resultEyebrow(game.winner, game.mode)}
-        title={resultTitle(game.winner, game.mode)}
+        eyebrow={resultEyebrow(game.winner, game.mode, game.humanColor)}
+        title={resultTitle(game.winner, game.mode, game.humanColor)}
         detail={resultDetail(game.winner, game.counts)}
-        variant={resultVariant(game.winner, game.mode)}
+        variant={resultVariant(game.winner, game.mode, game.humanColor)}
         onRematch={() => game.resetGame()}
         onMenu={onBack}
       />

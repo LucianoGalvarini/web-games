@@ -5,8 +5,9 @@ import { formsMill } from './geometry'
 import { hasLegalMove, isUnderMinimum } from './moves'
 import type { Winner } from '../shared/types'
 import type { MorrisMove, MorrisPosition } from './types'
+import type { MorrisVariant } from './variants'
 
-export function applyMove(position: MorrisPosition, move: MorrisMove): MorrisPosition {
+export function applyMove(variant: MorrisVariant, position: MorrisPosition, move: MorrisMove): MorrisPosition {
   const board = cloneBoard(position.board)
   const inHand = cloneHands(position.inHand)
   const player = position.current
@@ -14,7 +15,7 @@ export function applyMove(position: MorrisPosition, move: MorrisMove): MorrisPos
   if (move.kind === 'place') {
     board[keyOf(move.to)] = player
     inHand[player] -= 1
-    const mill = formsMill(board, move.to, player)
+    const mill = formsMill(variant, board, move.to, player)
     return {
       board,
       inHand,
@@ -26,7 +27,7 @@ export function applyMove(position: MorrisPosition, move: MorrisMove): MorrisPos
   if (move.kind === 'slide') {
     board[keyOf(move.from)] = null
     board[keyOf(move.to)] = player
-    const mill = formsMill(board, move.to, player)
+    const mill = formsMill(variant, board, move.to, player)
     return {
       board,
       inHand,
@@ -44,11 +45,11 @@ export function applyMove(position: MorrisPosition, move: MorrisMove): MorrisPos
   }
 }
 
-export function applyTurn(position: MorrisPosition, turn: MorrisMove[]): MorrisPosition {
-  return turn.reduce((current, move) => applyMove(current, move), position)
+export function applyTurn(variant: MorrisVariant, position: MorrisPosition, turn: MorrisMove[]): MorrisPosition {
+  return turn.reduce((current, move) => applyMove(variant, current, move), position)
 }
 
-export function winnerOf(position: MorrisPosition): Winner {
+export function winnerOf(variant: MorrisVariant, position: MorrisPosition): Winner {
   if (position.pendingRemoval) {
     return null
   }
@@ -56,13 +57,13 @@ export function winnerOf(position: MorrisPosition): Winner {
   const toMove = position.current
   const idle = opponent(toMove)
 
-  if (isUnderMinimum(position, toMove)) {
+  if (isUnderMinimum(variant, position, toMove)) {
     return idle
   }
-  if (isUnderMinimum(position, idle)) {
+  if (isUnderMinimum(variant, position, idle)) {
     return toMove
   }
-  if (!hasLegalMove(position)) {
+  if (!hasLegalMove(variant, position)) {
     return idle
   }
   return null

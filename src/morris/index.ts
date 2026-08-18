@@ -2,7 +2,7 @@ export { chooseAiTurn, generateTurns } from './ai'
 export type { MorrisTurn } from './ai'
 export { applyMove, applyTurn, winnerOf } from './apply'
 export { createEmptyBoard, createInitialPosition, serializePosition } from './board'
-export { GRID_SIZE, MILLS, PIECES_PER_PLAYER, POINTS } from './constants'
+export { GRID_SIZE } from './constants'
 export {
   canFly,
   countPieces,
@@ -16,3 +16,5 @@ export {
 } from './geometry'
 export { legalMoves } from './moves'
 export type { Hands, MorrisBoard, MorrisMove, MorrisPosition } from './types'
+export { DEFAULT_VARIANT, VARIANTS, VARIANT_ORDER } from './variants'
+export type { MorrisVariant, MorrisVariantId } from './variants'
