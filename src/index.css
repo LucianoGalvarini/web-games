@@ -278,6 +278,26 @@ h2 {
   cursor: pointer;
 }
 
+.stone-actor {
+  pointer-events: none;
+}
+
+.stone-bob {
+  transform-box: fill-box;
+  transform-origin: 50% 80%;
+  transition: transform 220ms cubic-bezier(0.22, 0.72, 0.28, 1);
+}
+
+.stone-bob.is-selected {
+  transform: translateY(-6px) scale(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stone-bob {
+    transition: none;
+  }
+}
+
 .stone.is-selected circle:nth-of-type(1) {
   stroke: var(--gold);
   stroke-width: 3;
@@ -477,6 +497,10 @@ h2 {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin: 18px 0 0;
+}
+
+.minesweeper-shell .status-card {
+  margin-bottom: 18px;
 }
 
 .ms-digit {

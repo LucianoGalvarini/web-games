@@ -1,8 +1,9 @@
-import { COLS, ROWS, getCell, samePoint } from '../../game'
+import { COLS, ROWS, samePoint } from '../../game'
 import type { Board, Move, Point } from '../../game'
 import { BoardLines } from './BoardLines'
 import { BOARD_HEIGHT, BOARD_WIDTH, toSvg } from './geometry'
 import { Stone, StoneDefs, pointLabel } from './Stone'
+import { useStoneMotion } from './useStoneMotion'
 
 type BoardViewProps = {
   board: Board
@@ -33,12 +34,26 @@ export function BoardView({
   onSelect,
   onHover,
 }: BoardViewProps) {
+  const stones = useStoneMotion(board, lastMove)
   const points: Point[] = []
   for (let y = 0; y < ROWS; y += 1) {
     for (let x = 0; x < COLS; x += 1) {
       points.push({ x, y })
     }
   }
+
+  const paintedStones = [...stones].sort((a, b) => {
+    if (a.departing !== b.departing) {
+      return a.departing ? -1 : 1
+    }
+    if (a.moving !== b.moving) {
+      return a.moving ? 1 : -1
+    }
+    if (a.point.y !== b.point.y) {
+      return a.point.y - b.point.y
+    }
+    return a.point.x - b.point.x
+  })
 
   return (
     <svg
@@ -82,12 +97,8 @@ export function BoardView({
 
       {points.map((point) => {
         const pos = toSvg(point)
-        const occupant = getCell(board, point)
-        const selectedHere = selected ? samePoint(selected, point) : false
         const targetHere = isListed(targets, point)
         const capturedHere = isListed(hoverCaptures, point) || isListed(choiceCaptures, point)
-        const movable = occupant !== null && isListed(movableFrom, point)
-        const lastMoved = lastMove ? samePoint(lastMove.to, point) : false
 
         return (
           <g
@@ -99,14 +110,6 @@ export function BoardView({
               r={targetHere ? 14 : 7}
               className={`node ${targetHere ? 'is-target' : ''} ${capturedHere ? 'is-captured' : ''}`}
             />
-            {occupant ? (
-              <Stone
-                player={occupant}
-                selected={selectedHere}
-                movable={movable && !selectedHere}
-                lastMoved={lastMoved}
-              />
-            ) : null}
             <circle
               r="28"
               className="hit"
@@ -116,6 +119,33 @@ export function BoardView({
             >
               <title>{pointLabel(point)}</title>
             </circle>
+          </g>
+        )
+      })}
+
+      {paintedStones.map((stone) => {
+        const selectedHere = selected ? samePoint(selected, stone.point) : false
+        const movable = !stone.departing && isListed(movableFrom, stone.point)
+        const lastMoved = lastMove ? samePoint(lastMove.to, stone.point) : false
+
+        return (
+          <g
+            key={stone.id}
+            className="stone-actor"
+            transform={`translate(${stone.x}, ${stone.y})`}
+            opacity={stone.opacity}
+          >
+            <g className={`stone-bob ${selectedHere && !stone.moving ? 'is-selected' : ''}`}>
+              <Stone
+                player={stone.player}
+                selected={selectedHere}
+                movable={movable && !selectedHere}
+                lastMoved={lastMoved}
+                lift={stone.lift}
+                tilt={stone.tilt}
+                scale={stone.scale}
+              />
+            </g>
           </g>
         )
       })}

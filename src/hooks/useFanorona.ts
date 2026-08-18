@@ -29,7 +29,7 @@ export function useFanorona() {
   const [selected, setSelected] = useState<Point | null>(null)
   const [pendingChoice, setPendingChoice] = useState<Move[] | null>(null)
   const [winner, setWinner] = useState<Winner>(null)
-  const [mode, setMode] = useState<GameMode>('local')
+  const [mode, setMode] = useState<GameMode>('cpu')
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [thinking, setThinking] = useState(false)
   const [hoverTarget, setHoverTarget] = useState<Point | null>(null)
@@ -337,7 +337,7 @@ export function useFanorona() {
             setThinking(false)
             return
           }
-          timers.push(window.setTimeout(playNext, 420))
+          timers.push(window.setTimeout(playNext, 460))
         }
         playNext()
       }, 380),
