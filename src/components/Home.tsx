@@ -10,7 +10,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Cinco clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Seis clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -110,6 +110,35 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">Números</p>
             <h2>Sudoku</h2>
             <p>Anotaciones, pistas lógicas y tableros de solución única.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('damas')}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="16" y="4" width="58" height="42" rx="4" fill="#8f5e32" />
+            {Array.from({ length: 6 }, (_, row) =>
+              Array.from({ length: 6 }, (_, col) => (
+                <rect
+                  key={`${row}-${col}`}
+                  x={20 + col * 8.4}
+                  y={8 + row * 5.9}
+                  width="8.4"
+                  height="5.9"
+                  fill={(row + col) % 2 === 0 ? '#c9a066' : '#5b3918'}
+                />
+              )),
+            )}
+            <circle cx="28.2" cy="10.9" r="2.6" fill="#241910" />
+            <circle cx="44.9" cy="10.9" r="2.6" fill="#241910" />
+            <circle cx="36.6" cy="16.9" r="2.6" fill="#241910" />
+            <circle cx="53.3" cy="39" r="2.6" fill="#f3e6d2" />
+            <circle cx="61.7" cy="39" r="2.6" fill="#f3e6d2" />
+            <circle cx="45" cy="33.1" r="2.6" fill="#f3e6d2" />
+          </svg>
+          <div>
+            <p className="eyebrow">Tablero</p>
+            <h2>Damas</h2>
+            <p>Capturá saltando en diagonal. Reglas inglesas o criollas, con dama voladora.</p>
           </div>
         </button>
 

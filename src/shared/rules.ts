@@ -36,6 +36,25 @@ export const MINESWEEPER_RULES = [
   'Principiante 9×9 / 10 minas, Intermedio 16×16 / 40, Experto 30×16 / 99.',
 ]
 
+import type { DamasVariant } from '../damas/variants'
+
+export function damasRulesFor(variant: DamasVariant): string[] {
+  const rules = [
+    'Tablero de 8×8, 12 piezas por bando en las casillas oscuras. Las blancas empiezan.',
+    'Las piezas simples se mueven y comen en diagonal, un paso, siempre hacia adelante.',
+    'Si hay al menos una captura disponible, es obligatorio jugarla (podés elegir cuál).',
+    'Después de comer, si esa misma pieza puede seguir comiendo, es obligatorio continuar.',
+    'Una pieza simple que llega a la última fila se corona dama. Si fue comiendo, el turno termina ahí.',
+  ]
+  rules.push(
+    variant.flyingKing
+      ? 'La dama "vuela": se mueve cualquier cantidad de casillas vacías en diagonal, y come a distancia.'
+      : 'La dama se mueve y come de a una casilla en diagonal, en cualquiera de las 4 direcciones.',
+  )
+  rules.push('Gana quien deja al rival sin piezas o sin movimientos legales. Triple repetición es tablas.')
+  return rules
+}
+
 export const SUDOKU_RULES = [
   'Cada fila, cada columna y cada bloque de 3×3 debe tener los números del 1 al 9, sin repetir.',
   'Las casillas oscuras son pistas fijas. Las demás las llenás vos.',

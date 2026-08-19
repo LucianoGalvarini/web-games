@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DamasGame } from './components/DamasGame'
 import { FanoronaGame } from './components/FanoronaGame'
 import { Home } from './components/Home'
 import { MinesweeperGame } from './components/MinesweeperGame'
@@ -28,6 +29,10 @@ export default function App() {
 
   if (game === 'sudoku') {
     return <SudokuGame onBack={() => setGame(null)} />
+  }
+
+  if (game === 'damas') {
+    return <DamasGame onBack={() => setGame(null)} />
   }
 
   return <TrucoGame onBack={() => setGame(null)} />
