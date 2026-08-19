@@ -10,7 +10,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Cuatro clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Cinco clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -110,6 +110,29 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">Números</p>
             <h2>Sudoku</h2>
             <p>Anotaciones, pistas lógicas y tableros de solución única.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('truco')}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="4" y="4" width="82" height="42" rx="4" fill="#8f5e32" />
+            <g transform="translate(18 8) rotate(-12)">
+              <rect width="22" height="34" rx="3" fill="#f3e6d2" stroke="#5b3918" />
+              <circle cx="11" cy="17" r="4" fill="#b8860b" />
+            </g>
+            <g transform="translate(34 7)">
+              <rect width="22" height="34" rx="3" fill="#7a4a1f" stroke="#e4b45a" />
+              <path d="M11 10l5 5-5 5-5-5z" fill="none" stroke="#f0d59a" strokeWidth="1.2" />
+            </g>
+            <g transform="translate(50 8) rotate(12)">
+              <rect width="22" height="34" rx="3" fill="#f3e6d2" stroke="#5b3918" />
+              <path d="M11 8l4 9c1 2 1 4 0 5l-4 2-4-2c-1-1-1-3 0-5z" fill="#1c3147" />
+            </g>
+          </svg>
+          <div>
+            <p className="eyebrow">Naipes</p>
+            <h2>Truco</h2>
+            <p>Mano a mano, sin flor, a 30. Envido, truco y mazo español.</p>
           </div>
         </button>
       </div>

@@ -45,3 +45,13 @@ export const SUDOKU_RULES = [
   'Los conflictos de fila, columna o bloque se marcan en rojo. El teclado acepta 1-9, flechas y borrar.',
   'Fácil ~40 pistas, Media ~32, Difícil ~27, Experta ~23. Cada tablero tiene solución única.',
 ]
+
+export const TRUCO_RULES = [
+  'Mano a mano, sin flor, partida a 30 (malas hasta 15, después buenas).',
+  'Mazo español de 40. Jerarquía de bazas: 1 de espadas, 1 de bastos, 7 de espadas, 7 de oros, los 3, los 2, anchos falsos, 12, 11, 10, 7 falsos, 6, 5 y 4.',
+  'Gana la mano quien hace dos bazas. Si la primera es parda, define la segunda. Si la tercera empata, gana quien hizo la primera; si todas son pardas, gana el mano.',
+  'Envido, real envido y falta envido se cantan en la primera baza, antes de que caigan las dos cartas. Empate de tantos: gana el mano.',
+  'La falta vale lo que le falta al que va ganando para las 15 (si ambos están en malas) o para las 30.',
+  'Truco vale 2, retruco 3, vale cuatro 4. No quiero deja el valor anterior (el truco no querido vale 1).',
+  'Irse al mazo entrega el valor actual de la mano. El mano sale en la primera baza y se alterna cada mano.',
+]

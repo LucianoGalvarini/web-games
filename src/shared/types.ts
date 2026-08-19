@@ -6,4 +6,4 @@ export type Difficulty = 'easy' | 'medium' | 'hard' | 'perfect'
 
 export type Winner = Player | 'draw' | null
 
-export type GameId = 'fanorona' | 'morris' | 'minesweeper' | 'sudoku'
+export type GameId = 'fanorona' | 'morris' | 'minesweeper' | 'sudoku' | 'truco'

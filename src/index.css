@@ -523,7 +523,7 @@ h2 {
 }
 
 .home {
-  max-width: 920px;
+  max-width: 1100px;
   margin: 0 auto;
   padding-top: 28px;
 }
@@ -905,4 +905,141 @@ h2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+.truco-table {
+  max-width: 720px;
+  justify-self: center;
+  width: 100%;
+}
+
+.truco-table-inner {
+  display: grid;
+  gap: 16px;
+  justify-items: stretch;
+}
+
+.truco-seat {
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.truco-hand {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  min-height: 132px;
+}
+
+.truco-card {
+  width: min(104px, 22vw);
+  display: block;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.38));
+}
+
+.truco-card svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+button.truco-card {
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: default;
+  color: inherit;
+}
+
+button.truco-card.is-playable {
+  cursor: pointer;
+  transform: translateY(-8px);
+}
+
+button.truco-card.is-playable:hover:not(:disabled) {
+  transform: translateY(-12px);
+}
+
+button.truco-card:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.truco-play {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: end;
+  min-height: 170px;
+  padding: 12px 8px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(228, 180, 90, 0.14);
+}
+
+.truco-slot {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.truco-slot span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.truco-empty {
+  width: min(104px, 22vw);
+  aspect-ratio: 160 / 240;
+  border-radius: 12px;
+  border: 1px dashed rgba(228, 180, 90, 0.28);
+  background: rgba(255, 244, 224, 0.04);
+}
+
+.truco-envido-banner {
+  margin: 0;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(228, 180, 90, 0.12);
+  border: 1px solid rgba(228, 180, 90, 0.28);
+  color: var(--gold-2);
+}
+
+.truco-cants {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+}
+
+.truco-cants-placeholder {
+  min-height: 46px;
+}
+
+.truco-log {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.16);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.truco-log p {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.truco-card.is-playable,
+  button.truco-card.is-playable:hover:not(:disabled) {
+    transform: none;
+  }
 }

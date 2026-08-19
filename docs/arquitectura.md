@@ -10,11 +10,13 @@ src/
   morris/                      # Motor Molino (variantes 6 / 9 / 12)
   minesweeper/                 # Motor Buscaminas
   sudoku/                      # Motor Sudoku
+  truco/                       # Motor Truco argentino
   hooks/
     useFanorona.ts
     useMorris.ts
     useMinesweeper.ts
     useSudoku.ts
+    useTruco.ts
   components/
     Home.tsx
     GamePanel.tsx              # Controles y estadísticas de Fanorona y Molino
@@ -24,10 +26,12 @@ src/
     MorrisGame.tsx
     MinesweeperGame.tsx
     SudokuGame.tsx
+    TrucoGame.tsx
     Board/                     # SVG Fanorona + piedras + motion
     morris/MorrisBoardView.tsx
     minesweeper/MinesweeperBoard.tsx
     sudoku/                    # Tablero y teclado numérico
+    truco/                     # Naipes SVG y mesa
 ```
 
 `App` solo elige el juego. Cada motor se puede importar sin montar React.
