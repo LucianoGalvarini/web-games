@@ -1,0 +1,8 @@
+export { chooseAiTurn, generateTurns } from './ai'
+export { applyMove, applyTurn, winnerOf } from './apply'
+export { createInitialBoard, createInitialPosition, serializePosition } from './board'
+export { BOARD_SIZE, countPieces, DARK_SQUARES, isDarkSquare, isPromotionRow, pieceAt, piecesOf } from './geometry'
+export { hasLegalTurn, legalStepsAtTurnStart, pieceCaptureSteps } from './moves'
+export type { DamasBoard, DamasMove, DamasPosition, DamasTurn, PieceKind, Square } from './types'
+export { DEFAULT_VARIANT, VARIANTS, VARIANT_ORDER } from './variants'
+export type { DamasVariant, DamasVariantId } from './variants'

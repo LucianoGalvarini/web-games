@@ -906,3 +906,161 @@ h2 {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+
+.damas-table {
+  max-width: 640px;
+  justify-self: center;
+  width: 100%;
+}
+
+.damas-field {
+  position: relative;
+  width: min(100%, 560px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  padding: clamp(10px, 1.1vw, 18px);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #b8894d 0%, #c9a066 45%, #8f5e32 100%);
+  box-shadow:
+    inset 0 0 0 8px #5b3918,
+    inset 0 0 0 10px rgba(232, 194, 122, 0.55);
+}
+
+.damas-field.is-disabled .damas-piece {
+  pointer-events: none;
+}
+
+.damas-cells {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.damas-cell {
+  position: relative;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: default;
+}
+
+.damas-cell.is-light {
+  background: #e4d3b4;
+}
+
+.damas-cell.is-dark {
+  background: #6d4320;
+  cursor: pointer;
+}
+
+.damas-cell.is-dark:disabled {
+  cursor: default;
+}
+
+.damas-cell.is-target::after {
+  content: '';
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  border: 3px solid var(--gold);
+  background: rgba(228, 180, 90, 0.18);
+}
+
+.damas-pieces {
+  position: absolute;
+  inset: clamp(10px, 1.1vw, 18px);
+  pointer-events: none;
+}
+
+.damas-piece {
+  position: absolute;
+  width: 12.5%;
+  height: 12.5%;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+  cursor: pointer;
+  transition:
+    left 280ms cubic-bezier(0.34, 1.1, 0.4, 1),
+    top 280ms cubic-bezier(0.34, 1.1, 0.4, 1);
+}
+
+.damas-piece-face {
+  width: 78%;
+  height: 78%;
+  border-radius: 50%;
+  box-shadow: 0 3px 6px rgba(20, 10, 4, 0.4);
+  animation: damasPiecePlace 220ms ease-out;
+}
+
+.damas-piece.is-white .damas-piece-face {
+  background: radial-gradient(circle at 38% 32%, #fff8ea, #e6d3b1 70%, #c8ae86 100%);
+  border: 1px solid #d7c4a3;
+}
+
+.damas-piece.is-black .damas-piece-face {
+  background: radial-gradient(circle at 38% 32%, #4a382c, #241910 55%, #120c08 100%);
+  border: 1px solid #1a120c;
+}
+
+.damas-piece.is-king .damas-piece-face {
+  box-shadow:
+    0 3px 6px rgba(20, 10, 4, 0.4),
+    inset 0 0 0 3px var(--gold);
+}
+
+.damas-piece.is-selected .damas-piece-face {
+  box-shadow:
+    0 3px 6px rgba(20, 10, 4, 0.4),
+    0 0 0 3px var(--gold);
+}
+
+.damas-piece.is-movable .damas-piece-face {
+  filter: drop-shadow(0 0 6px rgba(228, 180, 90, 0.35));
+}
+
+.damas-piece.is-last .damas-piece-face {
+  box-shadow:
+    0 3px 6px rgba(20, 10, 4, 0.4),
+    0 0 0 2px #f4d9a6;
+}
+
+.damas-piece.is-capturing .damas-piece-face {
+  animation: damasCaptureFade 250ms ease-in forwards;
+}
+
+@keyframes damasPiecePlace {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes damasCaptureFade {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .damas-piece,
+  .damas-piece-face,
+  .damas-piece.is-capturing .damas-piece-face {
+    animation: none !important;
+    transition: none !important;
+  }
+}

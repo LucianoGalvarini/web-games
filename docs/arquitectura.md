@@ -8,24 +8,28 @@ src/
   shared/                      # Player, Point, Difficulty, textos de reglas y resultado
   game/                        # Motor Fanorona
   morris/                      # Motor Molino (variantes 6 / 9 / 12)
+  damas/                       # Motor Damas (variantes inglesas / criollas)
   minesweeper/                 # Motor Buscaminas
   sudoku/                      # Motor Sudoku
   hooks/
     useFanorona.ts
     useMorris.ts
+    useDamas.ts
     useMinesweeper.ts
     useSudoku.ts
   components/
     Home.tsx
-    GamePanel.tsx              # Controles y estadísticas de Fanorona y Molino
+    GamePanel.tsx              # Controles y estadísticas de Fanorona, Molino y Damas
     ResultOverlay.tsx
     RulesModal.tsx
     FanoronaGame.tsx
     MorrisGame.tsx
+    DamasGame.tsx
     MinesweeperGame.tsx
     SudokuGame.tsx
     Board/                     # SVG Fanorona + piedras + motion
     morris/MorrisBoardView.tsx
+    damas/DamasBoard.tsx       # Grilla 8×8, piezas en capa aparte
     minesweeper/MinesweeperBoard.tsx
     sudoku/                    # Tablero y teclado numérico
 ```
@@ -40,14 +44,14 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 
 - `shared/point.ts` y `shared/player.ts`: coordenadas, etiquetas y `isCpuTurn`.
 - `shared/types.ts`: `GameMode`, `Difficulty` (`easy` \| `medium` \| `hard` \| `perfect`), `GameId`.
-- `GamePanel`: modo, dificultad, color humano y selector de tablero (Molino).
+- `GamePanel`: modo, dificultad, color humano y selector de tablero/variante (Molino, Damas).
 - `Stone`: la misma piedra SVG en Fanorona y Molino.
 - Resultado: `resultTitle` / `resultEyebrow` / `resultVariant` según modo y color humano.
 
 ## Decisiones de diseño
 
 - **Motor sin React.** Las reglas se pueden importar desde un script Node/tsx. Facilita tests y la IA.
-- **Turno = lista de pasos.** En Fanorona y Molino la CPU piensa secuencias (`captura+cadena` o `place/slide+remove`), no un paso aislado.
+- **Turno = lista de pasos.** La CPU piensa secuencias completas, no un paso aislado: `captura+cadena` en Fanorona, `place/slide+remove` en Molino, cadena de saltos en Damas.
 - **Inmutabilidad.** `applyMove` clona; el deshacer guarda referencias a estados anteriores.
 - **Sin enums de TypeScript.** `erasableSyntaxOnly`; los tipos son uniones.
 - **Imports de tipos explícitos.** `verbatimModuleSyntax` exige `import type { ... }`.
@@ -57,4 +61,5 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 - Tests del motor Fanorona: importar `legalMovesAtTurnStart` / `applyMove`. Las cinco aperturas son un buen smoke test.
 - Otra CPU: cambiar `chooseAiTurn` del juego correspondiente, sin tocar la UI.
 - Variante de Molino: agregar una entrada en `VARIANTS` (puntos, molinos, `flyingEnabled`).
+- Variante de Damas: agregar una entrada en `VARIANTS` (`flyingKing`); el tablero y la posición inicial son iguales en las dos.
 - Variantes Fanoron-Telo (3×3) o Dimy (5×5): parametrizar `COLS`/`ROWS` y la posición inicial; la geometría de puntos fuertes se mantiene si el origen es fuerte.
