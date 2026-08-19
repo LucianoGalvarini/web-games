@@ -5,6 +5,7 @@ import { Home } from './components/Home'
 import { MinesweeperGame } from './components/MinesweeperGame'
 import { MorrisGame } from './components/MorrisGame'
 import { SudokuGame } from './components/SudokuGame'
+import { TetrisGame } from './components/TetrisGame'
 import { TrucoGame } from './components/TrucoGame'
 import type { GameId } from './shared/types'
 
@@ -35,5 +36,9 @@ export default function App() {
     return <DamasGame onBack={() => setGame(null)} />
   }
 
-  return <TrucoGame onBack={() => setGame(null)} />
+  if (game === 'truco') {
+    return <TrucoGame onBack={() => setGame(null)} />
+  }
+
+  return <TetrisGame onBack={() => setGame(null)} />
 }

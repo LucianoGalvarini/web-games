@@ -74,3 +74,13 @@ export const TRUCO_RULES = [
   'Truco vale 2, retruco 3, vale cuatro 4. No quiero deja el valor anterior (el truco no querido vale 1).',
   'Irse al mazo entrega el valor actual de la mano. El mano sale en la primera baza y se alterna cada mano.',
 ]
+
+export const TETRIS_RULES = [
+  'Pozo de 10×20. Caen las siete piezas (I, O, T, S, Z, J, L) en bolsas de 7, sin repetir hasta agotar la bolsa.',
+  'Completá líneas horizontales para borrarlas. Una, dos, tres o cuatro (tetris) suman 100, 300, 500 u 800, por el nivel.',
+  'Bajar suave suma 1 por celda. Tirar (espacio) clava la pieza y suma 2 por celda de caída.',
+  'Los giros usan patadas SRS: si no entra, la pieza se corre un poco contra la pared o el piso.',
+  'C reserva la pieza (hold), una vez por caída. El fantasma marca dónde va a caer.',
+  'Cada 10 líneas sube el nivel y cae más rápido. Si la siguiente pieza no entra, se llena el pozo.',
+  'Fácil arranca en nivel 1, Media en 5, Difícil en 10. Pausa con P o Esc.',
+]

@@ -10,7 +10,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Seis clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Siete clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -162,6 +162,26 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">Naipes</p>
             <h2>Truco</h2>
             <p>Mano a mano, sin flor, a 30. Envido, truco y mazo español.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('tetris')}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="28" y="4" width="34" height="42" rx="3" fill="#8f5e32" />
+            <rect x="31" y="7" width="28" height="36" fill="#5b3918" />
+            <rect x="31" y="31" width="7" height="12" fill="#4a9b8e" />
+            <rect x="38" y="31" width="7" height="12" fill="#4a9b8e" />
+            <rect x="45" y="31" width="7" height="12" fill="#4a9b8e" />
+            <rect x="52" y="31" width="7" height="12" fill="#4a9b8e" />
+            <rect x="38" y="19" width="7" height="12" fill="#e4b45a" />
+            <rect x="45" y="19" width="7" height="12" fill="#e4b45a" />
+            <rect x="38" y="7" width="7" height="12" fill="#e4b45a" />
+            <rect x="45" y="7" width="7" height="12" fill="#e4b45a" />
+          </svg>
+          <div>
+            <p className="eyebrow">Caída</p>
+            <h2>Tetris</h2>
+            <p>Completá líneas. Bolsa de 7, giros SRS, reserva y fantasma.</p>
           </div>
         </button>
       </div>

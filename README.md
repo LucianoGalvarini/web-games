@@ -1,10 +1,10 @@
 # Juegos de mesa
 
-Seis clásicos en el navegador: Fanorona, Molino, Damas, Buscaminas, Sudoku y Truco. La interfaz está en español. Al abrir se elige el juego; cada uno conserva sus reglas.
+Siete clásicos en el navegador: Fanorona, Molino, Damas, Buscaminas, Sudoku, Truco y Tetris. La interfaz está en español. Al abrir se elige el juego; cada uno conserva sus reglas.
 
 Sitio: [lucianogalvarini.github.io/web-games](https://lucianogalvarini.github.io/web-games/)
 
-Fanorona, Molino, Damas y Truco arrancan contra la CPU. Buscaminas y Sudoku se juegan en solitario.
+Fanorona, Molino, Damas y Truco arrancan contra la CPU. Buscaminas, Sudoku y Tetris se juegan en solitario.
 
 ## Documentación
 
@@ -16,6 +16,7 @@ Cada juego tiene su propia página:
 - [Buscaminas](docs/buscaminas.md)
 - [Sudoku](docs/sudoku.md)
 - [Truco](docs/truco.md)
+- [Tetris](docs/tetris.md)
 - [Arquitectura](docs/arquitectura.md)
 
 ## Cómo ejecutarlo

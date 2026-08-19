@@ -12,6 +12,7 @@ src/
   minesweeper/                 # Motor Buscaminas
   sudoku/                      # Motor Sudoku
   truco/                       # Motor Truco argentino
+  tetris/                      # Motor Tetris
   hooks/
     useFanorona.ts
     useMorris.ts
@@ -19,6 +20,7 @@ src/
     useMinesweeper.ts
     useSudoku.ts
     useTruco.ts
+    useTetris.ts
   components/
     Home.tsx
     GamePanel.tsx              # Controles y estadísticas de Fanorona, Molino y Damas
@@ -30,12 +32,14 @@ src/
     MinesweeperGame.tsx
     SudokuGame.tsx
     TrucoGame.tsx
+    TetrisGame.tsx
     Board/                     # SVG Fanorona + piedras + motion
     morris/MorrisBoardView.tsx
     damas/DamasBoard.tsx       # Grilla 8×8, piezas en capa aparte
     minesweeper/MinesweeperBoard.tsx
     sudoku/                    # Tablero y teclado numérico
     truco/                     # Naipes SVG y mesa
+    tetris/                    # Pozo, minipiezas
 ```
 
 `App` solo elige el juego. Cada motor se puede importar sin montar React.
