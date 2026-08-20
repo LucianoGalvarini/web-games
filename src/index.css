@@ -269,25 +269,33 @@ h2 {
   right: 16px;
   z-index: 12;
   display: flex;
-  gap: 8px;
+  gap: 14px;
 }
 
 .hud-btn {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--gold-2);
+  cursor: pointer;
+}
+
+.hud-icon {
+  width: 42px;
   height: 42px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px 0 10px;
+  display: grid;
+  place-items: center;
   border-radius: 14px;
   border: 1px solid rgba(228, 180, 90, 0.35);
   background: rgba(28, 18, 12, 0.82);
-  color: var(--gold-2);
-  cursor: pointer;
   backdrop-filter: blur(10px);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
 }
 
-.hud-btn:hover {
+.hud-btn:hover .hud-icon {
   border-color: var(--gold);
 }
 
@@ -295,17 +303,17 @@ h2 {
   color: var(--muted);
 }
 
-.hud-btn svg {
+.hud-icon svg {
   width: 20px;
   height: 20px;
   display: block;
-  flex-shrink: 0;
 }
 
-.hud-btn span {
+.hud-label {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: inherit;
 }
 
 .table {
@@ -728,14 +736,15 @@ h2 {
   .table-hud {
     top: 10px;
     right: 10px;
+    gap: 10px;
   }
 
-  .hud-btn {
+  .hud-icon {
+    width: 38px;
     height: 38px;
-    padding: 0 10px 0 8px;
   }
 
-  .hud-btn span {
+  .hud-label {
     font-size: 10px;
   }
 }
@@ -744,6 +753,16 @@ h2 {
 .tetris-shell,
 .truco-shell {
   --controls-col: 360px;
+}
+
+.fanorona-shell {
+  max-width: 1720px;
+}
+
+.fanorona-shell .table {
+  max-width: 1040px;
+  justify-self: center;
+  width: 100%;
 }
 
 .damas-shell,
@@ -758,7 +777,7 @@ h2 {
 
 .minesweeper-shell {
   --controls-col: 440px;
-  max-width: min(1600px, 100%);
+  max-width: min(1760px, 100%);
 }
 
 .morris-shell {
@@ -807,7 +826,7 @@ h2 {
 .ms-field {
   --ms-gap: clamp(2px, 0.25vw, 3px);
   --ms-pad: clamp(10px, 1.1vw, 18px);
-  --ms-cell-max: 48px;
+  --ms-cell-max: 56px;
   --ms-cols: 9;
   container-type: inline-size;
   display: grid;
@@ -825,11 +844,11 @@ h2 {
 }
 
 .ms-field.is-16x16 {
-  --ms-cell-max: 36px;
+  --ms-cell-max: 40px;
 }
 
 .ms-field.is-30x16 {
-  --ms-cell-max: 40px;
+  --ms-cell-max: 42px;
 }
 
 .ms-cell {
@@ -1227,14 +1246,14 @@ h2 {
 }
 
 .ajedrez-table {
-  max-width: 640px;
+  max-width: 720px;
   justify-self: center;
   width: 100%;
 }
 
 .ajedrez-field {
   position: relative;
-  width: min(100%, 560px);
+  width: min(100%, 660px);
   aspect-ratio: 1;
   margin: 0 auto;
   padding: clamp(10px, 1.1vw, 18px);
@@ -1962,7 +1981,7 @@ button.truco-card:disabled {
 }
 
 .tetris-table {
-  max-width: 420px;
+  max-width: 460px;
   justify-self: center;
   width: 100%;
   display: grid;
@@ -1972,7 +1991,7 @@ button.truco-card:disabled {
 
 .tetris-field {
   position: relative;
-  width: min(100%, 320px);
+  width: min(100%, 372px);
   padding: clamp(10px, 1.1vw, 16px);
   border-radius: 18px;
   background: linear-gradient(180deg, #b8894d 0%, #c9a066 45%, #8f5e32 100%);
@@ -2082,7 +2101,7 @@ button.truco-card:disabled {
 .tetris-mini-cell.is-L { background: #c67a32; }
 
 .paisho-table {
-  max-width: 560px;
+  max-width: 660px;
   justify-self: center;
   width: 100%;
   display: grid;
@@ -2097,7 +2116,7 @@ button.truco-card:disabled {
 }
 
 .paisho-board {
-  width: min(100%, 520px);
+  width: min(100%, 620px);
   aspect-ratio: 1;
   display: block;
   filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.35));

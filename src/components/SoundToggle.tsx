@@ -37,8 +37,10 @@ export function SoundToggle() {
       aria-label={muted ? 'Sonido off' : 'Sonido on'}
       title={muted ? 'Sonido off' : 'Sonido on'}
     >
-      <SpeakerIcon muted={muted} />
-      <span>Sonido</span>
+      <span className="hud-icon">
+        <SpeakerIcon muted={muted} />
+      </span>
+      <span className="hud-label">Sonido</span>
     </button>
   )
 }
