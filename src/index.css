@@ -528,11 +528,11 @@ h2 {
   }
 
   .truco-table-inner {
-    min-height: 88dvh;
+    min-height: 0;
   }
 
   .truco-shell .panel-stats {
-    grid-template-rows: auto minmax(38dvh, 46dvh) 18dvh;
+    grid-template-rows: auto auto 9.6rem;
   }
 }
 
@@ -1071,19 +1071,17 @@ h2 {
 }
 
 .truco-shell {
-  min-height: calc(100dvh - 4.5rem);
-  align-items: stretch;
+  align-items: start;
 }
 
 .truco-shell .panel-stats {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) minmax(14dvh, 16.5dvh);
-  gap: clamp(10px, 1.2dvh, 16px);
-  min-height: calc(100dvh - 4.5rem);
+  grid-template-rows: auto auto 9.6rem;
+  gap: 12px;
 }
 
 .truco-shell .status-card {
-  min-height: 4.8rem;
+  min-height: 3.4rem;
 }
 
 .truco-table {
@@ -1091,28 +1089,26 @@ h2 {
   justify-self: center;
   width: 100%;
   display: flex;
-  min-height: calc(100dvh - 4.5rem);
 }
 
 .truco-table-inner {
   display: grid;
   grid-template-rows:
     auto
-    minmax(26dvh, 1fr)
-    3.4rem
+    minmax(11.5rem, 22vh)
+    2.4rem
     auto
-    6.2rem;
-  gap: clamp(12px, 1.8dvh, 28px);
+    4.4rem;
+  gap: 10px;
   justify-items: stretch;
   width: 100%;
-  min-height: 100%;
 }
 
 .truco-seat {
-  margin: 0 0 0.5em;
-  min-height: 1.2em;
+  margin: 0 0 0.35em;
+  min-height: 1.1em;
   text-align: center;
-  font-size: clamp(11px, 1.15dvh, 13px);
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--gold);
@@ -1122,20 +1118,20 @@ h2 {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: 0.6em;
-  height: 10dvh;
-  min-height: 10dvh;
+  gap: 0.5em;
+  height: 4.6rem;
+  min-height: 4.6rem;
 }
 
 .truco-hand.is-you {
-  height: 18dvh;
-  min-height: 18dvh;
+  height: 6.4rem;
+  min-height: 6.4rem;
   gap: 0;
 }
 
 .truco-hand-slot {
   display: flex;
-  width: min(7dvh, 12%);
+  width: 3.1rem;
   aspect-ratio: 160 / 240;
   justify-content: center;
   align-items: flex-end;
@@ -1143,8 +1139,8 @@ h2 {
 }
 
 .truco-hand.is-you .truco-hand-slot {
-  width: min(11dvh, 15%);
-  margin: 0 -0.35em;
+  width: 4.2rem;
+  margin: 0 -0.28em;
 }
 
 .truco-hand-slot .truco-card,
@@ -1180,17 +1176,17 @@ h2 {
 }
 
 .truco-card {
-  width: min(11dvh, 15%);
+  width: 4.2rem;
   display: block;
   filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.38));
 }
 
 .truco-card.is-sm {
-  width: min(7dvh, 12%);
+  width: 3.1rem;
 }
 
 .truco-card.is-md {
-  width: min(11dvh, 15%);
+  width: 4.2rem;
 }
 
 .truco-card svg {
@@ -1255,7 +1251,7 @@ button.truco-card:disabled {
   position: absolute;
   left: 50%;
   top: 62%;
-  width: min(9dvh, 14%);
+  width: 4.2rem;
   filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
 }
 
@@ -1361,8 +1357,8 @@ button.truco-card:disabled {
 .truco-envido-banner {
   margin: 0;
   text-align: center;
-  min-height: 3.4rem;
-  height: 3.4rem;
+  min-height: 2.4rem;
+  height: 2.4rem;
   display: grid;
   place-items: center;
   padding: 0 12px;
@@ -1371,6 +1367,7 @@ button.truco-card:disabled {
   border: 1px solid rgba(228, 180, 90, 0.28);
   color: var(--gold-2);
   overflow: hidden;
+  font-size: 13px;
 }
 
 .truco-envido-banner.is-empty {
@@ -1385,18 +1382,17 @@ button.truco-card:disabled {
   justify-content: center;
   align-content: center;
   gap: 8px;
-  height: 6.2rem;
-  min-height: 6.2rem;
+  height: 4.4rem;
+  min-height: 4.4rem;
 }
 
 .truco-anotador {
   position: relative;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) 12%;
+  grid-template-rows: auto auto 2.6rem;
   margin: 0;
-  height: 100%;
-  min-height: 0;
-  padding: 1.5% 3% 1%;
+  height: auto;
+  padding: 8px 10px 6px;
   overflow: hidden;
   border-radius: 18px;
   border: 1px solid rgba(228, 180, 90, 0.28);
@@ -1418,12 +1414,12 @@ button.truco-card:disabled {
 .truco-anotador-target {
   position: relative;
   z-index: 3;
-  width: 54px;
-  margin: 0 auto 8px;
-  padding: 6px 0 7px;
+  width: 42px;
+  margin: 0 auto 6px;
+  padding: 4px 0 5px;
   text-align: center;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1;
   color: #f0b45a;
@@ -1437,10 +1433,10 @@ button.truco-card:disabled {
 .truco-anotador-pole {
   position: absolute;
   left: 50%;
-  top: 46px;
-  bottom: 18px;
+  top: 38px;
+  bottom: 10px;
   z-index: 2;
-  width: 36px;
+  width: 28px;
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -1450,28 +1446,26 @@ button.truco-card:disabled {
   z-index: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12%;
+  gap: 18px;
   min-height: 0;
-  height: 100%;
 }
 
 .truco-anotador-col {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
   justify-items: center;
   align-content: start;
-  gap: 6px;
+  gap: 4px;
   min-height: 0;
-  height: 100%;
 }
 
 .truco-anotador-name {
   margin: 0;
   width: 100%;
-  padding: 7px 6px 8px;
+  padding: 5px 6px 6px;
   text-align: center;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(15px, 2.2vw, 20px);
+  font-size: 16px;
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
@@ -1486,9 +1480,9 @@ button.truco-card:disabled {
 .truco-anotador-half {
   margin: 0;
   width: 92%;
-  padding: 5px 8px 6px;
+  padding: 3px 8px 4px;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1508,27 +1502,24 @@ button.truco-card:disabled {
 
 .truco-anotador-groups {
   display: grid;
-  grid-template-rows: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, 3.6rem);
   justify-items: center;
-  gap: 1%;
+  gap: 2px;
   width: 100%;
-  min-height: 0;
-  height: 100%;
 }
 
 .truco-anotador-group {
   display: block;
-  width: auto;
-  height: 100%;
-  max-width: 100%;
+  width: 3.6rem;
+  height: 3.6rem;
 }
 
 .truco-anotador-pile {
   position: relative;
   z-index: 3;
   display: block;
-  width: 52%;
-  height: 100%;
+  width: 7.5rem;
+  height: 2.6rem;
   margin: 0 auto;
 }
 
