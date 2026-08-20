@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AjedrezGame } from './components/AjedrezGame'
 import { DamasGame } from './components/DamasGame'
+import { DoomGame } from './components/DoomGame'
 import { FanoronaGame } from './components/FanoronaGame'
 import { Home } from './components/Home'
 import { MinesweeperGame } from './components/MinesweeperGame'
@@ -52,6 +53,10 @@ export default function App() {
 
   if (game === 'paisho') {
     return <PaiShoGame onBack={() => setGame(null)} />
+  }
+
+  if (game === 'doom') {
+    return <DoomGame onBack={() => setGame(null)} />
   }
 
   return null

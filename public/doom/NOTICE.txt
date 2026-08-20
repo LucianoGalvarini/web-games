@@ -1,0 +1,9 @@
+Motor: doomgeneric (id Software Doom, GPLv2)
+https://github.com/ozkl/doomgeneric
+
+El paquete incluye el IWAD shareware de Doom 1 (DOOM1.WAD),
+distribuible de forma gratuita según la licencia original de id Software.
+Es el primer episodio (Knee-Deep in the Dead), no el juego registrado.
+
+Build WASM tomado del demo público:
+https://ozkl.github.io/doomgeneric/

@@ -217,3 +217,27 @@ export const PAISHO_MANUAL: ManualStep[] = [
     spot: 'board',
   },
 ]
+
+export const DOOM_MANUAL: ManualStep[] = [
+  {
+    title: 'Qué es',
+    body: 'Es el shareware de Doom 1 (1993): el primer episodio, Knee-Deep in the Dead. El motor es doomgeneric, el código que id publicó. No incluye el juego registrado.',
+    spot: 'board',
+  },
+  {
+    title: 'Empezar',
+    body: 'Tocá el recuadro negro para darle foco. Esc abre el menú. New Game, episodio 1, una dificultad, y listo.',
+    tryIt: 'Hacé clic en el recuadro e Enter en el menú.',
+    spot: 'board',
+  },
+  {
+    title: 'Mover y disparar',
+    body: 'WASD o flechas avanzan y giran. Alt + A/D (o Alt + flechas) va de costado. Clic o Ctrl dispara. Espacio abre puertas e interruptores. Shift corre.',
+    spot: 'board',
+  },
+  {
+    title: 'Armas y mapa',
+    body: 'Teclas 1 a 7 cambian de arma. Tab abre el mapa. El volumen está en el icono de sonido, arriba a la derecha: clic y una barra de 0 a 100.',
+    spot: 'board',
+  },
+]

@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Doom</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+        position: relative;
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%231b120c' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23e4b45a' stroke-width='1.6'/%3E%3Cpath d='M16 1v9M16 22v9M1 16h9M22 16h9' stroke='%231b120c' stroke-width='3' stroke-linecap='square'/%3E%3Cpath d='M16 1v9M16 22v9M1 16h9M22 16h9' stroke='%23f0d59a' stroke-width='1.6' stroke-linecap='square'/%3E%3Ccircle cx='16' cy='16' r='2.2' fill='%23c45c48'/%3E%3C/svg%3E") 16 16, crosshair;
+      }
+
+      #spinner,
+      #progress {
+        display: none;
+      }
+
+      #status {
+        display: none;
+        position: absolute;
+        inset: 0;
+        place-items: center;
+        margin: 0;
+        color: #e4b45a;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font: 12px/1.4 sans-serif;
+        background: #000;
+        z-index: 2;
+        cursor: inherit;
+      }
+
+      #status.is-on {
+        display: grid;
+      }
+
+      .emscripten_border {
+        width: 100%;
+        height: 100%;
+      }
+
+      #canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        image-rendering: pixelated;
+        background: #000;
+        outline: none;
+        cursor: inherit !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="spinner"></div>
+    <p id="status">Cargando…</p>
+    <progress id="progress" value="0" max="100" hidden></progress>
+    <div class="emscripten_border">
+      <canvas id="canvas" class="emscripten" tabindex="0"></canvas>
+    </div>
+    <script>
+      var VOLUME_KEY = 'web-games-volume'
+      var MUTE_KEY = 'web-games-muted'
+      var gainNode = null
+      var volume = readStoredVolume()
+      var canvas = document.getElementById('canvas')
+      var heldMove = {}
+      var mouseFire = false
+
+      function readStoredVolume() {
+        var stored = Number(localStorage.getItem(VOLUME_KEY))
+        if (Number.isInteger(stored) && stored >= 0 && stored <= 100) {
+          return stored / 100
+        }
+        if (localStorage.getItem(MUTE_KEY) === '1') {
+          return 0
+        }
+        return 0.1
+      }
+
+      function setDoomVolume(value) {
+        var next = Number(value)
+        volume = Number.isFinite(next) ? Math.max(0, Math.min(1, next)) : 0.1
+        if (!gainNode) {
+          return
+        }
+        gainNode.gain.setTargetAtTime(volume, gainNode.context.currentTime, 0.04)
+      }
+
+      ;(function patchAudioAndCanvas() {
+        var origGetContext = HTMLCanvasElement.prototype.getContext
+        HTMLCanvasElement.prototype.getContext = function (type, opts) {
+          if (type === '2d') {
+            opts = Object.assign({}, opts, { alpha: false })
+          }
+          return origGetContext.call(this, type, opts)
+        }
+
+        var OrigAC = window.AudioContext || window.webkitAudioContext
+        if (!OrigAC) {
+          return
+        }
+
+        var origConnect = AudioNode.prototype.connect
+        AudioNode.prototype.connect = function () {
+          var dest = arguments[0]
+          if (gainNode && dest === gainNode.context.destination) {
+            arguments[0] = gainNode
+          }
+          return origConnect.apply(this, arguments)
+        }
+
+        function wrapContext() {
+          var ctx
+          try {
+            ctx = new OrigAC({ latencyHint: 'interactive' })
+          } catch (err) {
+            ctx = new OrigAC()
+          }
+          gainNode = ctx.createGain()
+          gainNode.gain.value = volume
+          origConnect.call(gainNode, ctx.destination)
+          return ctx
+        }
+
+        window.AudioContext = wrapContext
+        if (window.webkitAudioContext) {
+          window.webkitAudioContext = wrapContext
+        }
+      })()
+
+      window.addEventListener('message', function (event) {
+        if (event.source !== window.parent) {
+          return
+        }
+        if (!event.data || event.data.type !== 'doom-volume') {
+          return
+        }
+        setDoomVolume(event.data.value)
+      })
+
+      var WASD = {
+        KeyW: { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 },
+        KeyA: { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 },
+        KeyS: { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 },
+        KeyD: { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+      }
+      var CTRL = { key: 'Control', code: 'ControlLeft', keyCode: 17 }
+
+      function synthKey(type, mapped, mods) {
+        mods = mods || {}
+        var event = new KeyboardEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          key: mapped.key,
+          code: mapped.code,
+          ctrlKey: mapped.keyCode === 17,
+          shiftKey: !!mods.shiftKey,
+          altKey: !!mods.altKey,
+          metaKey: false,
+          repeat: !!mods.repeat,
+        })
+        Object.defineProperty(event, 'keyCode', { get: function () { return mapped.keyCode } })
+        Object.defineProperty(event, 'which', { get: function () { return mapped.keyCode } })
+        event.__doomSynth = true
+        canvas.dispatchEvent(event)
+      }
+
+      function remapWasd(event) {
+        if (event.__doomSynth) {
+          return
+        }
+        var mapped = WASD[event.code]
+        if (!mapped) {
+          return
+        }
+        if (event.type === 'keydown') {
+          if (heldMove[event.code]) {
+            return
+          }
+          heldMove[event.code] = mapped
+          synthKey('keydown', mapped, { shiftKey: event.shiftKey, altKey: event.altKey })
+          return
+        }
+        if (!heldMove[event.code]) {
+          return
+        }
+        delete heldMove[event.code]
+        synthKey('keyup', mapped, { shiftKey: event.shiftKey, altKey: event.altKey })
+      }
+
+      function releaseMoves() {
+        Object.keys(heldMove).forEach(function (code) {
+          var mapped = heldMove[code]
+          delete heldMove[code]
+          synthKey('keyup', mapped, {})
+        })
+      }
+
+      function setMouseFire(down) {
+        if (down === mouseFire) {
+          return
+        }
+        mouseFire = down
+        synthKey(down ? 'keydown' : 'keyup', CTRL, {})
+      }
+
+      window.addEventListener('keydown', remapWasd, true)
+      window.addEventListener('keyup', remapWasd, true)
+      window.addEventListener('blur', function () {
+        releaseMoves()
+        setMouseFire(false)
+      })
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+          releaseMoves()
+          setMouseFire(false)
+        }
+      })
+
+      canvas.addEventListener('pointerdown', function (event) {
+        if (event.button !== 0) {
+          return
+        }
+        canvas.focus()
+        canvas.setPointerCapture(event.pointerId)
+        if (!event.ctrlKey) {
+          setMouseFire(true)
+        }
+      })
+      canvas.addEventListener('pointerup', function (event) {
+        if (event.button !== 0) {
+          return
+        }
+        if (event.ctrlKey) {
+          mouseFire = false
+          return
+        }
+        setMouseFire(false)
+      })
+      canvas.addEventListener('pointercancel', function () {
+        setMouseFire(false)
+      })
+      canvas.addEventListener('contextmenu', function (event) {
+        event.preventDefault()
+      })
+
+      var statusElement = document.getElementById('status')
+      var progressElement = document.getElementById('progress')
+      var spinnerElement = document.getElementById('spinner')
+
+      function showStatus(text) {
+        statusElement.textContent = text || ''
+        statusElement.className = text ? 'is-on' : ''
+      }
+
+      showStatus('Cargando…')
+
+      var Module = {
+        preRun: [],
+        postRun: [],
+        print: function () {},
+        printErr: function () {},
+        canvas: canvas,
+        setStatus: function (text) {
+          if (!Module.setStatus.last) {
+            Module.setStatus.last = { time: Date.now(), text: '' }
+          }
+          if (text === Module.setStatus.last.text) {
+            return
+          }
+          Module.setStatus.last.time = Date.now()
+          Module.setStatus.last.text = text
+          showStatus(text)
+        },
+        totalDependencies: 0,
+        monitorRunDependencies: function (left) {
+          this.totalDependencies = Math.max(this.totalDependencies, left)
+          if (left) {
+            showStatus('Cargando ' + (this.totalDependencies - left) + ' / ' + this.totalDependencies)
+          } else {
+            showStatus('')
+          }
+        },
+      }
+    </script>
+    <script src="doomgeneric.js"></script>
+  </body>
+</html>

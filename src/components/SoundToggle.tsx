@@ -1,4 +1,5 @@
-import { useMuted } from '../hooks/useMuted'
+import { useEffect, useRef, useState } from 'react'
+import { useVolume } from '../hooks/useVolume'
 
 function SpeakerIcon({ muted }: { muted: boolean }) {
   return (
@@ -26,21 +27,68 @@ function SpeakerIcon({ muted }: { muted: boolean }) {
 }
 
 export function SoundToggle() {
-  const { muted, toggleMuted } = useMuted()
+  const { volume, setVolume, muted } = useVolume()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
 
   return (
-    <button
-      type="button"
-      className={`hud-btn ${muted ? 'is-off' : ''}`}
-      onClick={toggleMuted}
-      aria-pressed={!muted}
-      aria-label={muted ? 'Sonido off' : 'Sonido on'}
-      title={muted ? 'Sonido off' : 'Sonido on'}
-    >
-      <span className="hud-icon">
-        <SpeakerIcon muted={muted} />
-      </span>
-      <span className="hud-label">Sonido</span>
-    </button>
+    <div className="hud-volume" ref={rootRef}>
+      <button
+        type="button"
+        className={`hud-btn ${muted ? 'is-off' : ''}`}
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        aria-controls="hud-volume-slider"
+        aria-label="Volumen"
+        title="Volumen"
+      >
+        <span className="hud-icon">
+          <SpeakerIcon muted={muted} />
+        </span>
+        <span className="hud-label">Sonido</span>
+      </button>
+      {open ? (
+        <div className="hud-volume-pop" id="hud-volume-slider">
+          <label className="hud-volume-field">
+            <span>{volume}</span>
+            <input
+              className="hud-volume-slider"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={volume}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={volume}
+              aria-label="Volumen"
+              onChange={(event) => setVolume(Number(event.target.value))}
+            />
+          </label>
+        </div>
+      ) : null}
+    </div>
   )
 }

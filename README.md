@@ -1,10 +1,10 @@
 # Juegos de mesa
 
-Nueve clásicos en el navegador: Fanorona, Molino, Damas, Buscaminas, Sudoku, Truco, Tetris, Ajedrez y Pai Sho. La interfaz está en español. Al abrir se elige el juego; cada uno conserva sus reglas.
+Diez juegos en el navegador: Fanorona, Molino, Damas, Buscaminas, Sudoku, Truco, Tetris, Ajedrez, Pai Sho y Doom. La interfaz está en español. Al abrir se elige el juego; cada uno conserva sus reglas.
 
 Sitio: [lucianogalvarini.github.io/web-games](https://lucianogalvarini.github.io/web-games/)
 
-Fanorona, Molino, Damas, Truco, Ajedrez y Pai Sho arrancan contra la CPU. Buscaminas, Sudoku y Tetris se juegan en solitario.
+Fanorona, Molino, Damas, Truco, Ajedrez y Pai Sho arrancan contra la CPU. Buscaminas, Sudoku y Tetris se juegan en solitario. Doom es el shareware de 1993 (primer episodio) en WebAssembly.
 
 ## Documentación
 
@@ -19,6 +19,7 @@ Cada juego tiene su propia página:
 - [Tetris](docs/tetris.md)
 - [Ajedrez](docs/ajedrez.md)
 - [Pai Sho](docs/paisho.md)
+- [Doom](docs/doom.md)
 - [Arquitectura](docs/arquitectura.md)
 
 ## Cómo ejecutarlo

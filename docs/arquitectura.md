@@ -26,6 +26,7 @@ src/
     useAjedrez.ts
     usePaiSho.ts
     useMuted.ts
+    useVolume.ts
   components/
     Home.tsx
     GamePanel.tsx              # Controles y estadísticas de los juegos de tablero
@@ -42,6 +43,7 @@ src/
     TetrisGame.tsx
     AjedrezGame.tsx
     PaiShoGame.tsx
+    DoomGame.tsx               # Iframe del puerto WASM (shareware)
     Board/                     # SVG Fanorona + piedras + motion
     morris/MorrisBoardView.tsx
     damas/DamasBoard.tsx       # Grilla 8×8, piezas en capa aparte
@@ -53,7 +55,7 @@ src/
     paisho/                    # Tablero circular, reserva de flores
 ```
 
-`App` solo elige el juego. Cada motor se puede importar sin montar React.
+`App` solo elige el juego. Cada motor de mesa se puede importar sin montar React. Doom no tiene motor TypeScript: el puerto WASM está en `public/doom/` y la UI lo embebe en un iframe.
 
 ## Layout
 
@@ -64,10 +66,10 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 - `shared/point.ts` y `shared/player.ts`: coordenadas, etiquetas y `isCpuTurn`.
 - `shared/types.ts`: `GameMode`, `Difficulty` (`easy` \| `medium` \| `hard` \| `perfect`), `GameId`.
 - `GamePanel`: modo, dificultad, color humano, selector de tablero/variante (Molino, Damas).
-- `TableHud`: iconos fijos de manual y sonido, con etiqueta, arriba a la derecha, en todos los juegos.
+- `TableHud`: iconos fijos de manual y sonido, con etiqueta, arriba a la derecha, en todos los juegos. El de sonido abre una barra de 0 a 100.
 - `Stone`: la misma piedra SVG en Fanorona y Molino.
 - Resultado: `resultTitle` / `resultEyebrow` / `resultVariant` según modo y color humano.
-- Sonido: `playSfx` en Web Audio (madera, cartas, clics, líneas). Mute en `localStorage`.
+- Sonido: `playSfx` en Web Audio (madera, cartas, clics, líneas). Volumen 0–100 en `localStorage`.
 - Manual: `ManualTour` recorre pasos y resalta `data-manual` en el layout. No se abre solo.
 
 ## Decisiones de diseño

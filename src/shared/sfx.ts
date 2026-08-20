@@ -28,31 +28,60 @@ export type SfxName =
   | 'draw'
 
 const MUTE_KEY = 'web-games-muted'
+const VOLUME_KEY = 'web-games-volume'
+const VOLUME_MAX = 100
+const VOLUME_DEFAULT = 10
+const MASTER_GAIN = 0.22
 
 type MuteListener = (muted: boolean) => void
+type VolumeListener = (volume: number) => void
 
 let audio: AudioContext | null = null
 let master: GainNode | null = null
 let noise: AudioBuffer | null = null
-let muted = readMuted()
+let volume = readVolume()
+let muted = volume === 0
 const listeners = new Set<MuteListener>()
+const volumeListeners = new Set<VolumeListener>()
 let unlocked = false
 let lastFanfare = 0
 
-function readMuted(): boolean {
-  try {
-    return localStorage.getItem(MUTE_KEY) === '1'
-  } catch {
-    return false
+function clampVolume(value: number): number {
+  if (!Number.isInteger(value) || value < 0 || value > VOLUME_MAX) {
+    return VOLUME_DEFAULT
   }
+  return value
 }
 
-function persistMuted(value: boolean): void {
+function readVolume(): number {
   try {
-    localStorage.setItem(MUTE_KEY, value ? '1' : '0')
+    const stored = localStorage.getItem(VOLUME_KEY)
+    if (stored !== null) {
+      return clampVolume(Number(stored))
+    }
+    if (localStorage.getItem(MUTE_KEY) === '1') {
+      return 0
+    }
+  } catch {
+    return VOLUME_DEFAULT
+  }
+  return VOLUME_DEFAULT
+}
+
+function persistVolume(value: number): void {
+  try {
+    localStorage.setItem(VOLUME_KEY, String(value))
+    localStorage.setItem(MUTE_KEY, value === 0 ? '1' : '0')
   } catch {
     /* ignore quota */
   }
+}
+
+function applyMasterGain(): void {
+  if (!master) {
+    return
+  }
+  master.gain.value = volume === 0 ? 0 : MASTER_GAIN * (volume / VOLUME_MAX)
 }
 
 function context(): AudioContext | null {
@@ -70,7 +99,7 @@ function context(): AudioContext | null {
   }
   if (!master) {
     master = audio.createGain()
-    master.gain.value = 0.22
+    applyMasterGain()
     master.connect(audio.destination)
   }
   if (!noise && audio) {
@@ -109,11 +138,31 @@ export function isMuted(): boolean {
   return muted
 }
 
-export function setMuted(value: boolean): void {
-  muted = value
-  persistMuted(value)
+export function getVolume(): number {
+  return volume
+}
+
+export function setVolume(value: number): void {
+  const next = Math.max(0, Math.min(VOLUME_MAX, Math.round(value)))
+  volume = next
+  muted = next === 0
+  persistVolume(next)
+  applyMasterGain()
+  for (const listener of volumeListeners) {
+    listener(volume)
+  }
   for (const listener of listeners) {
     listener(muted)
+  }
+}
+
+export function setMuted(value: boolean): void {
+  if (value) {
+    setVolume(0)
+    return
+  }
+  if (volume === 0) {
+    setVolume(VOLUME_DEFAULT)
   }
 }
 
@@ -121,6 +170,12 @@ export function subscribeMuted(listener: MuteListener): () => void {
   listeners.add(listener)
   listener(muted)
   return () => listeners.delete(listener)
+}
+
+export function subscribeVolume(listener: VolumeListener): () => void {
+  volumeListeners.add(listener)
+  listener(volume)
+  return () => volumeListeners.delete(listener)
 }
 
 function out(): GainNode | null {

@@ -1,3 +1,4 @@
+import { prefetchDoom } from '../shared/prefetchDoom'
 import type { GameId } from '../shared/types'
 
 type HomeProps = {
@@ -10,7 +11,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Nueve clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Diez juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -227,6 +228,23 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">Jardín</p>
             <h2>Pai Sho</h2>
             <p>Flores, armonías y el anillo del loto. El juego de Iroh.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('doom')} onPointerEnter={prefetchDoom}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="16" y="4" width="58" height="42" rx="4" fill="#8f5e32" />
+            <rect x="22" y="8" width="46" height="34" rx="2" fill="#241910" />
+            <path d="M28 36v-10h4v-6h8v6h4v10" fill="#5b3918" />
+            <rect x="40" y="24" width="6" height="12" fill="#3d2918" />
+            <circle cx="34" cy="18" r="3" fill="#c45c48" />
+            <circle cx="56" cy="16" r="2.4" fill="#e4b45a" />
+            <rect x="24" y="10" width="10" height="3" rx="0.6" fill="#8b2a1c" />
+          </svg>
+          <div>
+            <p className="eyebrow">FPS</p>
+            <h2>Doom</h2>
+            <p>Shareware de 1993 en el navegador. Primer episodio, teclado y ratón.</p>
           </div>
         </button>
       </div>
