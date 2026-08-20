@@ -66,9 +66,14 @@ h2 {
 }
 
 .app {
+  position: relative;
   min-height: 100vh;
   padding: 28px 20px 40px;
   overflow-x: clip;
+}
+
+.app:has(.table-hud) {
+  padding-top: 100px;
 }
 
 .shell {
@@ -264,9 +269,9 @@ h2 {
 }
 
 .table-hud {
-  position: fixed;
-  top: 16px;
-  right: 16px;
+  position: absolute;
+  top: 18px;
+  right: 20px;
   z-index: 12;
   display: flex;
   gap: 14px;
@@ -734,8 +739,8 @@ h2 {
   }
 
   .table-hud {
-    top: 10px;
-    right: 10px;
+    top: 12px;
+    right: 12px;
     gap: 10px;
   }
 
