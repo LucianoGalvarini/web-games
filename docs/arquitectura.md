@@ -14,6 +14,7 @@ src/
   truco/                       # Motor Truco argentino
   tetris/                      # Motor Tetris
   ajedrez/                     # Motor Ajedrez
+  paisho/                      # Motor Pai Sho (jardín / armonías)
   hooks/
     useFanorona.ts
     useMorris.ts
@@ -23,10 +24,11 @@ src/
     useTruco.ts
     useTetris.ts
     useAjedrez.ts
+    usePaiSho.ts
     useMuted.ts
   components/
     Home.tsx
-    GamePanel.tsx              # Controles y estadísticas de Fanorona, Molino, Damas y Ajedrez
+    GamePanel.tsx              # Controles y estadísticas de los juegos de tablero
     ResultOverlay.tsx
     ManualTour.tsx
     SoundToggle.tsx
@@ -38,6 +40,7 @@ src/
     TrucoGame.tsx
     TetrisGame.tsx
     AjedrezGame.tsx
+    PaiShoGame.tsx
     Board/                     # SVG Fanorona + piedras + motion
     morris/MorrisBoardView.tsx
     damas/DamasBoard.tsx       # Grilla 8×8, piezas en capa aparte
@@ -46,6 +49,7 @@ src/
     truco/                     # Naipes SVG y mesa
     tetris/                    # Pozo, minipiezas
     ajedrez/                   # Grilla 8×8, glifos SVG
+    paisho/                    # Tablero circular, reserva de flores
 ```
 
 `App` solo elige el juego. Cada motor se puede importar sin montar React.
@@ -67,7 +71,7 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 ## Decisiones de diseño
 
 - **Motor sin React.** Las reglas se pueden importar desde un script Node/tsx. Facilita tests y la IA.
-- **Turno = lista de pasos.** La CPU piensa secuencias completas, no un paso aislado: `captura+cadena` en Fanorona, `place/slide+remove` en Molino, cadena de saltos en Damas. En Ajedrez el turno es una sola jugada legal.
+- **Turno = lista de pasos.** La CPU piensa secuencias completas, no un paso aislado: `captura+cadena` en Fanorona, `place/slide+remove` en Molino, cadena de saltos en Damas. En Ajedrez y Pai Sho el turno es una sola jugada legal.
 - **Inmutabilidad.** `applyMove` clona; el deshacer guarda referencias a estados anteriores.
 - **Sin enums de TypeScript.** `erasableSyntaxOnly`; los tipos son uniones.
 - **Imports de tipos explícitos.** `verbatimModuleSyntax` exige `import type { ... }`.

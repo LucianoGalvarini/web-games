@@ -5,6 +5,7 @@ import { FanoronaGame } from './components/FanoronaGame'
 import { Home } from './components/Home'
 import { MinesweeperGame } from './components/MinesweeperGame'
 import { MorrisGame } from './components/MorrisGame'
+import { PaiShoGame } from './components/PaiShoGame'
 import { SudokuGame } from './components/SudokuGame'
 import { TetrisGame } from './components/TetrisGame'
 import { TrucoGame } from './components/TrucoGame'
@@ -47,6 +48,10 @@ export default function App() {
 
   if (game === 'ajedrez') {
     return <AjedrezGame onBack={() => setGame(null)} />
+  }
+
+  if (game === 'paisho') {
+    return <PaiShoGame onBack={() => setGame(null)} />
   }
 
   return null

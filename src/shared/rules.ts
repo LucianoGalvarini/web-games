@@ -93,3 +93,12 @@ export const TETRIS_RULES = [
   'Cada 10 líneas sube el nivel y cae más rápido. Si la siguiente pieza no entra, se llena el pozo.',
   'Fácil arranca en nivel 1, Media en 5, Difícil en 10. Pausa con P o Esc.',
 ]
+
+export const PAISHO_RULES = [
+  'Tablero circular con cuatro puertas. El anfitrión empieza. Gana quien cierra un anillo de armonías alrededor del centro.',
+  'Turno: plantar una flor de la reserva en una puerta vacía, o mover una flor del jardín.',
+  'Círculo de armonía: rosa, crisantemo, rododendro, jazmín, lirio, jade. Vecinas armonizan; el mismo número de otro color choca.',
+  'El loto blanco armoniza con todas las flores propias, entra en cualquier jardín y es el único que puede posarse en el centro.',
+  'Las flores rojas no terminan en jardín blanco; las blancas, no en rojo. Nunca se termina en una puerta.',
+  'Se puede comer una flor rival que choca cayendo en su punto. Triple repetición es tablas.',
+]

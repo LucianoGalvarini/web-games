@@ -187,3 +187,33 @@ export const AJEDREZ_MANUAL: ManualStep[] = [
     spot: 'board',
   },
 ]
+
+export const PAISHO_MANUAL: ManualStep[] = [
+  {
+    title: 'Objetivo',
+    body: 'Gana quien cierra un anillo de armonías alrededor del centro, sin tocarlo. El anfitrión (fichas claras) empieza.',
+    spot: 'board',
+  },
+  {
+    title: 'Plantar',
+    body: 'En tu turno podés plantar una flor de la reserva en una puerta vacía: los cuatro puntos rojos del borde.',
+    tryIt: 'Elegí una flor abajo y tocá una puerta.',
+    spot: 'pad',
+  },
+  {
+    title: 'Arreglar',
+    body: 'O mové una flor ya plantada. Rosa y jazmín caminan 3, crisantemo y lirio 4, rododendro y jade 5, el loto 2. Solo en cruz, sin saltar. No se termina en una puerta.',
+    tryIt: 'Tocá una flor del jardín y un punto marcado.',
+    spot: 'board',
+  },
+  {
+    title: 'Armonía',
+    body: 'Dos flores propias en la misma fila o columna, sin nada en el medio, armonizan si son vecinas en el círculo: rosa, crisantemo, rododendro, jazmín, lirio, jade. El loto armoniza con todas las propias. Las líneas de oro marcan esas armonías.',
+    spot: 'board',
+  },
+  {
+    title: 'Choque y jardines',
+    body: 'Rosa choca con jazmín, crisantemo con lirio, rododendro con jade. No puede haber dos flores chocando alineadas. Podés comer la que choca cayendo encima. Las rojas no terminan en jardín blanco del centro, ni las blancas en el rojo. El loto entra en ambos y es el único que se posa en el punto central.',
+    spot: 'board',
+  },
+]

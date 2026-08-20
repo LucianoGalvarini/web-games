@@ -10,7 +10,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Ocho clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Nueve clásicos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -207,6 +207,26 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">Tablero</p>
             <h2>Ajedrez</h2>
             <p>Enroque, al paso y coronación. Blancas o negras contra la CPU.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('paisho')}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="16" y="4" width="58" height="42" rx="4" fill="#8f5e32" />
+            <circle cx="45" cy="25" r="18" fill="#c9a066" stroke="#5b3918" strokeWidth="1.4" />
+            <circle cx="45" cy="25" r="6" fill="none" stroke="#8b2a1c" strokeWidth="1" />
+            <circle cx="45" cy="25" r="2" fill="#e4b45a" />
+            <circle cx="45" cy="9" r="2.2" fill="#8b2a1c" />
+            <circle cx="61" cy="25" r="2.2" fill="#8b2a1c" />
+            <circle cx="45" cy="41" r="2.2" fill="#8b2a1c" />
+            <circle cx="29" cy="25" r="2.2" fill="#8b2a1c" />
+            <circle cx="38" cy="18" r="3" fill="#f3e6d2" stroke="#5b3918" strokeWidth="0.6" />
+            <circle cx="53" cy="31" r="3" fill="#241910" stroke="#e4b45a" strokeWidth="0.6" />
+          </svg>
+          <div>
+            <p className="eyebrow">Jardín</p>
+            <h2>Pai Sho</h2>
+            <p>Flores, armonías y el anillo del loto. El juego de Iroh.</p>
           </div>
         </button>
       </div>
