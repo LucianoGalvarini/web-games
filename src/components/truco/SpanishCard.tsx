@@ -27,9 +27,6 @@ const SUIT_NAME: Record<Suit, string> = {
 }
 
 function rankMain(rank: Rank): string {
-  if (rank === 1) {
-    return 'AS'
-  }
   return String(rank)
 }
 
@@ -163,7 +160,7 @@ function Corner({ rank, suit }: { rank: Rank; suit: Suit }) {
         x="12"
         y="28"
         fill={color}
-        fontSize={rank === 1 || rank >= 10 ? 16 : 26}
+        fontSize={rank >= 10 ? 16 : 26}
         fontFamily="Outfit, Segoe UI, sans-serif"
         fontWeight="800"
       >
@@ -188,7 +185,7 @@ function Corner({ rank, suit }: { rank: Rank; suit: Suit }) {
 
 function FigureArt({ rank, suit }: { rank: Rank; suit: Suit }) {
   const color = SUIT_COLOR[suit]
-  const name = rankName(rank) ?? 'AS'
+  const name = rankName(rank) ?? rankMain(rank)
   return (
     <g>
       <rect x="42" y="58" width="76" height="124" rx="10" fill="#fbf3e3" stroke={color} strokeWidth="2.4" />
@@ -240,7 +237,7 @@ function FigureArt({ rank, suit }: { rank: Rank; suit: Suit }) {
 
 function CardFace({ card, compact }: { card: Card; compact: boolean }) {
   const color = SUIT_COLOR[card.suit]
-  const figure = card.rank === 1 || card.rank >= 10
+  const figure = card.rank >= 10
   const name = rankName(card.rank)
 
   if (compact) {
@@ -251,7 +248,7 @@ function CardFace({ card, compact }: { card: Card; compact: boolean }) {
           y={name ? 78 : 88}
           textAnchor="middle"
           fill={color}
-          fontSize={card.rank === 1 ? 28 : 40}
+          fontSize={40}
           fontFamily="Outfit, Segoe UI, sans-serif"
           fontWeight="800"
         >

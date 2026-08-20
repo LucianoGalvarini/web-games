@@ -9,7 +9,7 @@ export const SUIT_LABEL: Record<Suit, string> = {
 }
 
 export const RANK_LABEL: Record<Rank, string> = {
-  1: 'As',
+  1: '1',
   2: '2',
   3: '3',
   4: '4',
