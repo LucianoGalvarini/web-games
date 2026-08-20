@@ -1,0 +1,7 @@
+export { chooseAiMove } from './ai'
+export { countPieces, insufficientMaterial, materialOf, winnerOf } from './apply'
+export { createInitialPosition, kingIndex, serializePosition, squareLabel } from './board'
+export { BOARD_SIZE, PIECE_VALUE, SQUARE_COUNT, fileOf, rankOf, squareIndex } from './constants'
+export { PIECE_NAME, pieceName } from './labels'
+export { applyMove, inCheck, isLightSquare, isSquareAttacked, legalMoves, sameMove } from './moves'
+export type { Castling, ChessMove, ChessOutcome, ChessPosition, Piece, PieceKind } from './types'

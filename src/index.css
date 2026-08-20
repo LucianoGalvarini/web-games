@@ -31,6 +31,18 @@ body,
   margin: 0;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 body {
   min-width: 320px;
   background:
@@ -1070,6 +1082,205 @@ h2 {
   }
 }
 
+.ajedrez-table {
+  max-width: 640px;
+  justify-self: center;
+  width: 100%;
+}
+
+.ajedrez-field {
+  position: relative;
+  width: min(100%, 560px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  padding: clamp(10px, 1.1vw, 18px);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #b8894d 0%, #c9a066 45%, #8f5e32 100%);
+  box-shadow:
+    inset 0 0 0 8px #5b3918,
+    inset 0 0 0 10px rgba(232, 194, 122, 0.55);
+}
+
+.ajedrez-field.is-disabled .ajedrez-piece {
+  pointer-events: none;
+}
+
+.ajedrez-cells {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ajedrez-cell {
+  position: relative;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.ajedrez-cell:disabled {
+  cursor: default;
+}
+
+.ajedrez-cell.is-light {
+  background: #e4d3b4;
+}
+
+.ajedrez-cell.is-dark {
+  background: #6d4320;
+}
+
+.ajedrez-cell.is-target::after {
+  content: '';
+  position: absolute;
+  inset: 32%;
+  border-radius: 50%;
+  border: 3px solid var(--gold);
+  background: rgba(228, 180, 90, 0.18);
+}
+
+.ajedrez-cell.is-last {
+  box-shadow: inset 0 0 0 100px rgba(228, 180, 90, 0.22);
+}
+
+.ajedrez-cell.is-selected {
+  box-shadow: inset 0 0 0 3px var(--gold);
+}
+
+.ajedrez-cell.is-check {
+  box-shadow: inset 0 0 0 100px rgba(176, 72, 36, 0.38);
+}
+
+.ajedrez-coord {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.ajedrez-cell.is-light .ajedrez-coord {
+  color: #6d4320;
+}
+
+.ajedrez-cell.is-dark .ajedrez-coord {
+  color: #e4d3b4;
+}
+
+.ajedrez-coord.is-file {
+  right: 4px;
+  bottom: 3px;
+}
+
+.ajedrez-coord.is-rank {
+  left: 4px;
+  top: 3px;
+}
+
+.ajedrez-pieces {
+  position: absolute;
+  inset: clamp(10px, 1.1vw, 18px);
+  pointer-events: none;
+}
+
+.ajedrez-piece {
+  position: absolute;
+  width: 12.5%;
+  height: 12.5%;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+  cursor: pointer;
+  transition:
+    left 280ms cubic-bezier(0.34, 1.1, 0.4, 1),
+    top 280ms cubic-bezier(0.34, 1.1, 0.4, 1);
+}
+
+.ajedrez-glyph {
+  width: 82%;
+  height: 82%;
+  filter: drop-shadow(0 2px 3px rgba(20, 10, 4, 0.45));
+  animation: damasPiecePlace 220ms ease-out;
+}
+
+.ajedrez-piece.is-selected .ajedrez-glyph {
+  filter:
+    drop-shadow(0 2px 3px rgba(20, 10, 4, 0.45))
+    drop-shadow(0 0 6px rgba(228, 180, 90, 0.7));
+}
+
+.ajedrez-piece.is-target .ajedrez-glyph {
+  filter:
+    drop-shadow(0 2px 3px rgba(20, 10, 4, 0.45))
+    drop-shadow(0 0 7px rgba(228, 180, 90, 0.85));
+}
+
+.ajedrez-piece.is-check .ajedrez-glyph {
+  filter:
+    drop-shadow(0 2px 3px rgba(20, 10, 4, 0.45))
+    drop-shadow(0 0 8px rgba(176, 72, 36, 0.9));
+}
+
+.ajedrez-piece.is-capturing .ajedrez-glyph {
+  animation: damasCaptureFade 250ms ease-in forwards;
+}
+
+.ajedrez-promo {
+  position: absolute;
+  inset: clamp(10px, 1.1vw, 18px);
+  display: grid;
+  place-items: center;
+  background: rgba(20, 10, 4, 0.62);
+  border-radius: 4px;
+  z-index: 2;
+}
+
+.ajedrez-promo p {
+  margin: 0 0 10px;
+  text-align: center;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 22px;
+  color: var(--gold-2);
+}
+
+.ajedrez-promo-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ajedrez-promo-btn {
+  width: 64px;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 8px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: rgba(28, 18, 12, 0.92);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.ajedrez-promo-btn span {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.ajedrez-promo-btn .ajedrez-glyph {
+  width: 40px;
+  height: 40px;
+  animation: none;
+}
+
 .truco-shell {
   align-items: start;
 }
@@ -1597,7 +1808,10 @@ button.truco-card:disabled {
 
   .damas-piece,
   .damas-piece-face,
-  .damas-piece.is-capturing .damas-piece-face {
+  .damas-piece.is-capturing .damas-piece-face,
+  .ajedrez-piece,
+  .ajedrez-glyph,
+  .ajedrez-piece.is-capturing .ajedrez-glyph {
     animation: none !important;
     transition: none !important;
   }

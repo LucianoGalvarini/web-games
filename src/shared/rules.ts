@@ -75,6 +75,15 @@ export const TRUCO_RULES = [
   'Irse al mazo entrega el valor actual de la mano. El mano sale en la primera baza y se alterna cada mano.',
 ]
 
+export const AJEDREZ_RULES = [
+  'Tablero de 8×8. Las blancas empiezan. Cada bando tiene rey, dama, dos torres, dos alfiles, dos caballos y ocho peones.',
+  'El rey se mueve una casilla. La dama, en cualquier dirección. La torre, en fila o columna. El alfil, en diagonal. El caballo, en L y puede saltar.',
+  'El peón avanza una casilla (o dos desde su fila inicial) y come en diagonal. Si un peón rival acaba de avanzar dos y queda al lado, se puede comer al paso.',
+  'Un peón que llega a la última fila se corona: dama, torre, alfil o caballo.',
+  'Enroque: el rey salta dos hacia la torre y la torre pasa a su lado, si no se movieron, el camino está vacío y el rey no pasa por jaque.',
+  'Hay que salir del jaque. Jaque mate gana. Ahogado, triple repetición, 50 jugadas sin peón ni captura, o material insuficiente, son tablas.',
+]
+
 export const TETRIS_RULES = [
   'Pozo de 10×20. Caen las siete piezas (I, O, T, S, Z, J, L) en bolsas de 7, sin repetir hasta agotar la bolsa.',
   'Completá líneas horizontales para borrarlas. Una, dos, tres o cuatro (tetris) suman 100, 300, 500 u 800, por el nivel.',
