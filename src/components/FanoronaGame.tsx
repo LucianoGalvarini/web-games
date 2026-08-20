@@ -3,13 +3,13 @@ import { playerLabel } from '../game'
 import type { GameMode, Player, Winner } from '../game'
 import { useFanorona } from '../hooks/useFanorona'
 import { isCpuTurn } from '../shared/player'
-import { FANORONA_RULES } from '../shared/rules'
+import { FANORONA_MANUAL } from '../shared/manuals'
 import { resultEyebrow, resultTitle, resultVariant } from '../shared/result'
 import { BoardView } from './Board/BoardView'
 import { CaptureChoice } from './CaptureChoice'
 import { GamePanel } from './GamePanel'
+import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { RulesModal } from './RulesModal'
 
 type FanoronaGameProps = {
   onBack: () => void
@@ -93,7 +93,7 @@ export function FanoronaGame({ onBack }: FanoronaGameProps) {
           onBack={onBack}
         />
 
-        <main className="table">
+        <main className="table" data-manual="board">
           {game.pendingChoice ? (
             <CaptureChoice
               options={game.pendingChoice}
@@ -118,7 +118,7 @@ export function FanoronaGame({ onBack }: FanoronaGameProps) {
         </main>
       </div>
 
-      <RulesModal open={rulesOpen} rules={FANORONA_RULES} onClose={() => setRulesOpen(false)} />
+      <ManualTour open={rulesOpen} steps={FANORONA_MANUAL} onClose={() => setRulesOpen(false)} />
       <ResultOverlay
         open={Boolean(game.winner)}
         eyebrow={resultEyebrow(game.winner, game.mode, game.humanColor)}

@@ -479,6 +479,61 @@ h2 {
   margin-top: 8px;
 }
 
+.manual-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.manual-veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 4, 2, 0.55);
+  pointer-events: none;
+}
+
+.manual-hole {
+  position: absolute;
+  border-radius: 18px;
+  box-shadow: 0 0 0 9999px rgba(8, 4, 2, 0.62);
+  outline: 2px solid var(--gold);
+  pointer-events: none;
+}
+
+.manual-card {
+  pointer-events: auto;
+  position: absolute;
+  background: #24170f;
+  border: 1px solid var(--stroke);
+  border-radius: 20px;
+  padding: 22px 22px 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.manual-card h2 {
+  font-size: 30px;
+  color: var(--gold-2);
+  margin: 0 0 10px;
+}
+
+.manual-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.manual-try {
+  margin-top: 10px !important;
+  color: var(--gold-2) !important;
+}
+
+.manual-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
 .result-backdrop {
   z-index: 20;
   background: rgba(8, 4, 2, 0.78);

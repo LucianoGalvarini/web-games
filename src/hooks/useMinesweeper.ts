@@ -14,6 +14,7 @@ import {
   revealMines,
 } from '../minesweeper'
 import type { Hint, MinesweeperDifficulty, MinesweeperStatus, MsBoard, MsPoint } from '../minesweeper'
+import { playSfx } from '../shared/sfx'
 
 const BEST_KEY = 'minesweeper-best'
 
@@ -105,6 +106,7 @@ export function useMinesweeper() {
   }, [hasLayout, resetBoard])
 
   const lose = useCallback((next: MsBoard, at: MsPoint) => {
+    playSfx('boom')
     setBoard(revealMines(next))
     setExploded(at)
     setStatus('lost')
@@ -153,6 +155,7 @@ export function useMinesweeper() {
       }
 
       current = floodReveal(current, { x, y })
+      playSfx('click')
       if (isWon(current)) {
         win(current, seconds, presetRef.current.id)
         return
@@ -175,6 +178,7 @@ export function useMinesweeper() {
         return current
       }
       cell.mark = cycleMark(cell.mark, questions)
+      playSfx(cell.mark === 'flag' ? 'flag' : 'click')
       return next
     })
     setHint(null)
@@ -202,6 +206,7 @@ export function useMinesweeper() {
         win(result.board, seconds, presetRef.current.id)
         return
       }
+      playSfx('click')
       setBoard(result.board)
       setHint(null)
       setHintChecked(false)

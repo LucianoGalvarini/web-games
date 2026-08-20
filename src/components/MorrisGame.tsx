@@ -3,11 +3,11 @@ import { useMorris } from '../hooks/useMorris'
 import { VARIANT_ORDER, VARIANTS } from '../morris'
 import { isCpuTurn, playerLabel } from '../shared/player'
 import { resultEyebrow, resultTitle, resultVariant } from '../shared/result'
-import { morrisRulesFor } from '../shared/rules'
+import { morrisManual } from '../shared/manuals'
 import type { GameMode, Player, Winner } from '../shared/types'
 import { GamePanel } from './GamePanel'
+import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { RulesModal } from './RulesModal'
 import { MorrisBoardView } from './morris/MorrisBoardView'
 
 const VARIANT_OPTIONS = VARIANT_ORDER.map((id) => ({ id, label: VARIANTS[id].label }))
@@ -108,7 +108,7 @@ export function MorrisGame({ onBack }: MorrisGameProps) {
           onBack={onBack}
         />
 
-        <main className="table morris-table">
+        <main className="table morris-table" data-manual="board">
           <MorrisBoardView
             variant={game.variantConfig}
             stones={game.stones}
@@ -124,7 +124,7 @@ export function MorrisGame({ onBack }: MorrisGameProps) {
         </main>
       </div>
 
-      <RulesModal open={rulesOpen} rules={morrisRulesFor(game.variantConfig)} onClose={() => setRulesOpen(false)} />
+      <ManualTour open={rulesOpen} steps={morrisManual(game.variantConfig)} onClose={() => setRulesOpen(false)} />
       <ResultOverlay
         open={Boolean(game.winner)}
         eyebrow={resultEyebrow(game.winner, game.mode, game.humanColor)}

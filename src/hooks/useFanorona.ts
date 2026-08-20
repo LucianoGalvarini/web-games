@@ -14,6 +14,7 @@ import {
 } from '../game'
 import type { Board, ChainState, Difficulty, GameMode, Move, Player, Point, Winner } from '../game'
 import { isCpuTurn } from '../shared/player'
+import { playSfx } from '../shared/sfx'
 
 type Snapshot = {
   board: Board
@@ -165,6 +166,7 @@ export function useFanorona() {
     setLastMove(move)
     setPendingChoice(null)
     setHoverTarget(null)
+    playSfx(isCaptureMove(move) ? 'capture' : 'stone')
 
     const player = currentRef.current
     const enemy = opponent(player)

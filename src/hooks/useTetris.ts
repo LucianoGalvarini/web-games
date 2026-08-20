@@ -8,6 +8,7 @@ import {
   grounded,
 } from '../tetris'
 import type { TetrisAction, TetrisDifficulty, TetrisState } from '../tetris'
+import { playSfx } from '../shared/sfx'
 
 const BEST_KEY = 'tetris-best'
 const LOCK_MS = 520
@@ -33,6 +34,32 @@ function writeBest(best: BestScores): void {
   localStorage.setItem(BEST_KEY, JSON.stringify(best))
 }
 
+function cueTetris(current: TetrisState, next: TetrisState, action: TetrisAction): void {
+  if (next.lines - current.lines >= 4) {
+    playSfx('tetris')
+    return
+  }
+  if (next.lines > current.lines) {
+    playSfx('line')
+    return
+  }
+  if (action.kind === 'hard') {
+    playSfx('drop')
+    return
+  }
+  if ((action.kind === 'cw' || action.kind === 'ccw') && next.active && current.active && next.active.rot !== current.active.rot) {
+    playSfx('rotate')
+    return
+  }
+  if (action.kind === 'hold' && next.hold !== current.hold) {
+    playSfx('slide')
+    return
+  }
+  if (action.kind === 'tick' && current.active && next.active && next.active.y < current.active.y) {
+    playSfx('lock')
+  }
+}
+
 export function useTetris() {
   const [difficulty, setDifficulty] = useState<TetrisDifficulty>('easy')
   const [state, setState] = useState<TetrisState>(() => createGame(PRESETS.easy.startLevel))
@@ -51,7 +78,9 @@ export function useTetris() {
     if (current.status !== 'playing' || pausedRef.current) {
       return
     }
-    setState(applyAction(current, action))
+    const next = applyAction(current, action)
+    cueTetris(current, next, action)
+    setState(next)
   }, [])
 
   const resetGame = useCallback((nextDifficulty = difficultyRef.current) => {
@@ -115,7 +144,9 @@ export function useTetris() {
         if (lockAcc >= LOCK_MS) {
           lockAcc = 0
           lockKey = ''
-          setState(applyAction(current, { kind: 'tick' }))
+          const next = applyAction(current, { kind: 'tick' })
+          cueTetris(current, next, { kind: 'tick' })
+          setState(next)
         }
       } else {
         lockKey = ''
@@ -124,7 +155,9 @@ export function useTetris() {
         const interval = gravityMs(current.level)
         if (fallAcc >= interval) {
           fallAcc -= interval
-          setState(applyAction(current, { kind: 'tick' }))
+          const next = applyAction(current, { kind: 'tick' })
+          cueTetris(current, next, { kind: 'tick' })
+          setState(next)
         }
       }
 

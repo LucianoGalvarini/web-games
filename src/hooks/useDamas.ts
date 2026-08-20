@@ -13,6 +13,7 @@ import {
 } from '../damas'
 import type { DamasBoard, DamasMove, DamasPosition, DamasVariantId, PieceKind } from '../damas'
 import { isCpuTurn } from '../shared/player'
+import { playSfx } from '../shared/sfx'
 import { samePoint } from '../shared/point'
 import type { Point } from '../shared/point'
 import type { Difficulty, GameMode, Player, Winner } from '../shared/types'
@@ -237,6 +238,10 @@ export function useDamas() {
       setPosition(next)
       setLastMove(move)
       setSelected(null)
+      playSfx(move.kind === 'jump' ? 'capture' : 'slide')
+      if (promoted) {
+        playSfx('promote')
+      }
 
       if (continuation.length > 0) {
         setActiveChain({ from: move.to, kind: landedKind, dead: nextDead })

@@ -3,12 +3,12 @@ import { useAjedrez } from '../hooks/useAjedrez'
 import { inCheck } from '../ajedrez'
 import { isCpuTurn, playerLabel } from '../shared/player'
 import { resultEyebrow, resultTitle, resultVariant } from '../shared/result'
-import { AJEDREZ_RULES } from '../shared/rules'
+import { AJEDREZ_MANUAL } from '../shared/manuals'
 import type { GameMode, Player, Winner } from '../shared/types'
 import { ChessBoard } from './ajedrez/ChessBoard'
 import { GamePanel } from './GamePanel'
+import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { RulesModal } from './RulesModal'
 
 type AjedrezGameProps = {
   onBack: () => void
@@ -78,7 +78,7 @@ export function AjedrezGame({ onBack }: AjedrezGameProps) {
           onBack={onBack}
         />
 
-        <main className="table ajedrez-table">
+        <main className="table ajedrez-table" data-manual="board">
           <ChessBoard
             pieces={game.pieces}
             selected={game.selected}
@@ -95,7 +95,7 @@ export function AjedrezGame({ onBack }: AjedrezGameProps) {
         </main>
       </div>
 
-      <RulesModal open={rulesOpen} rules={AJEDREZ_RULES} onClose={() => setRulesOpen(false)} />
+      <ManualTour open={rulesOpen} steps={AJEDREZ_MANUAL} onClose={() => setRulesOpen(false)} />
       <ResultOverlay
         open={Boolean(game.winner)}
         eyebrow={resultEyebrow(game.winner, game.mode, game.humanColor)}

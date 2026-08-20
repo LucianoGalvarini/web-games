@@ -1,6 +1,7 @@
 import { difficultyLabel } from '../shared/difficulty'
 import { isCpuTurn, playerLabel } from '../shared/player'
 import type { Difficulty, GameMode, Player, Winner } from '../shared/types'
+import { SoundToggle } from './SoundToggle'
 
 type VariantOption = {
   id: string
@@ -70,7 +71,7 @@ export function GamePanel({
 
   return (
     <>
-      <aside className="panel panel-controls">
+      <aside className="panel panel-controls" data-manual="controls">
         <header className="panel-header">
           <p className="eyebrow">{eyebrow}</p>
           <h1>{title}</h1>
@@ -167,8 +168,9 @@ export function GamePanel({
           <button type="button" className="btn" onClick={onReset}>
             Nueva partida
           </button>
+          <SoundToggle />
           <button type="button" className="btn btn-ghost" onClick={onRules}>
-            Cómo se juega
+            Manual
           </button>
           <button type="button" className="btn btn-ghost" onClick={onBack}>
             Elegir juego
@@ -176,7 +178,7 @@ export function GamePanel({
         </div>
       </aside>
 
-      <aside className="panel panel-stats">
+      <aside className="panel panel-stats" data-manual="stats">
         <div className="status-card">
           <p>{status}</p>
         </div>

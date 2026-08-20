@@ -13,6 +13,7 @@ import {
 } from '../ajedrez'
 import type { ChessMove, ChessPosition, PieceKind } from '../ajedrez'
 import { isCpuTurn } from '../shared/player'
+import { playSfx } from '../shared/sfx'
 import type { Difficulty, GameMode, Player, Winner } from '../shared/types'
 import type { BoardPiece } from '../components/ajedrez/ChessBoard'
 
@@ -159,6 +160,18 @@ export function useAjedrez() {
       setPromoting(null)
       setLastFrom(move.from)
       setLastTo(move.to)
+      if (move.castle) {
+        playSfx('castle')
+      } else if (move.promoteTo) {
+        playSfx('promote')
+      } else if (move.capture || move.enPassant) {
+        playSfx('capture')
+      } else {
+        playSfx('piece')
+      }
+      if (inCheck(next.squares, next.current)) {
+        window.setTimeout(() => playSfx('check'), 90)
+      }
       finish(next)
     },
     [finish],

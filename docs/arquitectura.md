@@ -5,7 +5,7 @@ Las **reglas** son funciones puras. La **sesión** vive en un hook. La **UI** so
 ```
 src/
   App.tsx                      # Menú o juego activo
-  shared/                      # Player, Point, Difficulty, textos de reglas y resultado
+  shared/                      # Player, Point, Difficulty, textos de reglas, resultado, sonido y manuales
   game/                        # Motor Fanorona
   morris/                      # Motor Molino (variantes 6 / 9 / 12)
   damas/                       # Motor Damas (variantes inglesas / criollas)
@@ -23,11 +23,13 @@ src/
     useTruco.ts
     useTetris.ts
     useAjedrez.ts
+    useMuted.ts
   components/
     Home.tsx
     GamePanel.tsx              # Controles y estadísticas de Fanorona, Molino, Damas y Ajedrez
     ResultOverlay.tsx
-    RulesModal.tsx
+    ManualTour.tsx
+    SoundToggle.tsx
     FanoronaGame.tsx
     MorrisGame.tsx
     DamasGame.tsx
@@ -56,9 +58,11 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 
 - `shared/point.ts` y `shared/player.ts`: coordenadas, etiquetas y `isCpuTurn`.
 - `shared/types.ts`: `GameMode`, `Difficulty` (`easy` \| `medium` \| `hard` \| `perfect`), `GameId`.
-- `GamePanel`: modo, dificultad, color humano y selector de tablero/variante (Molino, Damas).
+- `GamePanel`: modo, dificultad, color humano, selector de tablero/variante (Molino, Damas), sonido y Manual.
 - `Stone`: la misma piedra SVG en Fanorona y Molino.
 - Resultado: `resultTitle` / `resultEyebrow` / `resultVariant` según modo y color humano.
+- Sonido: `playSfx` en Web Audio (madera, cartas, clics, líneas). Mute en `localStorage`.
+- Manual: `ManualTour` recorre pasos y resalta `data-manual` en el layout. No se abre solo.
 
 ## Decisiones de diseño
 

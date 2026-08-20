@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useTruco } from '../hooks/useTruco'
 import { difficultyLabel } from '../shared/difficulty'
 import { resultEyebrow, resultTitle, resultVariant } from '../shared/result'
-import { TRUCO_RULES } from '../shared/rules'
+import { TRUCO_MANUAL } from '../shared/manuals'
 import { logSide, logText, statusText, TARGET_SCORE } from '../truco'
+import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { RulesModal } from './RulesModal'
+import { SoundToggle } from './SoundToggle'
 import { TrucoAnotador } from './truco/TrucoAnotador'
 import { TrucoTable } from './truco/TrucoTable'
 
@@ -22,7 +23,7 @@ export function TrucoGame({ onBack }: TrucoGameProps) {
   return (
     <div className="app">
       <div className="shell truco-shell">
-        <aside className="panel panel-controls">
+        <aside className="panel panel-controls" data-manual="controls">
           <header className="panel-header">
             <p className="eyebrow">Naipes</p>
             <h1>Truco</h1>
@@ -95,8 +96,9 @@ export function TrucoGame({ onBack }: TrucoGameProps) {
             <button type="button" className="btn" onClick={() => game.resetGame()}>
               Nueva partida
             </button>
+            <SoundToggle />
             <button type="button" className="btn btn-ghost" onClick={() => setRulesOpen(true)}>
-              Cómo se juega
+              Manual
             </button>
             <button type="button" className="btn btn-ghost" onClick={onBack}>
               Elegir juego
@@ -104,7 +106,7 @@ export function TrucoGame({ onBack }: TrucoGameProps) {
           </div>
         </aside>
 
-        <main className="table truco-table">
+        <main className="table truco-table" data-manual="hand">
           <TrucoTable
             state={state}
             viewing={game.viewing}
@@ -116,7 +118,7 @@ export function TrucoGame({ onBack }: TrucoGameProps) {
           />
         </main>
 
-        <aside className="panel panel-stats">
+        <aside className="panel panel-stats" data-manual="stats">
           <div className="status-card">
             <p>{statusText(state, game.actor, game.nameOf, game.thinking)}</p>
           </div>
@@ -153,7 +155,7 @@ export function TrucoGame({ onBack }: TrucoGameProps) {
         </aside>
       </div>
 
-      <RulesModal open={rulesOpen} rules={TRUCO_RULES} onClose={() => setRulesOpen(false)} />
+      <ManualTour open={rulesOpen} steps={TRUCO_MANUAL} onClose={() => setRulesOpen(false)} />
       <ResultOverlay
         open={Boolean(state.matchWinner)}
         eyebrow={resultEyebrow(state.matchWinner, game.mode, game.humanColor)}

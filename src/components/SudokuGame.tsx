@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useSudoku } from '../hooks/useSudoku'
 import { DIFFICULTIES, PRESETS } from '../sudoku'
-import { SUDOKU_RULES } from '../shared/rules'
+import { SUDOKU_MANUAL } from '../shared/manuals'
+import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { RulesModal } from './RulesModal'
+import { SoundToggle } from './SoundToggle'
 import { SudokuBoard } from './sudoku/SudokuBoard'
 import { SudokuPad } from './sudoku/SudokuPad'
 
@@ -100,7 +101,7 @@ export function SudokuGame({ onBack }: SudokuGameProps) {
   return (
     <div className="app">
       <div className="shell sudoku-shell">
-        <aside className="panel panel-controls">
+        <aside className="panel panel-controls" data-manual="controls">
           <header className="panel-header">
             <p className="eyebrow">Números</p>
             <h1>Sudoku</h1>
@@ -142,8 +143,9 @@ export function SudokuGame({ onBack }: SudokuGameProps) {
             <button type="button" className="btn" onClick={game.revealCell} disabled={game.disabled}>
               Revelar casilla
             </button>
+            <SoundToggle />
             <button type="button" className="btn btn-ghost" onClick={() => setRulesOpen(true)}>
-              Cómo se juega
+              Manual
             </button>
             <button type="button" className="btn btn-ghost" onClick={onBack}>
               Elegir juego
@@ -151,7 +153,7 @@ export function SudokuGame({ onBack }: SudokuGameProps) {
           </div>
         </aside>
 
-        <main className={`table sudoku-table ${game.status === 'loading' ? 'is-loading' : ''}`}>
+        <main className={`table sudoku-table ${game.status === 'loading' ? 'is-loading' : ''}`} data-manual="board">
           <SudokuBoard
             givens={game.givens}
             values={game.values}
@@ -162,17 +164,19 @@ export function SudokuGame({ onBack }: SudokuGameProps) {
             disabled={game.disabled}
             onSelect={game.setSelected}
           />
-          <SudokuPad
-            remaining={game.remaining}
-            noteMode={game.noteMode}
-            disabled={game.disabled}
-            onDigit={game.enterDigit}
-            onErase={game.eraseCell}
-            onToggleNotes={() => game.setNoteMode((on) => !on)}
-          />
+          <div data-manual="pad">
+            <SudokuPad
+              remaining={game.remaining}
+              noteMode={game.noteMode}
+              disabled={game.disabled}
+              onDigit={game.enterDigit}
+              onErase={game.eraseCell}
+              onToggleNotes={() => game.setNoteMode((on) => !on)}
+            />
+          </div>
         </main>
 
-        <aside className="panel panel-stats">
+        <aside className="panel panel-stats" data-manual="stats">
           <div className="ms-readouts">
             <div className="ms-digit">{game.timeLabel}</div>
             <div className="ms-digit">{String(game.emptyCount).padStart(2, '0')}</div>
@@ -199,7 +203,7 @@ export function SudokuGame({ onBack }: SudokuGameProps) {
         </aside>
       </div>
 
-      <RulesModal open={rulesOpen} rules={SUDOKU_RULES} onClose={() => setRulesOpen(false)} />
+      <ManualTour open={rulesOpen} steps={SUDOKU_MANUAL} onClose={() => setRulesOpen(false)} />
       <ResultOverlay
         open={game.status === 'won'}
         eyebrow="Victoria"

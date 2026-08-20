@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useMinesweeper } from '../hooks/useMinesweeper'
 import { DIFFICULTIES, PRESETS } from '../minesweeper'
-import { MINESWEEPER_RULES } from '../shared/rules'
+import { MINESWEEPER_MANUAL } from '../shared/manuals'
 import { MinesweeperBoard } from './minesweeper/MinesweeperBoard'
+import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { RulesModal } from './RulesModal'
+import { SoundToggle } from './SoundToggle'
 
 type MinesweeperGameProps = {
   onBack: () => void
@@ -37,7 +38,7 @@ export function MinesweeperGame({ onBack }: MinesweeperGameProps) {
   return (
     <div className="app">
       <div className="shell minesweeper-shell">
-        <aside className="panel panel-controls">
+        <aside className="panel panel-controls" data-manual="controls">
           <header className="panel-header">
             <p className="eyebrow">Clásico</p>
             <h1>Buscaminas</h1>
@@ -79,8 +80,9 @@ export function MinesweeperGame({ onBack }: MinesweeperGameProps) {
             <button type="button" className="btn" onClick={game.showHint} disabled={game.status !== 'playing'}>
               Pista
             </button>
+            <SoundToggle />
             <button type="button" className="btn btn-ghost" onClick={() => setRulesOpen(true)}>
-              Cómo se juega
+              Manual
             </button>
             <button type="button" className="btn btn-ghost" onClick={onBack}>
               Elegir juego
@@ -88,7 +90,7 @@ export function MinesweeperGame({ onBack }: MinesweeperGameProps) {
           </div>
         </aside>
 
-        <main className="table ms-table">
+        <main className="table ms-table" data-manual="board">
           <MinesweeperBoard
             board={game.board}
             exploded={game.exploded}
@@ -102,7 +104,7 @@ export function MinesweeperGame({ onBack }: MinesweeperGameProps) {
           />
         </main>
 
-        <aside className="panel panel-stats">
+        <aside className="panel panel-stats" data-manual="stats">
           <div className="ms-readouts">
             <div className="ms-digit">{game.mineCountLabel}</div>
             <div className="ms-digit">{game.timeLabel}</div>
@@ -129,7 +131,7 @@ export function MinesweeperGame({ onBack }: MinesweeperGameProps) {
         </aside>
       </div>
 
-      <RulesModal open={rulesOpen} rules={MINESWEEPER_RULES} onClose={() => setRulesOpen(false)} />
+      <ManualTour open={rulesOpen} steps={MINESWEEPER_MANUAL} onClose={() => setRulesOpen(false)} />
       <ResultOverlay
         open={game.status === 'won' || game.status === 'lost'}
         eyebrow={game.status === 'won' ? 'Victoria' : 'Derrota'}

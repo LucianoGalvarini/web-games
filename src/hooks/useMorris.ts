@@ -15,6 +15,7 @@ import {
 } from '../morris'
 import type { MorrisMove, MorrisPosition, MorrisVariantId } from '../morris'
 import { isCpuTurn } from '../shared/player'
+import { playSfx } from '../shared/sfx'
 import { samePoint } from '../shared/point'
 import type { Point } from '../shared/point'
 import type { Difficulty, GameMode, Player, Winner } from '../shared/types'
@@ -202,6 +203,16 @@ export function useMorris() {
       setPosition(next)
       setLastMove(move)
       setSelected(null)
+      if (move.kind === 'remove') {
+        playSfx('capture')
+      } else if (move.kind === 'place') {
+        playSfx('stone')
+      } else {
+        playSfx('slide')
+      }
+      if (next.pendingRemoval && move.kind !== 'remove') {
+        playSfx('mill')
+      }
       finishIfNeeded(next)
     },
     [resolvedVariant, finishIfNeeded],

@@ -9,9 +9,11 @@ import {
   emptyNotes,
   findHint,
   generatePuzzle,
+  keyOfCell,
   remainingOf,
   toggleNote,
 } from '../sudoku'
+import { playSfx } from '../shared/sfx'
 import type {
   SudokuDifficulty,
   SudokuHint,
@@ -188,6 +190,7 @@ export function useSudoku() {
           next[row][col] = toggleNote(next[row][col], digit)
           return next
         })
+        playSfx('pencil')
         setHint(null)
         setHintChecked(false)
         return
@@ -205,6 +208,11 @@ export function useSudoku() {
       setNotes(clearDigitInHouse(notesRef.current, row, col, digit))
       setHint(null)
       setHintChecked(false)
+      if (conflictKeys(next).has(keyOfCell(row, col))) {
+        playSfx('error')
+      } else {
+        playSfx('ink')
+      }
       winIfDone(next, seconds, difficulty)
     },
     [selected, givens, noteMode, values, beginPlay, pushHistory, winIfDone, seconds, difficulty],
@@ -233,6 +241,7 @@ export function useSudoku() {
     })
     setHint(null)
     setHintChecked(false)
+    playSfx('erase')
   }, [selected, givens, values, notes, beginPlay, pushHistory])
 
   const fillCell = useCallback(

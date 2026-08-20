@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ResultVariant } from '../shared/result'
+import { playSfx } from '../shared/sfx'
 
 type ResultOverlayProps = {
   open: boolean
@@ -31,6 +32,19 @@ export function ResultOverlay({
   useEffect(() => {
     setHidden(false)
   }, [open, title])
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    if (variant === 'win') {
+      playSfx('win')
+    } else if (variant === 'loss') {
+      playSfx('lose')
+    } else {
+      playSfx('draw')
+    }
+  }, [open, variant, title])
 
   if (!open || hidden) {
     return null

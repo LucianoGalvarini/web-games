@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useTetris } from '../hooks/useTetris'
-import { TETRIS_RULES } from '../shared/rules'
+import { TETRIS_MANUAL } from '../shared/manuals'
 import { NEXT_COUNT, PRESETS } from '../tetris'
+import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { RulesModal } from './RulesModal'
+import { SoundToggle } from './SoundToggle'
 import { MiniPiece } from './tetris/MiniPiece'
 import { TetrisBoard } from './tetris/TetrisBoard'
 
@@ -27,7 +28,7 @@ export function TetrisGame({ onBack }: TetrisGameProps) {
   return (
     <div className="app">
       <div className="shell tetris-shell">
-        <aside className="panel panel-controls">
+        <aside className="panel panel-controls" data-manual="controls">
           <header className="panel-header">
             <p className="eyebrow">Caída</p>
             <h1>Tetris</h1>
@@ -62,8 +63,9 @@ export function TetrisGame({ onBack }: TetrisGameProps) {
             >
               {game.paused ? 'Seguir' : 'Pausa'}
             </button>
+            <SoundToggle />
             <button type="button" className="btn btn-ghost" onClick={() => setRulesOpen(true)}>
-              Cómo se juega
+              Manual
             </button>
             <button type="button" className="btn btn-ghost" onClick={onBack}>
               Elegir juego
@@ -71,9 +73,9 @@ export function TetrisGame({ onBack }: TetrisGameProps) {
           </div>
         </aside>
 
-        <main className="table tetris-table">
+        <main className="table tetris-table" data-manual="board">
           <TetrisBoard state={state} paused={game.paused} />
-          <div className="tetris-pad">
+          <div className="tetris-pad" data-manual="pad">
             <button type="button" className="btn" onClick={() => game.play({ kind: 'left' })}>
               Izq
             </button>
@@ -98,7 +100,7 @@ export function TetrisGame({ onBack }: TetrisGameProps) {
           </div>
         </main>
 
-        <aside className="panel panel-stats">
+        <aside className="panel panel-stats" data-manual="stats">
           <div className="ms-readouts">
             <div className="ms-digit">{state.score.toLocaleString('es-AR')}</div>
             <div className="ms-digit">{String(state.level).padStart(2, '0')}</div>
@@ -140,7 +142,7 @@ export function TetrisGame({ onBack }: TetrisGameProps) {
         </aside>
       </div>
 
-      <RulesModal open={rulesOpen} rules={TETRIS_RULES} onClose={() => setRulesOpen(false)} />
+      <ManualTour open={rulesOpen} steps={TETRIS_MANUAL} onClose={() => setRulesOpen(false)} />
       <ResultOverlay
         open={state.status === 'lost'}
         eyebrow="Fin"

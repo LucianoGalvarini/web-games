@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { isCpuTurn, opponent } from '../shared/player'
+import { playSfx } from '../shared/sfx'
 import type { Difficulty, GameMode, Player } from '../shared/types'
 import {
   actorOf,
@@ -14,6 +15,18 @@ import type { Card, TrucoAction, TrucoState } from '../truco'
 
 type Snapshot = {
   state: TrucoState
+}
+
+function cueTruco(action: TrucoAction): void {
+  if (action.kind === 'play') {
+    playSfx('card')
+    return
+  }
+  if (action.kind === 'mazo') {
+    playSfx('fold')
+    return
+  }
+  playSfx('shout')
 }
 
 export function useTruco() {
@@ -52,6 +65,7 @@ export function useTruco() {
       return
     }
     setHistory((prev) => [...prev, { state: current }])
+    cueTruco(action)
     setState(applyAction(current, who, action))
   }, [])
 
@@ -123,6 +137,7 @@ export function useTruco() {
         return
       }
       setHistory((prev) => [...prev, { state: current }])
+      cueTruco(action)
       setState(applyAction(current, who, action))
       setThinking(false)
     }, waitingCall ? 920 : 680)
@@ -139,6 +154,7 @@ export function useTruco() {
       return
     }
     const timer = window.setTimeout(() => {
+      playSfx('deal')
       setState((current) => nextHand(current))
     }, 2200)
     return () => window.clearTimeout(timer)

@@ -3,11 +3,11 @@ import { useDamas } from '../hooks/useDamas'
 import { VARIANT_ORDER, VARIANTS } from '../damas'
 import { isCpuTurn, playerLabel } from '../shared/player'
 import { resultEyebrow, resultTitle, resultVariant } from '../shared/result'
-import { damasRulesFor } from '../shared/rules'
+import { damasManual } from '../shared/manuals'
 import type { GameMode, Player, Winner } from '../shared/types'
 import { GamePanel } from './GamePanel'
+import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { RulesModal } from './RulesModal'
 import { DamasBoard } from './damas/DamasBoard'
 
 const VARIANT_OPTIONS = VARIANT_ORDER.map((id) => ({ id, label: VARIANTS[id].label }))
@@ -96,7 +96,7 @@ export function DamasGame({ onBack }: DamasGameProps) {
           onBack={onBack}
         />
 
-        <main className="table damas-table">
+        <main className="table damas-table" data-manual="board">
           <DamasBoard
             pieces={game.pieces}
             selected={game.selected}
@@ -109,7 +109,7 @@ export function DamasGame({ onBack }: DamasGameProps) {
         </main>
       </div>
 
-      <RulesModal open={rulesOpen} rules={damasRulesFor(game.variantConfig)} onClose={() => setRulesOpen(false)} />
+      <ManualTour open={rulesOpen} steps={damasManual(game.variantConfig)} onClose={() => setRulesOpen(false)} />
       <ResultOverlay
         open={Boolean(game.winner)}
         eyebrow={resultEyebrow(game.winner, game.mode, game.humanColor)}
