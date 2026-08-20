@@ -54,7 +54,7 @@ export function AjedrezGame({ onBack }: AjedrezGameProps) {
 
   return (
     <div className="app">
-      <div className="shell">
+      <div className="shell ajedrez-shell">
         <GamePanel
           eyebrow="Tablero"
           title="Ajedrez"

@@ -72,10 +72,12 @@ h2 {
 }
 
 .shell {
-  max-width: 1440px;
+  --controls-col: 360px;
+  --stats-col: 280px;
+  max-width: 1540px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(220px, 280px);
+  grid-template-columns: var(--controls-col) minmax(0, 1fr) minmax(220px, var(--stats-col));
   grid-template-areas: "controls board stats";
   gap: 22px;
   align-items: start;
@@ -220,8 +222,9 @@ h2 {
   background: transparent;
   color: var(--muted);
   border-radius: 9px;
-  padding: 8px 6px;
+  padding: 8px 8px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .segmented button.is-on {
@@ -270,11 +273,11 @@ h2 {
 }
 
 .hud-btn {
-  width: 42px;
   height: 42px;
-  display: grid;
-  place-items: center;
-  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 0 10px;
   border-radius: 14px;
   border: 1px solid rgba(228, 180, 90, 0.35);
   background: rgba(28, 18, 12, 0.82);
@@ -293,9 +296,16 @@ h2 {
 }
 
 .hud-btn svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   display: block;
+  flex-shrink: 0;
+}
+
+.hud-btn span {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .table {
@@ -714,10 +724,45 @@ h2 {
   .home-header h1 {
     font-size: 38px;
   }
+
+  .table-hud {
+    top: 10px;
+    right: 10px;
+  }
+
+  .hud-btn {
+    height: 38px;
+    padding: 0 10px 0 8px;
+  }
+
+  .hud-btn span {
+    font-size: 10px;
+  }
+}
+
+.fanorona-shell,
+.tetris-shell,
+.truco-shell {
+  --controls-col: 360px;
+}
+
+.damas-shell,
+.ajedrez-shell,
+.paisho-shell {
+  --controls-col: 388px;
+}
+
+.sudoku-shell {
+  --controls-col: 408px;
 }
 
 .minesweeper-shell {
+  --controls-col: 440px;
   max-width: min(1600px, 100%);
+}
+
+.morris-shell {
+  --controls-col: 456px;
 }
 
 .ms-readouts {

@@ -38,6 +38,7 @@ export function SoundToggle() {
       title={muted ? 'Sonido off' : 'Sonido on'}
     >
       <SpeakerIcon muted={muted} />
+      <span>Sonido</span>
     </button>
   )
 }

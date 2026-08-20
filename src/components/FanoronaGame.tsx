@@ -61,7 +61,7 @@ export function FanoronaGame({ onBack }: FanoronaGameProps) {
 
   return (
     <div className="app">
-      <div className="shell">
+      <div className="shell fanorona-shell">
         <GamePanel
           eyebrow="Madagascar"
           title="Fanorona"

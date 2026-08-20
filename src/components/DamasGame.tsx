@@ -62,7 +62,7 @@ export function DamasGame({ onBack }: DamasGameProps) {
 
   return (
     <div className="app">
-      <div className="shell">
+      <div className="shell damas-shell">
         <GamePanel
           eyebrow="Damas"
           title={game.variantConfig.label}

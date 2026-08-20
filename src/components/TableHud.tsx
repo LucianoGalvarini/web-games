@@ -25,6 +25,7 @@ export function TableHud({ onManual }: TableHudProps) {
     <div className="table-hud">
       <button type="button" className="hud-btn" onClick={onManual} aria-label="Manual" title="Manual">
         <BookIcon />
+        <span>Manual</span>
       </button>
       <SoundToggle />
     </div>

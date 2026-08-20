@@ -58,7 +58,7 @@ export function PaiShoGame({ onBack }: PaiShoGameProps) {
 
   return (
     <div className="app">
-      <div className="shell">
+      <div className="shell paisho-shell">
         <GamePanel
           eyebrow="Jardín"
           title="Pai Sho"

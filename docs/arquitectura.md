@@ -57,14 +57,14 @@ src/
 
 ## Layout
 
-En partida hay tres columnas: **controles** a la izquierda (título, modo, dificultad, acciones), **tablero** al centro y **estadísticas** a la derecha (turno, reloj, piezas, estado). En pantallas chicas se apilan en ese orden.
+En partida hay tres columnas: **controles** a la izquierda (título, modo, dificultad, acciones), **tablero** al centro y **estadísticas** a la derecha (turno, reloj, piezas, estado). El ancho del panel de controles lo fija cada juego (`--controls-col`) según cuántas opciones tenga. En pantallas chicas se apilan en ese orden.
 
 ## Piezas compartidas
 
 - `shared/point.ts` y `shared/player.ts`: coordenadas, etiquetas y `isCpuTurn`.
 - `shared/types.ts`: `GameMode`, `Difficulty` (`easy` \| `medium` \| `hard` \| `perfect`), `GameId`.
 - `GamePanel`: modo, dificultad, color humano, selector de tablero/variante (Molino, Damas).
-- `TableHud`: iconos fijos de manual y sonido, arriba a la derecha, en todos los juegos.
+- `TableHud`: iconos fijos de manual y sonido, con etiqueta, arriba a la derecha, en todos los juegos.
 - `Stone`: la misma piedra SVG en Fanorona y Molino.
 - Resultado: `resultTitle` / `resultEyebrow` / `resultVariant` según modo y color humano.
 - Sonido: `playSfx` en Web Audio (madera, cartas, clics, líneas). Mute en `localStorage`.

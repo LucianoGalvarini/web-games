@@ -66,7 +66,7 @@ export function MorrisGame({ onBack }: MorrisGameProps) {
 
   return (
     <div className="app">
-      <div className="shell">
+      <div className="shell morris-shell">
         <GamePanel
           eyebrow="Molino"
           title={game.variantConfig.label}
