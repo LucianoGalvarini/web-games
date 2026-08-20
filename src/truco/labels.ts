@@ -48,6 +48,92 @@ export function nextTrucoLabel(level: TrucoLevel): string {
   return 'Vale cuatro'
 }
 
+export type TableShout = {
+  title: string
+  sub?: string
+  who: Player
+  kind: 'call' | 'answer'
+  waiting: boolean
+}
+
+function lastCallTitle(chain: TrucoState['envidoChain']): string {
+  const last = chain[chain.length - 1]
+  if (last === 'falta') {
+    return 'Falta envido'
+  }
+  if (last === 'real') {
+    return 'Real envido'
+  }
+  if (chain.filter((item) => item === 'envido').length > 1) {
+    return 'Envido envido'
+  }
+  return 'Envido'
+}
+
+function shoutFromEvent(event: LogEvent): TableShout | null {
+  if (event.kind === 'envido') {
+    return { title: 'Envido', who: event.player, kind: 'call', waiting: false }
+  }
+  if (event.kind === 'real') {
+    return { title: 'Real envido', who: event.player, kind: 'call', waiting: false }
+  }
+  if (event.kind === 'falta') {
+    return { title: 'Falta envido', who: event.player, kind: 'call', waiting: false }
+  }
+  if (event.kind === 'truco') {
+    return { title: trucoLevelLabel(event.level), who: event.player, kind: 'call', waiting: false }
+  }
+  if (event.kind === 'quiero') {
+    return { title: 'Quiero', who: event.player, kind: 'answer', waiting: false }
+  }
+  if (event.kind === 'no-quiero') {
+    return { title: 'No quiero', who: event.player, kind: 'answer', waiting: false }
+  }
+  if (event.kind === 'mazo') {
+    return { title: 'Me voy al mazo', who: event.player, kind: 'answer', waiting: false }
+  }
+  if (event.kind === 'envido-result') {
+    return {
+      title: event.accepted ? 'Envido' : 'No querido',
+      sub: event.accepted ? `Se llevó ${event.points}` : `Vale ${event.points}`,
+      who: event.winner,
+      kind: 'answer',
+      waiting: false,
+    }
+  }
+  return null
+}
+
+export function tableShout(state: TrucoState): TableShout | null {
+  if (state.envidoPending) {
+    return {
+      title: lastCallTitle(state.envidoChain),
+      who: state.envidoPending.from,
+      kind: 'call',
+      waiting: true,
+    }
+  }
+  if (state.trucoPending) {
+    return {
+      title: trucoLevelLabel(state.trucoPending.level),
+      who: state.trucoPending.from,
+      kind: 'call',
+      waiting: true,
+    }
+  }
+  for (let index = state.log.length - 1; index >= 0; index -= 1) {
+    const event = state.log[index]
+    if (!event || event.kind === 'play' || event.kind === 'trick') {
+      continue
+    }
+    if (event.kind === 'hand') {
+      return null
+    }
+    return shoutFromEvent(event)
+  }
+  return null
+}
+
 export function seatLabel(player: Player, mode: 'local' | 'cpu', humanColor: Player): string {
   if (mode === 'cpu') {
     return player === humanColor ? 'Vos' : 'CPU'
@@ -93,6 +179,20 @@ export function logText(event: LogEvent, nameOf: (player: Player) => string): st
     return `${nameOf(event.winner)} se llevó el envido (${event.points}). ${nameOf('white')} ${event.values.white} — ${nameOf('black')} ${event.values.black}.`
   }
   return `${nameOf(event.winner)} ganó la mano (${event.points}).`
+}
+
+export function logSide(event: LogEvent, viewing: Player): 'you' | 'them' | 'meta' {
+  if (event.kind === 'trick' && event.winner === 'parda') {
+    return 'meta'
+  }
+  const who =
+    event.kind === 'envido-result' || event.kind === 'hand' || event.kind === 'trick'
+      ? event.winner
+      : event.player
+  if (who === 'parda') {
+    return 'meta'
+  }
+  return who === viewing ? 'you' : 'them'
 }
 
 export function statusText(

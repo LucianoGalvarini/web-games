@@ -106,6 +106,7 @@ export function useTruco() {
       return
     }
     let cancelled = false
+    const waitingCall = Boolean(stateRef.current.envidoPending || stateRef.current.trucoPending)
     const timer = window.setTimeout(() => {
       if (cancelled) {
         return
@@ -124,7 +125,7 @@ export function useTruco() {
       setHistory((prev) => [...prev, { state: current }])
       setState(applyAction(current, who, action))
       setThinking(false)
-    }, 520)
+    }, waitingCall ? 920 : 680)
     setThinking(true)
     return () => {
       cancelled = true
@@ -139,7 +140,7 @@ export function useTruco() {
     }
     const timer = window.setTimeout(() => {
       setState((current) => nextHand(current))
-    }, 1700)
+    }, 2200)
     return () => window.clearTimeout(timer)
   }, [state.handWinner, state.matchWinner, state.mano, state.scores.white, state.scores.black])
 

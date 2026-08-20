@@ -2,9 +2,11 @@ import { chooseAiAction } from './ai'
 import { applyAction, createMatch, nextHand } from './apply'
 import { fullDeck, mulberry32 } from './deck'
 import { envidoOf, faltaValue } from './envido'
-import { actorOf, legalActions } from './legal'
+import { logSide } from './labels'
+import { actorOf, isLegalAction, legalActions } from './legal'
 import { compareTruco, trucoPower } from './ranking'
-import type { Card } from './types'
+import { scoreBoxes, scoreHalf } from './score'
+import type { Card, LogEvent } from './types'
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -68,8 +70,26 @@ trucoHand = applyAction(trucoHand, 'white', { kind: 'truco' })
 trucoHand = applyAction(trucoHand, 'black', { kind: 'no-quiero' })
 assert(trucoHand.handWinner === 'white' && trucoHand.scores.white === 1, 'Truco no querido vale 1.')
 
+assert(scoreHalf(0).label === 'Malas' && scoreHalf(0).value === 0, '0 tantos son 0 malas.')
+assert(scoreHalf(4).label === 'Malas' && scoreHalf(4).value === 4, '4 tantos son 4 malas.')
+assert(scoreHalf(15).label === 'Buenas' && scoreHalf(15).value === 0, '15 tantos pasan a buenas.')
+assert(scoreHalf(16).label === 'Buenas' && scoreHalf(16).value === 1, '16 tantos son 1 buena.')
+assert(scoreHalf(30).value === 15, '30 tantos llenan las buenas.')
+assert(scoreBoxes(0).every((box) => box === 0), 'Sin puntos, tres cajas vacías.')
+assert(JSON.stringify(scoreBoxes(4)) === JSON.stringify([4, 0, 0]), '4 puntos llenan la primera caja.')
+assert(JSON.stringify(scoreBoxes(12)) === JSON.stringify([5, 5, 2]), '12 puntos son dos cajas y dos fósforos.')
+assert(JSON.stringify(scoreBoxes(15)) === JSON.stringify([5, 5, 5]), '15 puntos cierran tres cajas.')
+
+const cantoVos: LogEvent = { kind: 'truco', player: 'white', level: 2 }
+const cantoCpu: LogEvent = { kind: 'quiero', player: 'black' }
+const parda: LogEvent = { kind: 'trick', winner: 'parda' }
+assert(logSide(cantoVos, 'white') === 'you', 'El canto propio se marca como vos.')
+assert(logSide(cantoCpu, 'white') === 'them', 'El canto rival se marca como CPU.')
+assert(logSide(parda, 'white') === 'meta', 'La parda es un evento neutro.')
+
 let finished = 0
-for (let game = 0; game < 80; game += 1) {
+const diffs = ['easy', 'medium', 'hard'] as const
+for (let game = 0; game < 90; game += 1) {
   const random = mulberry32(1000 + game * 17)
   let match = createMatch(random, game % 2 === 0 ? 'white' : 'black')
   let steps = 0
@@ -80,9 +100,12 @@ for (let game = 0; game < 80; game += 1) {
     }
     const actor = actorOf(match)
     assert(actor, `Partida ${game} sin actor en el paso ${steps}.`)
-    const action = chooseAiAction(match, actor, steps % 3 === 0 ? 'easy' : 'hard', random)
+    const action = chooseAiAction(match, actor, diffs[game % 3] ?? 'medium', random)
     assert(action, `Partida ${game} sin jugada de CPU.`)
-    match = applyAction(match, actor, action)
+    assert(isLegalAction(match, actor, action), `Partida ${game} jugó una acción ilegal.`)
+    const next = applyAction(match, actor, action)
+    assert(next !== match, `Partida ${game} no avanzó en el paso ${steps}.`)
+    match = next
     steps += 1
   }
   assert(match.matchWinner, `La partida ${game} no terminó.`)
@@ -90,6 +113,6 @@ for (let game = 0; game < 80; game += 1) {
   finished += 1
 }
 
-assert(finished === 80, `Solo terminaron ${finished} de 80 partidas.`)
+assert(finished === 90, `Solo terminaron ${finished} de 90 partidas.`)
 
 console.log('truco selfcheck ok')

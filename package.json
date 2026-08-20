@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test": "npx --yes tsx src/truco/selfcheck.ts && npx --yes tsx src/tetris/selfcheck.ts",
     "preview": "vite preview"
   },
   "dependencies": {

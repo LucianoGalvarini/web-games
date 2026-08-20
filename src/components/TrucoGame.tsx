@@ -3,9 +3,10 @@ import { useTruco } from '../hooks/useTruco'
 import { difficultyLabel } from '../shared/difficulty'
 import { resultEyebrow, resultTitle, resultVariant } from '../shared/result'
 import { TRUCO_RULES } from '../shared/rules'
-import { logText, MALAS_LIMIT, statusText, TARGET_SCORE } from '../truco'
+import { logSide, logText, statusText, TARGET_SCORE } from '../truco'
 import { ResultOverlay } from './ResultOverlay'
 import { RulesModal } from './RulesModal'
+import { TrucoAnotador } from './truco/TrucoAnotador'
 import { TrucoTable } from './truco/TrucoTable'
 
 type TrucoGameProps = {
@@ -120,35 +121,34 @@ export function TrucoGame({ onBack }: TrucoGameProps) {
             <p>{statusText(state, game.actor, game.nameOf, game.thinking)}</p>
           </div>
 
-          <div className="scores">
-            <div className={`score ${game.actor === 'white' && !state.matchWinner ? 'is-active' : ''}`}>
-              <span className="swatch white" />
-              <div>
-                <strong>{game.nameOf('white')}</strong>
-                <span>
-                  {state.scores.white} — {state.scores.white < MALAS_LIMIT ? 'malas' : 'buenas'}
-                </span>
-              </div>
-            </div>
-            <div className={`score ${game.actor === 'black' && !state.matchWinner ? 'is-active' : ''}`}>
-              <span className="swatch black" />
-              <div>
-                <strong>{game.nameOf('black')}</strong>
-                <span>
-                  {state.scores.black} — {state.scores.black < MALAS_LIMIT ? 'malas' : 'buenas'}
-                </span>
-              </div>
-            </div>
-          </div>
+          <TrucoAnotador
+            leftName={game.nameOf('white')}
+            leftPoints={state.scores.white}
+            rightName={game.nameOf('black')}
+            rightPoints={state.scores.black}
+          />
 
-          <div className="truco-log">
-            {recent.length === 0 ? (
-              <p>Partida a {TARGET_SCORE}. Canta o jugá una carta.</p>
-            ) : (
-              recent.map((event, index) => (
-                <p key={`${event.kind}-${index}`}>{logText(event, game.nameOf)}</p>
-              ))
-            )}
+          <div className="truco-log" aria-label="Jugadas">
+            {Array.from({ length: 6 }, (_, index) => {
+              const event = recent[index]
+              if (!event) {
+                return (
+                  <p key={`pad-${index}`} className="truco-log-row is-meta">
+                    {index === 0 && recent.length === 0
+                      ? `Partida a ${TARGET_SCORE}. Canta o jugá una carta.`
+                      : '\u00a0'}
+                  </p>
+                )
+              }
+              return (
+                <p
+                  key={`${state.log.length - index}-${event.kind}`}
+                  className={`truco-log-row is-${logSide(event, game.viewing)}`}
+                >
+                  {logText(event, game.nameOf)}
+                </p>
+              )
+            })}
           </div>
         </aside>
       </div>

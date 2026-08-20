@@ -12,12 +12,15 @@ export {
 } from './envido'
 export {
   cardLabel,
+  logSide,
   logText,
   nextTrucoLabel,
   seatLabel,
   statusText,
+  tableShout,
   trucoLevelLabel,
 } from './labels'
+export type { TableShout } from './labels'
 export {
   actorOf,
   canRaiseTruco,
@@ -27,12 +30,14 @@ export {
   legalActions,
 } from './legal'
 export { compareTruco, envidoValue, trucoPower } from './ranking'
+export { scoreBoxes, scoreHalf } from './score'
 export type {
   Card,
   EnvidoCall,
   LogEvent,
   Rank,
   Suit,
+  TrickPlay,
   TrickResult,
   TrucoAction,
   TrucoLevel,

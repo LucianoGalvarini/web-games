@@ -520,6 +520,20 @@ h2 {
   .panel h1 {
     font-size: 42px;
   }
+
+  .truco-shell,
+  .truco-table,
+  .truco-shell .panel-stats {
+    min-height: 0;
+  }
+
+  .truco-table-inner {
+    min-height: 88dvh;
+  }
+
+  .truco-shell .panel-stats {
+    grid-template-rows: auto minmax(38dvh, 46dvh) 18dvh;
+  }
 }
 
 .home {
@@ -1056,22 +1070,49 @@ h2 {
   }
 }
 
+.truco-shell {
+  min-height: calc(100dvh - 4.5rem);
+  align-items: stretch;
+}
+
+.truco-shell .panel-stats {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) minmax(14dvh, 16.5dvh);
+  gap: clamp(10px, 1.2dvh, 16px);
+  min-height: calc(100dvh - 4.5rem);
+}
+
+.truco-shell .status-card {
+  min-height: 4.8rem;
+}
+
 .truco-table {
-  max-width: 720px;
+  max-width: min(860px, 100%);
   justify-self: center;
   width: 100%;
+  display: flex;
+  min-height: calc(100dvh - 4.5rem);
 }
 
 .truco-table-inner {
   display: grid;
-  gap: 16px;
+  grid-template-rows:
+    auto
+    minmax(26dvh, 1fr)
+    3.4rem
+    auto
+    6.2rem;
+  gap: clamp(12px, 1.8dvh, 28px);
   justify-items: stretch;
+  width: 100%;
+  min-height: 100%;
 }
 
 .truco-seat {
-  margin: 0 0 8px;
+  margin: 0 0 0.5em;
+  min-height: 1.2em;
   text-align: center;
-  font-size: 12px;
+  font-size: clamp(11px, 1.15dvh, 13px);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--gold);
@@ -1080,14 +1121,76 @@ h2 {
 .truco-hand {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  min-height: 132px;
+  align-items: flex-end;
+  gap: 0.6em;
+  height: 10dvh;
+  min-height: 10dvh;
+}
+
+.truco-hand.is-you {
+  height: 18dvh;
+  min-height: 18dvh;
+  gap: 0;
+}
+
+.truco-hand-slot {
+  display: flex;
+  width: min(9.2dvh, 16%);
+  aspect-ratio: 160 / 240;
+  justify-content: center;
+  align-items: flex-end;
+  flex: 0 0 auto;
+}
+
+.truco-hand.is-you .truco-hand-slot {
+  width: min(16dvh, 22%);
+  margin: 0 -0.45em;
+}
+
+.truco-hand-slot .truco-card,
+.truco-hand-slot .truco-card.is-sm,
+.truco-hand-slot .truco-card.is-md {
+  width: 100%;
+  transition: transform 180ms ease;
+}
+
+.truco-hand.is-you .truco-hand-slot:nth-child(1) .truco-card {
+  transform: rotate(-8deg) translateY(8%);
+}
+
+.truco-hand.is-you .truco-hand-slot:nth-child(2) .truco-card {
+  transform: rotate(0deg) translateY(0);
+  z-index: 1;
+}
+
+.truco-hand.is-you .truco-hand-slot:nth-child(3) .truco-card {
+  transform: rotate(8deg) translateY(8%);
+}
+
+.truco-hand.is-you .truco-hand-slot:nth-child(1) .truco-card.is-playable {
+  transform: rotate(-8deg) translateY(-8%);
+}
+
+.truco-hand.is-you .truco-hand-slot:nth-child(2) .truco-card.is-playable {
+  transform: translateY(-10%);
+}
+
+.truco-hand.is-you .truco-hand-slot:nth-child(3) .truco-card.is-playable {
+  transform: rotate(8deg) translateY(-8%);
 }
 
 .truco-card {
-  width: min(104px, 22vw);
+  width: min(16dvh, 22%);
   display: block;
   filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.38));
+}
+
+.truco-card.is-sm {
+  width: min(9.2dvh, 16%);
+}
+
+.truco-card.is-md {
+  width: min(16dvh, 22%);
 }
 
 .truco-card svg {
@@ -1106,11 +1209,10 @@ button.truco-card {
 
 button.truco-card.is-playable {
   cursor: pointer;
-  transform: translateY(-8px);
 }
 
 button.truco-card.is-playable:hover:not(:disabled) {
-  transform: translateY(-12px);
+  filter: drop-shadow(0 14px 18px rgba(228, 180, 90, 0.35));
 }
 
 button.truco-card:disabled {
@@ -1118,68 +1220,371 @@ button.truco-card:disabled {
   cursor: default;
 }
 
-.truco-play {
+.truco-felt {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(46, 92, 54, 0.55), rgba(18, 42, 24, 0.92)),
+    rgba(20, 48, 28, 0.9);
+  border: 1px solid rgba(228, 180, 90, 0.18);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.truco-pile {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+
+.truco-pile-empty {
+  position: absolute;
+  inset: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  align-items: end;
-  min-height: 170px;
-  padding: 12px 8px;
-  border-radius: 18px;
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(228, 180, 90, 0.14);
+  place-items: center;
+  margin: 0;
+  color: rgba(255, 244, 224, 0.38);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: clamp(11px, 1.2dvh, 13px);
 }
 
-.truco-slot {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
+.truco-pile-card {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: min(16dvh, 28%);
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
 }
 
-.truco-slot span {
-  font-size: 12px;
-  color: var(--muted);
+.truco-pile-card .truco-card,
+.truco-pile-card .truco-card.is-md {
+  width: 100%;
 }
 
-.truco-empty {
-  width: min(104px, 22vw);
-  aspect-ratio: 160 / 240;
-  border-radius: 12px;
-  border: 1px dashed rgba(228, 180, 90, 0.28);
-  background: rgba(255, 244, 224, 0.04);
+.truco-shout {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  min-width: min(280px, 78%);
+  padding: 10px 18px 12px;
+  border-radius: 16px;
+  text-align: center;
+  pointer-events: none;
+  background: rgba(12, 18, 12, 0.78);
+  border: 1px solid rgba(228, 180, 90, 0.45);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  animation: truco-shout-in 280ms ease-out;
+}
+
+.truco-shout.is-them {
+  border-color: rgba(240, 196, 96, 0.85);
+  background: rgba(72, 42, 8, 0.86);
+}
+
+.truco-shout.is-you {
+  border-color: rgba(196, 220, 180, 0.55);
+  background: rgba(18, 42, 24, 0.88);
+}
+
+.truco-shout.is-waiting {
+  animation: truco-shout-in 280ms ease-out, truco-shout-pulse 1.4s ease-in-out infinite;
+}
+
+.truco-shout-who,
+.truco-shout-sub,
+.truco-shout-wait {
+  margin: 0;
+}
+
+.truco-shout-who {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.truco-shout-title {
+  margin: 2px 0 0;
+  font-size: clamp(28px, 6vw, 42px);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff6df;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.truco-shout-sub {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--gold-2);
+}
+
+.truco-shout-wait {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffe7a8;
+}
+
+.truco-cants.is-urgent .btn {
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+@keyframes truco-shout-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes truco-shout-pulse {
+  0%,
+  100% {
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(228, 180, 90, 0.35);
+  }
+  50% {
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), 0 0 0 10px rgba(228, 180, 90, 0);
+  }
 }
 
 .truco-envido-banner {
   margin: 0;
   text-align: center;
-  padding: 10px 12px;
+  min-height: 3.4rem;
+  height: 3.4rem;
+  display: grid;
+  place-items: center;
+  padding: 0 12px;
   border-radius: 12px;
   background: rgba(228, 180, 90, 0.12);
   border: 1px solid rgba(228, 180, 90, 0.28);
   color: var(--gold-2);
+  overflow: hidden;
+}
+
+.truco-envido-banner.is-empty {
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
 }
 
 .truco-cants {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-content: center;
   gap: 8px;
-  min-height: 46px;
+  height: 6.2rem;
+  min-height: 6.2rem;
 }
 
-.truco-cants-placeholder {
-  min-height: 46px;
+.truco-anotador {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) 12%;
+  margin: 0;
+  height: 100%;
+  min-height: 0;
+  padding: 1.5% 3% 1%;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(228, 180, 90, 0.28);
+  background-color: #4a2816;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.22) 0px,
+      rgba(92, 48, 24, 0.5) 6px,
+      rgba(255, 220, 170, 0.05) 11px,
+      rgba(0, 0, 0, 0.28) 18px,
+      #5c301a 28px,
+      #3d1c10 36px
+    ),
+    linear-gradient(180deg, #6a3a22 0%, #3a1c10 100%);
+  box-shadow: inset 0 0 48px rgba(0, 0, 0, 0.45);
+}
+
+.truco-anotador-target {
+  position: relative;
+  z-index: 3;
+  width: 54px;
+  margin: 0 auto 8px;
+  padding: 6px 0 7px;
+  text-align: center;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: #f0b45a;
+  background: linear-gradient(180deg, #2a1810, #140c08);
+  border: 2px solid #d4a84a;
+  box-shadow:
+    0 0 0 2px #6a4a18,
+    0 6px 10px rgba(0, 0, 0, 0.4);
+}
+
+.truco-anotador-pole {
+  position: absolute;
+  left: 50%;
+  top: 46px;
+  bottom: 18px;
+  z-index: 2;
+  width: 36px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.truco-anotador-cols {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12%;
+  min-height: 0;
+  height: 100%;
+}
+
+.truco-anotador-col {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  min-height: 0;
+  height: 100%;
+}
+
+.truco-anotador-name {
+  margin: 0;
+  width: 100%;
+  padding: 7px 6px 8px;
+  text-align: center;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(15px, 2.2vw, 20px);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #1c0e08;
+  background: linear-gradient(180deg, #ef8a3a, #c45612);
+  border-radius: 3px;
+  box-shadow: 0 3px 0 #8a3408, 0 7px 10px rgba(0, 0, 0, 0.35);
+}
+
+.truco-anotador-half {
+  margin: 0;
+  width: 92%;
+  padding: 5px 8px 6px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  clip-path: polygon(8% 0, 92% 0, 100% 50%, 92% 100%, 8% 100%, 0 50%);
+}
+
+.truco-anotador-half.is-buenas {
+  color: #f7fbff;
+  background: linear-gradient(180deg, #8ec8ee, #4e96d0);
+  text-shadow: 0 1px 0 rgba(20, 40, 70, 0.35);
+}
+
+.truco-anotador-half.is-malas {
+  color: #f3e6d2;
+  background: linear-gradient(180deg, #4a4540, #1c1916);
+}
+
+.truco-anotador-groups {
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  gap: 1%;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+}
+
+.truco-anotador-group {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+}
+
+.truco-anotador-pile {
+  position: relative;
+  z-index: 3;
+  display: block;
+  width: 52%;
+  height: 100%;
+  margin: 0 auto;
 }
 
 .truco-log {
-  margin-top: 16px;
-  display: grid;
-  gap: 8px;
-  padding: 12px 14px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
   border-radius: 14px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: clamp(12px, 1.25dvh, 14px);
+}
+
+.truco-log-row {
+  margin: 0;
+  flex: 0 0 auto;
+  min-height: 2.35em;
+  padding: 0.35em 0.75em;
+  border-left: 3px solid transparent;
+  line-height: 1.35;
+}
+
+.truco-log-row.is-you:nth-child(odd) {
+  background: rgba(92, 150, 78, 0.22);
+  border-left-color: #8fce7a;
+  color: #e7f5d8;
+}
+
+.truco-log-row.is-you:nth-child(even) {
+  background: rgba(92, 150, 78, 0.1);
+  border-left-color: #8fce7a;
+  color: #d8eec8;
+}
+
+.truco-log-row.is-them:nth-child(odd) {
+  background: rgba(228, 180, 90, 0.22);
+  border-left-color: var(--gold);
+  color: #f7e4b4;
+}
+
+.truco-log-row.is-them:nth-child(even) {
+  background: rgba(228, 180, 90, 0.1);
+  border-left-color: var(--gold);
+  color: var(--gold-2);
+}
+
+.truco-log-row.is-meta:nth-child(odd) {
+  background: rgba(255, 244, 224, 0.06);
+  color: var(--muted);
+}
+
+.truco-log-row.is-meta:nth-child(even) {
   background: rgba(0, 0, 0, 0.16);
   color: var(--muted);
-  font-size: 13px;
 }
 
 .truco-log p {
@@ -1187,9 +1592,16 @@ button.truco-card:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  button.truco-card.is-playable,
+  .truco-hand.is-you .truco-card,
+  .truco-hand.is-you .truco-hand-slot .truco-card,
   button.truco-card.is-playable:hover:not(:disabled) {
     transform: none;
+    transition: none;
+  }
+
+  .truco-shout,
+  .truco-shout.is-waiting {
+    animation: none;
   }
 
   .damas-piece,
