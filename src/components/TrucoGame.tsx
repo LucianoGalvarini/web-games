@@ -6,7 +6,7 @@ import { TRUCO_MANUAL } from '../shared/manuals'
 import { logSide, logText, statusText, TARGET_SCORE } from '../truco'
 import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { SoundToggle } from './SoundToggle'
+import { TableHud } from './TableHud'
 import { TrucoAnotador } from './truco/TrucoAnotador'
 import { TrucoTable } from './truco/TrucoTable'
 
@@ -22,6 +22,7 @@ export function TrucoGame({ onBack }: TrucoGameProps) {
 
   return (
     <div className="app">
+      <TableHud onManual={() => setRulesOpen(true)} />
       <div className="shell truco-shell">
         <aside className="panel panel-controls" data-manual="controls">
           <header className="panel-header">
@@ -95,10 +96,6 @@ export function TrucoGame({ onBack }: TrucoGameProps) {
             </button>
             <button type="button" className="btn" onClick={() => game.resetGame()}>
               Nueva partida
-            </button>
-            <SoundToggle />
-            <button type="button" className="btn btn-ghost" onClick={() => setRulesOpen(true)}>
-              Manual
             </button>
             <button type="button" className="btn btn-ghost" onClick={onBack}>
               Elegir juego

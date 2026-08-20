@@ -4,7 +4,7 @@ import { TETRIS_MANUAL } from '../shared/manuals'
 import { NEXT_COUNT, PRESETS } from '../tetris'
 import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { SoundToggle } from './SoundToggle'
+import { TableHud } from './TableHud'
 import { MiniPiece } from './tetris/MiniPiece'
 import { TetrisBoard } from './tetris/TetrisBoard'
 
@@ -27,6 +27,7 @@ export function TetrisGame({ onBack }: TetrisGameProps) {
 
   return (
     <div className="app">
+      <TableHud onManual={() => setRulesOpen(true)} />
       <div className="shell tetris-shell">
         <aside className="panel panel-controls" data-manual="controls">
           <header className="panel-header">
@@ -62,10 +63,6 @@ export function TetrisGame({ onBack }: TetrisGameProps) {
               disabled={state.status !== 'playing'}
             >
               {game.paused ? 'Seguir' : 'Pausa'}
-            </button>
-            <SoundToggle />
-            <button type="button" className="btn btn-ghost" onClick={() => setRulesOpen(true)}>
-              Manual
             </button>
             <button type="button" className="btn btn-ghost" onClick={onBack}>
               Elegir juego

@@ -32,6 +32,7 @@ src/
     ResultOverlay.tsx
     ManualTour.tsx
     SoundToggle.tsx
+    TableHud.tsx
     FanoronaGame.tsx
     MorrisGame.tsx
     DamasGame.tsx
@@ -62,7 +63,8 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 
 - `shared/point.ts` y `shared/player.ts`: coordenadas, etiquetas y `isCpuTurn`.
 - `shared/types.ts`: `GameMode`, `Difficulty` (`easy` \| `medium` \| `hard` \| `perfect`), `GameId`.
-- `GamePanel`: modo, dificultad, color humano, selector de tablero/variante (Molino, Damas), sonido y Manual.
+- `GamePanel`: modo, dificultad, color humano, selector de tablero/variante (Molino, Damas).
+- `TableHud`: iconos fijos de manual y sonido, arriba a la derecha, en todos los juegos.
 - `Stone`: la misma piedra SVG en Fanorona y Molino.
 - Resultado: `resultTitle` / `resultEyebrow` / `resultVariant` según modo y color humano.
 - Sonido: `playSfx` en Web Audio (madera, cartas, clics, líneas). Mute en `localStorage`.

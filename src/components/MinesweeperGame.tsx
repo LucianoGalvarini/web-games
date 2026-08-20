@@ -5,7 +5,7 @@ import { MINESWEEPER_MANUAL } from '../shared/manuals'
 import { MinesweeperBoard } from './minesweeper/MinesweeperBoard'
 import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { SoundToggle } from './SoundToggle'
+import { TableHud } from './TableHud'
 
 type MinesweeperGameProps = {
   onBack: () => void
@@ -37,6 +37,7 @@ export function MinesweeperGame({ onBack }: MinesweeperGameProps) {
 
   return (
     <div className="app">
+      <TableHud onManual={() => setRulesOpen(true)} />
       <div className="shell minesweeper-shell">
         <aside className="panel panel-controls" data-manual="controls">
           <header className="panel-header">
@@ -79,10 +80,6 @@ export function MinesweeperGame({ onBack }: MinesweeperGameProps) {
             </button>
             <button type="button" className="btn" onClick={game.showHint} disabled={game.status !== 'playing'}>
               Pista
-            </button>
-            <SoundToggle />
-            <button type="button" className="btn btn-ghost" onClick={() => setRulesOpen(true)}>
-              Manual
             </button>
             <button type="button" className="btn btn-ghost" onClick={onBack}>
               Elegir juego

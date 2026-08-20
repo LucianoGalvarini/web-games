@@ -34,6 +34,7 @@ npm run dev
 | `npm run build` | Typecheck (`tsc -b`) + build de producción |
 | `npm run preview` | Sirve el build de `dist/` |
 | `npm run lint` | Oxlint |
+| `npm run test` | Selfcheck de los nueve motores |
 
 Stack: Vite 8, React 19, TypeScript. CSS propio, sin librería de componentes. Tipografías Cormorant Garamond y Outfit.
 

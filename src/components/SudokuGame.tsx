@@ -4,7 +4,7 @@ import { DIFFICULTIES, PRESETS } from '../sudoku'
 import { SUDOKU_MANUAL } from '../shared/manuals'
 import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
-import { SoundToggle } from './SoundToggle'
+import { TableHud } from './TableHud'
 import { SudokuBoard } from './sudoku/SudokuBoard'
 import { SudokuPad } from './sudoku/SudokuPad'
 
@@ -100,6 +100,7 @@ export function SudokuGame({ onBack }: SudokuGameProps) {
 
   return (
     <div className="app">
+      <TableHud onManual={() => setRulesOpen(true)} />
       <div className="shell sudoku-shell">
         <aside className="panel panel-controls" data-manual="controls">
           <header className="panel-header">
@@ -142,10 +143,6 @@ export function SudokuGame({ onBack }: SudokuGameProps) {
             </button>
             <button type="button" className="btn" onClick={game.revealCell} disabled={game.disabled}>
               Revelar casilla
-            </button>
-            <SoundToggle />
-            <button type="button" className="btn btn-ghost" onClick={() => setRulesOpen(true)}>
-              Manual
             </button>
             <button type="button" className="btn btn-ghost" onClick={onBack}>
               Elegir juego

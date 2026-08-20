@@ -1,7 +1,7 @@
 import { difficultyLabel } from '../shared/difficulty'
 import { isCpuTurn, playerLabel } from '../shared/player'
 import type { Difficulty, GameMode, Player, Winner } from '../shared/types'
-import { SoundToggle } from './SoundToggle'
+import { TableHud } from './TableHud'
 
 type VariantOption = {
   id: string
@@ -71,6 +71,7 @@ export function GamePanel({
 
   return (
     <>
+      <TableHud onManual={onRules} />
       <aside className="panel panel-controls" data-manual="controls">
         <header className="panel-header">
           <p className="eyebrow">{eyebrow}</p>
@@ -167,10 +168,6 @@ export function GamePanel({
           </button>
           <button type="button" className="btn" onClick={onReset}>
             Nueva partida
-          </button>
-          <SoundToggle />
-          <button type="button" className="btn btn-ghost" onClick={onRules}>
-            Manual
           </button>
           <button type="button" className="btn btn-ghost" onClick={onBack}>
             Elegir juego
