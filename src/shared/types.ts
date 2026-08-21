@@ -17,3 +17,4 @@ export type GameId =
   | 'ajedrez'
   | 'paisho'
   | 'doom'
+  | 'shogi'

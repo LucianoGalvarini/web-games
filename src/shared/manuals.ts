@@ -164,6 +164,46 @@ export const TETRIS_MANUAL: ManualStep[] = [
   },
 ]
 
+export const SHOGI_MANUAL: ManualStep[] = [
+  {
+    title: '¿Qué es el Shogi?',
+    body: 'La versión japonesa del ajedrez: tablero de 9×9, sin casillas de colores. Gana quien acorrala al rey rival. La gran diferencia con el ajedrez: acá las piezas que le comés al rival pasan a ser tuyas y las podés volver a poner en juego.',
+    spot: 'board',
+  },
+  {
+    title: 'Quién es quién',
+    body: 'Las piezas son de madera para los dos bandos y se distinguen por el tono (clara la tuya, oscura la del rival cuando jugás blancas) y porque apuntan hacia el otro lado del tablero. Cada bando arranca con rey, torre, alfil, dos oros, dos platas, dos caballos, dos lanzas y nueve peones. Empiezan las blancas.',
+    spot: 'board',
+  },
+  {
+    title: 'Cómo se mueve cada pieza',
+    body: 'Rey: una casilla en cualquier dirección. Oro: una casilla ortogonal o en diagonal hacia adelante (no hacia atrás en diagonal). Plata: en diagonal, o un paso derecho adelante. Caballo: salta dos adelante y uno al costado, siempre hacia adelante. Lanza: derecho hacia adelante, la distancia que quieras. Torre: en línea recta, cualquier distancia. Alfil: en diagonal, cualquier distancia. Peón: una casilla derecho adelante, y come igual que mueve (no en diagonal como en ajedrez).',
+    tryIt: 'Tocá una pieza propia: se marcan sus casillas posibles. Tocá una marcada para jugarla.',
+    spot: 'board',
+  },
+  {
+    title: 'La mano: tu arma secreta',
+    body: 'Cuando le comés una pieza al rival, no desaparece: pasa a tu mano (siempre "despromovida") y en cualquier turno futuro la podés tirar en una casilla vacía en vez de mover una pieza del tablero. Eso hace que el material nunca "se pierda" y que el ataque pueda venir de cualquier lado.',
+    tryIt: 'Con una pieza en la mano, tocala y después tocá una casilla vacía para tirarla.',
+    spot: 'hand',
+  },
+  {
+    title: 'Tirar tiene sus límites',
+    body: 'No podés tirar un peón en una columna donde ya tenés otro peón propio sin promocionar (nifu). Tampoco podés tirar una pieza en una casilla donde quedaría trabada para siempre (un peón o una lanza en la última fila, un caballo en las últimas dos). Y no podés tirar un peón si esa tirada da jaque mate en el acto — con cualquier otra pieza sí se puede.',
+    spot: 'hand',
+  },
+  {
+    title: 'Promoción',
+    body: 'Si tu pieza entra, se mueve dentro o sale de tus últimas tres filas, se puede promocionar: se da vuelta y queda con más movimiento (tinta roja en el kanji). Es obligatorio solo cuando, si no promocionás, la pieza queda sin ninguna jugada futura: peón o lanza en la última fila, caballo en las últimas dos.',
+    spot: 'board',
+  },
+  {
+    title: 'Cómo termina',
+    body: 'Gana quien deja al rival sin ninguna jugada legal (mover, comer o tirar), esté o no en jaque — a diferencia del ajedrez, en Shogi no existen las tablas por ahogado: sin jugadas siempre se pierde. Triple repetición de la misma posición sí es tablas.',
+    spot: 'board',
+  },
+]
+
 export const AJEDREZ_MANUAL: ManualStep[] = [
   {
     title: 'Piezas',

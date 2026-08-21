@@ -7,6 +7,7 @@ import { Home } from './components/Home'
 import { MinesweeperGame } from './components/MinesweeperGame'
 import { MorrisGame } from './components/MorrisGame'
 import { PaiShoGame } from './components/PaiShoGame'
+import { ShogiGame } from './components/ShogiGame'
 import { SudokuGame } from './components/SudokuGame'
 import { TetrisGame } from './components/TetrisGame'
 import { TrucoGame } from './components/TrucoGame'
@@ -57,6 +58,10 @@ export default function App() {
 
   if (game === 'doom') {
     return <DoomGame onBack={() => setGame(null)} />
+  }
+
+  if (game === 'shogi') {
+    return <ShogiGame onBack={() => setGame(null)} />
   }
 
   return null
