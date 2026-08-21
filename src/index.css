@@ -509,6 +509,9 @@ h2 {
   border-radius: 20px;
   padding: 22px 22px 18px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .manual-card h2 {
@@ -532,6 +535,11 @@ h2 {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 16px;
+  position: sticky;
+  bottom: -18px;
+  background: #24170f;
+  padding-bottom: 4px;
+  flex-shrink: 0;
 }
 
 .result-backdrop {
@@ -1866,7 +1874,10 @@ button.truco-card:disabled {
   .damas-piece.is-capturing .damas-piece-face,
   .ajedrez-piece,
   .ajedrez-glyph,
-  .ajedrez-piece.is-capturing .ajedrez-glyph {
+  .ajedrez-piece.is-capturing .ajedrez-glyph,
+  .shogi-piece,
+  .shogi-koma,
+  .shogi-piece.is-capturing .shogi-koma {
     animation: none !important;
     transition: none !important;
   }
@@ -1991,3 +2002,289 @@ button.truco-card:disabled {
 .tetris-mini-cell.is-Z { background: #b04c32; }
 .tetris-mini-cell.is-J { background: #3d6b9a; }
 .tetris-mini-cell.is-L { background: #c67a32; }
+
+.shogi-shell .panel h1 {
+  font-family: "Noto Serif JP", "Cormorant Garamond", Georgia, serif;
+}
+
+.shogi-table {
+  max-width: 560px;
+  justify-self: center;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  justify-items: center;
+}
+
+.shogi-field {
+  container-type: inline-size;
+  position: relative;
+  width: min(100%, 520px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  padding: clamp(10px, 1.1vw, 18px);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #dcb87c 0%, #c9a066 55%, #b8894d 100%);
+  box-shadow:
+    inset 0 0 0 6px #6d4320,
+    inset 0 0 0 8px rgba(232, 194, 122, 0.5);
+}
+
+.shogi-field.is-disabled .shogi-piece {
+  pointer-events: none;
+}
+
+.shogi-cells {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  width: 100%;
+  height: 100%;
+}
+
+.shogi-cell {
+  position: relative;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: transparent;
+  box-shadow: inset 0 0 0 0.5px rgba(45, 25, 12, 0.55);
+}
+
+.shogi-cell:disabled {
+  cursor: default;
+}
+
+.shogi-cell.is-target::after {
+  content: '';
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  border: 3px solid var(--gold);
+  background: rgba(228, 180, 90, 0.2);
+}
+
+.shogi-cell.is-last {
+  box-shadow: inset 0 0 0 100px rgba(228, 180, 90, 0.2);
+}
+
+.shogi-cell.is-selected {
+  box-shadow: inset 0 0 0 3px var(--gold);
+}
+
+.shogi-cell.is-check {
+  box-shadow: inset 0 0 0 100px rgba(176, 72, 36, 0.36);
+}
+
+.shogi-pieces {
+  position: absolute;
+  inset: clamp(10px, 1.1vw, 18px);
+  pointer-events: none;
+}
+
+.shogi-piece {
+  position: absolute;
+  width: calc(100% / 9);
+  height: calc(100% / 9);
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+  cursor: pointer;
+  transition:
+    left 280ms cubic-bezier(0.34, 1.1, 0.4, 1),
+    top 280ms cubic-bezier(0.34, 1.1, 0.4, 1);
+}
+
+.shogi-koma {
+  position: relative;
+  width: 84%;
+  height: 84%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #f0dfb8 0%, #e0c793 55%, #cda36a 100%);
+  clip-path: polygon(50% 0%, 88% 30%, 100% 100%, 0% 100%, 12% 30%);
+  box-shadow: 0 2px 3px rgba(20, 10, 4, 0.5);
+  border: 1px solid #7a4a1f;
+  animation: damasPiecePlace 220ms ease-out;
+  transition: transform 280ms cubic-bezier(0.34, 1.1, 0.4, 1);
+}
+
+.shogi-piece.is-rotated .shogi-koma {
+  transform: rotate(180deg);
+}
+
+.shogi-glyph {
+  font-family: "Noto Serif JP", "Cormorant Garamond", serif;
+  font-weight: 700;
+  font-size: clamp(11px, 3.6cqw, 22px);
+  line-height: 1;
+  color: #241910;
+  user-select: none;
+}
+
+.shogi-piece.is-promoted .shogi-glyph {
+  color: #a3241a;
+}
+
+/*
+ * Real shogi tells the two sides apart only by which way the piece points —
+ * but that's a hard read for anyone who hasn't trained on it. Two-tone wood
+ * sets exist in real life for exactly this reason, so pieces stay
+ * unmistakably "mine" vs. "theirs" at a glance while still reading as wood +
+ * kanji, not colored discs.
+ */
+.shogi-piece.is-black .shogi-koma {
+  background: linear-gradient(180deg, #6b4a2e 0%, #4a3320 55%, #34220f 100%);
+  border-color: #1e1206;
+}
+
+.shogi-piece.is-black .shogi-glyph {
+  color: #f0dfb8;
+}
+
+.shogi-piece.is-black.is-promoted .shogi-glyph {
+  color: #ff7a54;
+}
+
+.shogi-piece.is-selected .shogi-koma {
+  box-shadow:
+    0 2px 3px rgba(20, 10, 4, 0.5),
+    0 0 0 3px var(--gold);
+}
+
+.shogi-piece.is-target .shogi-koma {
+  box-shadow:
+    0 2px 3px rgba(20, 10, 4, 0.5),
+    0 0 0 3px rgba(228, 180, 90, 0.85);
+}
+
+.shogi-piece.is-check .shogi-koma {
+  box-shadow:
+    0 2px 3px rgba(20, 10, 4, 0.5),
+    0 0 0 3px rgba(176, 72, 36, 0.9);
+}
+
+.shogi-piece.is-capturing .shogi-koma {
+  animation: damasCaptureFade 250ms ease-in forwards;
+}
+
+.shogi-promo {
+  position: absolute;
+  inset: clamp(10px, 1.1vw, 18px);
+  display: grid;
+  place-items: center;
+  background: rgba(20, 10, 4, 0.62);
+  border-radius: 4px;
+  z-index: 2;
+}
+
+.shogi-promo p {
+  margin: 0 0 10px;
+  text-align: center;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 22px;
+  color: var(--gold-2);
+}
+
+.shogi-promo-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.shogi-hand {
+  width: 100%;
+  justify-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid transparent;
+}
+
+.shogi-hand.is-active {
+  border-color: var(--gold);
+  background: rgba(228, 180, 90, 0.1);
+}
+
+.shogi-hand-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.shogi-hand-pieces {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.shogi-hand-empty {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.shogi-hand-piece {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(243, 230, 210, 0.14);
+  background: linear-gradient(180deg, #e0c793 0%, #cda36a 100%);
+  cursor: pointer;
+}
+
+.shogi-hand-piece:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.shogi-hand-piece.is-black {
+  background: linear-gradient(180deg, #6b4a2e 0%, #4a3320 100%);
+  border-color: rgba(20, 12, 6, 0.4);
+}
+
+.shogi-hand-piece.is-black .shogi-glyph {
+  color: #f0dfb8;
+}
+
+.shogi-hand-piece.is-selected {
+  box-shadow: 0 0 0 3px var(--gold);
+}
+
+.shogi-hand-piece .shogi-glyph {
+  font-size: 15px;
+}
+
+.shogi-hand-count {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: #2d190c;
+  color: var(--gold-2);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .shogi-hand {
+    justify-content: center;
+  }
+}

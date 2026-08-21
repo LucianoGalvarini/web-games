@@ -15,3 +15,4 @@ export type GameId =
   | 'truco'
   | 'tetris'
   | 'ajedrez'
+  | 'shogi'

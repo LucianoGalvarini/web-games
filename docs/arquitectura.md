@@ -14,6 +14,7 @@ src/
   truco/                       # Motor Truco argentino
   tetris/                      # Motor Tetris
   ajedrez/                     # Motor Ajedrez
+  shogi/                       # Motor Shogi
   hooks/
     useFanorona.ts
     useMorris.ts
@@ -23,10 +24,11 @@ src/
     useTruco.ts
     useTetris.ts
     useAjedrez.ts
+    useShogi.ts
     useMuted.ts
   components/
     Home.tsx
-    GamePanel.tsx              # Controles y estadísticas de Fanorona, Molino, Damas y Ajedrez
+    GamePanel.tsx              # Controles y estadísticas de Fanorona, Molino, Damas, Ajedrez y Shogi
     ResultOverlay.tsx
     ManualTour.tsx
     SoundToggle.tsx
@@ -38,6 +40,7 @@ src/
     TrucoGame.tsx
     TetrisGame.tsx
     AjedrezGame.tsx
+    ShogiGame.tsx
     Board/                     # SVG Fanorona + piedras + motion
     morris/MorrisBoardView.tsx
     damas/DamasBoard.tsx       # Grilla 8×8, piezas en capa aparte
@@ -46,6 +49,7 @@ src/
     truco/                     # Naipes SVG y mesa
     tetris/                    # Pozo, minipiezas
     ajedrez/                   # Grilla 8×8, glifos SVG
+    shogi/                     # Grilla 9×9, piezas de madera con kanji
 ```
 
 `App` solo elige el juego. Cada motor se puede importar sin montar React.
@@ -67,7 +71,7 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 ## Decisiones de diseño
 
 - **Motor sin React.** Las reglas se pueden importar desde un script Node/tsx. Facilita tests y la IA.
-- **Turno = lista de pasos.** La CPU piensa secuencias completas, no un paso aislado: `captura+cadena` en Fanorona, `place/slide+remove` en Molino, cadena de saltos en Damas. En Ajedrez el turno es una sola jugada legal.
+- **Turno = lista de pasos.** La CPU piensa secuencias completas, no un paso aislado: `captura+cadena` en Fanorona, `place/slide+remove` en Molino, cadena de saltos en Damas. En Ajedrez y Shogi el turno es una sola jugada legal (mover o, en Shogi, tirar una pieza de la mano).
 - **Inmutabilidad.** `applyMove` clona; el deshacer guarda referencias a estados anteriores.
 - **Sin enums de TypeScript.** `erasableSyntaxOnly`; los tipos son uniones.
 - **Imports de tipos explícitos.** `verbatimModuleSyntax` exige `import type { ... }`.
@@ -78,4 +82,5 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 - Otra CPU: cambiar `chooseAiTurn` del juego correspondiente, sin tocar la UI.
 - Variante de Molino: agregar una entrada en `VARIANTS` (puntos, molinos, `flyingEnabled`).
 - Variante de Damas: agregar una entrada en `VARIANTS` (`flyingKing`); el tablero y la posición inicial son iguales en las dos.
+- Shogi es el único juego con texto en kanji (fuente Noto Serif JP, cargada en `index.html`) y piezas con forma en vez de color: se distinguen por rotación (`is-rotated`), no por `is-white`/`is-black` como el resto.
 - Variantes Fanoron-Telo (3×3) o Dimy (5×5): parametrizar `COLS`/`ROWS` y la posición inicial; la geometría de puntos fuertes se mantiene si el origen es fuerte.

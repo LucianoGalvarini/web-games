@@ -4,6 +4,9 @@ export type SfxName =
   | 'capture'
   | 'mill'
   | 'piece'
+  | 'koma'
+  | 'kane'
+  | 'kiru'
   | 'castle'
   | 'check'
   | 'promote'
@@ -224,6 +227,20 @@ export function playSfx(name: SfxName): void {
     case 'piece':
       thud(ctx, dest, 160, 0.11)
       burst(ctx, dest, 0.05, 0.2, 1200, 0.8)
+      break
+    case 'koma':
+      burst(ctx, dest, 0.028, 0.65, 2700, 2.4)
+      window.setTimeout(() => burst(ctx, dest, 0.022, 0.4, 1900, 2.6), 16)
+      tone(ctx, dest, 'triangle', 340, 0.05, 0.4, 190)
+      break
+    case 'kane':
+      tone(ctx, dest, 'sine', 660, 0.55, 0.4, 630)
+      tone(ctx, dest, 'sine', 1320, 0.4, 0.16, 1250)
+      burst(ctx, dest, 0.05, 0.3, 2600, 3.2)
+      break
+    case 'kiru':
+      burst(ctx, dest, 0.05, 0.68, 3200, 3.4)
+      tone(ctx, dest, 'sawtooth', 210, 0.07, 0.3, 60)
       break
     case 'capture':
       burst(ctx, dest, 0.09, 0.7, 420, 0.8)
