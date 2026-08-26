@@ -2803,7 +2803,7 @@ body.is-liga-wide {
   font-size: 15px;
 }
 
-.liga-start-panel .liga-party-info em {
+.liga-start-panel .liga-party-info strong em {
   color: #e09070;
 }
 
@@ -3122,8 +3122,8 @@ body.is-liga-wide {
   line-height: 1.1;
 }
 
-.liga-hud span,
-.liga-hud em {
+.liga-hud p span,
+.liga-hud > em {
   font-style: normal;
   font-size: 0.82em;
   color: #e09070;
@@ -3146,11 +3146,6 @@ body.is-liga-wide {
   color: #1c1810;
   border: 1px solid rgba(28, 24, 16, 0.28);
   text-transform: uppercase;
-}
-
-.liga-type.is-light {
-  color: #f4f0e8;
-  border-color: rgba(20, 16, 12, 0.45);
 }
 
 .liga-hud .liga-types {

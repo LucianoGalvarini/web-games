@@ -1,8 +1,6 @@
-import { TYPE_COLOR } from '../../liga/fx'
+import { TYPE_COLOR, TYPE_INK } from '../../liga/fx'
 import { TYPE_LABELS } from '../../liga/labels'
 import type { LigaType } from '../../liga/types'
-
-const LIGHT: ReadonlySet<LigaType> = new Set(['fighting', 'poison', 'water', 'ghost', 'dragon', 'dark'])
 
 type LigaTypesProps = {
   types: LigaType[]
@@ -14,8 +12,8 @@ export function LigaTypes({ types }: LigaTypesProps) {
       {types.map((type) => (
         <em
           key={type}
-          className={`liga-type${LIGHT.has(type) ? ' is-light' : ''}`}
-          style={{ background: TYPE_COLOR[type] }}
+          className="liga-type"
+          style={{ background: TYPE_COLOR[type], color: TYPE_INK[type] }}
         >
           {TYPE_LABELS[type]}
         </em>

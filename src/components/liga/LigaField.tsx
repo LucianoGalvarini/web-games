@@ -116,6 +116,69 @@ function bolt(
   ctx.stroke()
 }
 
+function along(
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  p: number,
+): { x: number; y: number } {
+  return { x: fromX + (toX - fromX) * p, y: fromY + (toY - fromY) * p }
+}
+
+function flame(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string, tip: string): void {
+  ctx.fillStyle = color
+  ctx.beginPath()
+  ctx.moveTo(x, y - size * 1.6)
+  ctx.quadraticCurveTo(x + size, y - size * 0.2, x, y + size * 0.6)
+  ctx.quadraticCurveTo(x - size, y - size * 0.2, x, y - size * 1.6)
+  ctx.fill()
+  ctx.fillStyle = tip
+  ctx.beginPath()
+  ctx.ellipse(x, y - size * 0.15, size * 0.38, size * 0.7, 0, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+function leaf(ctx: CanvasRenderingContext2D, x: number, y: number, rot: number, color: string): void {
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.rotate(rot)
+  ctx.fillStyle = color
+  ctx.beginPath()
+  ctx.ellipse(0, 0, 8, 3.2, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = shade(color, -40)
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(-7, 0)
+  ctx.lineTo(7, 0)
+  ctx.stroke()
+  ctx.restore()
+}
+
+function shard(ctx: CanvasRenderingContext2D, x: number, y: number, rot: number, color: string): void {
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.rotate(rot)
+  ctx.fillStyle = color
+  ctx.beginPath()
+  ctx.moveTo(0, -9)
+  ctx.lineTo(4, 2)
+  ctx.lineTo(0, 8)
+  ctx.lineTo(-4, 2)
+  ctx.closePath()
+  ctx.fill()
+  ctx.fillStyle = '#fff'
+  ctx.globalAlpha *= 0.55
+  ctx.beginPath()
+  ctx.moveTo(0, -6)
+  ctx.lineTo(1.4, 0)
+  ctx.lineTo(0, 3)
+  ctx.closePath()
+  ctx.fill()
+  ctx.restore()
+}
+
 function drawFx(
   ctx: CanvasRenderingContext2D,
   type: LigaType,
@@ -130,10 +193,11 @@ function drawFx(
   const x = fromX + (toX - fromX) * travel
   const y = fromY + (toY - fromY) * travel
   ctx.save()
-  ctx.globalAlpha = t < 0.08 ? t / 0.08 : t > 0.88 ? Math.max(0, (1 - t) / 0.12) : 1
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  const fade = t < 0.08 ? t / 0.08 : t > 0.88 ? Math.max(0, (1 - t) / 0.12) : 1
+  ctx.globalAlpha = fade
   if (type === 'electric') {
-    ctx.lineJoin = 'round'
-    ctx.lineCap = 'round'
     bolt(ctx, fromX, fromY, x, y, 1, shade(color, -40), 5)
     bolt(ctx, fromX, fromY, x, y, 1, color, 3)
     bolt(ctx, fromX, fromY, x, y, 1, '#fff6c8', 1)
@@ -148,89 +212,227 @@ function drawFx(
       ctx.fill()
     }
   } else if (type === 'fire') {
-    for (let i = 0; i < 5; i += 1) {
-      ctx.fillStyle = i % 2 === 0 ? color : shade(color, 50)
-      ctx.beginPath()
-      ctx.arc(x - 4 + i * 3, y - 6 - (i % 3) * 3, 8 - i, 0, Math.PI * 2)
-      ctx.fill()
+    for (let i = 6; i >= 0; i -= 1) {
+      const p = travel - i * 0.07
+      if (p <= 0) {
+        continue
+      }
+      const pos = along(fromX, fromY, toX, toY, p)
+      flame(ctx, pos.x + (i % 2) * 3 - 1, pos.y - i * 1.4, 9 - i * 0.7, i % 2 === 0 ? color : shade(color, 36), i < 2 ? '#fff4c8' : '#f0c050')
+    }
+    if (t > 0.5) {
+      flame(ctx, toX, toY + 2, 16 + (t - 0.5) * 10, color, '#fff4c0')
+      flame(ctx, toX - 10, toY + 4, 10, shade(color, -20), '#f0a848')
+      flame(ctx, toX + 11, toY + 3, 9, shade(color, 20), '#ffe078')
     }
   } else if (type === 'water') {
-    ctx.fillStyle = color
+    for (let i = 0; i < 5; i += 1) {
+      const p = Math.max(0, travel - i * 0.09)
+      const pos = along(fromX, fromY, toX, toY, p)
+      ctx.fillStyle = i === 0 ? '#d8f0ff' : color
+      ctx.beginPath()
+      ctx.ellipse(pos.x, pos.y, 12 - i * 1.6, 6 - i * 0.7, travel * 0.8, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.fillStyle = '#fff'
     ctx.beginPath()
-    ctx.ellipse(x, y, 13, 7, travel, 0, Math.PI * 2)
+    ctx.ellipse(x - 3, y - 2, 4, 2, 0.4, 0, Math.PI * 2)
     ctx.fill()
-    ctx.globalAlpha *= 0.7
-    ctx.beginPath()
-    ctx.ellipse(x - 8, y + 4, 7, 4, 0.4, 0, Math.PI * 2)
-    ctx.fill()
+    if (t > 0.5) {
+      ctx.globalAlpha = Math.max(0, 1 - (t - 0.5) * 2)
+      ctx.strokeStyle = '#c8e8ff'
+      ctx.lineWidth = 2
+      for (let r = 8; r <= 22; r += 7) {
+        ctx.beginPath()
+        ctx.ellipse(toX, toY + 4, r + (t - 0.5) * 16, r * 0.45, 0, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+    }
   } else if (type === 'ice') {
-    ctx.strokeStyle = color
-    ctx.lineWidth = 2
+    for (let i = 0; i < 4; i += 1) {
+      const p = Math.max(0, travel - i * 0.12)
+      const pos = along(fromX, fromY, toX, toY, p)
+      shard(ctx, pos.x, pos.y, t * 6 + i, color)
+    }
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 1.5
     for (let i = 0; i < 6; i += 1) {
-      const a = (i / 6) * Math.PI * 2 + t * 4
+      const a = (i / 6) * Math.PI * 2 + t * 3
       ctx.beginPath()
       ctx.moveTo(x, y)
-      ctx.lineTo(x + Math.cos(a) * 12, y + Math.sin(a) * 12)
+      ctx.lineTo(x + Math.cos(a) * 11, y + Math.sin(a) * 11)
       ctx.stroke()
     }
-  } else if (type === 'grass' || type === 'bug') {
-    ctx.fillStyle = color
-    for (let i = 0; i < 5; i += 1) {
+    if (t > 0.5) {
+      ctx.fillStyle = 'rgba(220, 244, 255, 0.35)'
       ctx.beginPath()
-      ctx.ellipse(x + i * 4 - 6, y + (i % 2) * 4, 7, 3, 0.5, 0, Math.PI * 2)
+      ctx.arc(toX, toY, 10 + (t - 0.5) * 16, 0, Math.PI * 2)
       ctx.fill()
+    }
+  } else if (type === 'grass' || type === 'bug') {
+    for (let i = 0; i < 6; i += 1) {
+      const p = Math.max(0, travel - i * 0.08)
+      const pos = along(fromX, fromY, toX, toY, p)
+      leaf(ctx, pos.x + ((i % 2) * 6 - 3), pos.y + (i % 3) - 2, 0.4 + i * 0.5 + t * 2, i % 2 === 0 ? color : shade(color, 30))
+    }
+    if (t > 0.5) {
+      for (let i = 0; i < 7; i += 1) {
+        const a = (i / 7) * Math.PI * 2
+        leaf(ctx, toX + Math.cos(a) * (8 + (t - 0.5) * 14), toY + Math.sin(a) * (6 + (t - 0.5) * 10), a, color)
+      }
     }
   } else if (type === 'poison') {
-    ctx.fillStyle = color
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < 5; i += 1) {
+      const p = Math.max(0, travel - i * 0.1)
+      const pos = along(fromX, fromY, toX, toY, p)
+      const r = 5 + (i % 3)
+      ctx.fillStyle = i % 2 === 0 ? color : shade(color, 40)
       ctx.beginPath()
-      ctx.arc(x + i * 5 - 5, y - (t * 8 + i * 2), 5 + i, 0, Math.PI * 2)
+      ctx.arc(pos.x, pos.y - i * 3 - t * 6, r, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'
+      ctx.beginPath()
+      ctx.arc(pos.x - 1.4, pos.y - i * 3 - t * 6 - 1.5, r * 0.28, 0, Math.PI * 2)
       ctx.fill()
     }
-  } else if (type === 'psychic' || type === 'ghost' || type === 'dark') {
+    if (t > 0.52) {
+      ctx.strokeStyle = color
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(toX, toY, 8 + (t - 0.52) * 18, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+  } else if (type === 'psychic') {
     ctx.strokeStyle = color
-    ctx.lineWidth = 3
+    for (let i = 1; i <= 3; i += 1) {
+      ctx.lineWidth = 4 - i
+      ctx.beginPath()
+      ctx.arc(x, y, 4 + i * 6 + t * 10, t * 8, t * 8 + 4.2)
+      ctx.stroke()
+    }
+    ctx.fillStyle = '#fff'
     ctx.beginPath()
-    ctx.arc(x, y, 6 + t * 16, 0, Math.PI * 2)
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.arc(x, y, 3 + t * 8, 0, Math.PI * 2)
-    ctx.stroke()
-  } else if (type === 'dragon') {
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.arc(x, y, 12, 0, Math.PI * 2)
+    ctx.arc(x, y, 3, 0, Math.PI * 2)
     ctx.fill()
-    ctx.strokeStyle = shade(color, 60)
+    if (t > 0.48) {
+      ctx.strokeStyle = '#ffd0ea'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(toX, toY, 6 + (t - 0.48) * 22, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+  } else if (type === 'ghost' || type === 'dark') {
+    const base = ctx.globalAlpha
+    for (let i = 0; i < 4; i += 1) {
+      const p = Math.max(0, travel - i * 0.11)
+      const pos = along(fromX, fromY, toX, toY, p)
+      ctx.globalAlpha = base * (0.9 - i * 0.15)
+      ctx.fillStyle = color
+      ctx.beginPath()
+      ctx.ellipse(pos.x, pos.y, 10 - i, 14 - i * 2, 0.2, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.globalAlpha = fade
+    ctx.fillStyle = '#1a1020'
+    ctx.beginPath()
+    ctx.arc(x - 3, y - 2, 1.6, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(x + 3, y - 2, 1.6, 0, Math.PI * 2)
+    ctx.fill()
+    if (t > 0.5) {
+      ctx.strokeStyle = shade(color, 50)
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.arc(toX, toY, 12 + (t - 0.5) * 14, 0.4, 2.6)
+      ctx.stroke()
+    }
+  } else if (type === 'dragon') {
+    for (let i = 5; i >= 0; i -= 1) {
+      const p = Math.max(0, travel - i * 0.06)
+      const pos = along(fromX, fromY, toX, toY, p)
+      ctx.fillStyle = i === 0 ? '#e8d8ff' : color
+      ctx.beginPath()
+      ctx.arc(pos.x, pos.y, 11 - i * 1.4, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.strokeStyle = shade(color, 70)
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.arc(x, y, 16 + t * 8, 0, Math.PI * 2)
+    ctx.arc(x, y, 14 + t * 6, 0, Math.PI * 2)
     ctx.stroke()
+    if (t > 0.5) {
+      ctx.strokeStyle = '#fff'
+      ctx.beginPath()
+      ctx.arc(toX, toY, 8 + (t - 0.5) * 20, 0, Math.PI * 2)
+      ctx.stroke()
+    }
   } else if (type === 'rock' || type === 'ground' || type === 'steel') {
-    ctx.fillStyle = color
-    ctx.fillRect(x - 6, y - 6, 12, 12)
-    ctx.fillRect(x + 4, y - 3, 8, 8)
-    ctx.fillRect(x - 12, y + 1, 7, 7)
+    for (let i = 0; i < 4; i += 1) {
+      const p = Math.max(0, travel - i * 0.1)
+      const pos = along(fromX, fromY, toX, toY, p)
+      const spin = t * 10 + i
+      ctx.save()
+      ctx.translate(pos.x, pos.y)
+      ctx.rotate(spin)
+      ctx.fillStyle = i % 2 === 0 ? color : shade(color, -25)
+      ctx.fillRect(-6, -5, 12, 10)
+      if (type === 'steel') {
+        ctx.fillStyle = '#fff'
+        ctx.globalAlpha *= 0.4
+        ctx.fillRect(-4, -3, 5, 2)
+      }
+      ctx.restore()
+    }
+    if (t > 0.5) {
+      ctx.fillStyle = color
+      ctx.fillRect(toX - 8, toY - 4, 7, 7)
+      ctx.fillRect(toX + 2, toY - 7, 9, 6)
+      ctx.fillRect(toX - 3, toY + 3, 6, 6)
+    }
   } else if (type === 'fighting') {
-    ctx.strokeStyle = color
-    ctx.lineWidth = 5
+    ctx.strokeStyle = shade(color, -30)
+    ctx.lineWidth = 7
     ctx.beginPath()
-    ctx.arc(x, y, 10 + t * 8, 0.2, 2.4)
+    ctx.arc(x, y, 11, 0.15, 2.5)
     ctx.stroke()
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.arc(x + 6, y + 2, 5, 0, Math.PI * 2)
-    ctx.fill()
-  } else {
     ctx.strokeStyle = color
     ctx.lineWidth = 4
     ctx.beginPath()
-    ctx.moveTo(x - 14, y - 6)
-    ctx.lineTo(x + 16, y + 4)
-    ctx.moveTo(x - 12, y + 8)
-    ctx.lineTo(x + 14, y - 4)
+    ctx.arc(x, y, 11, 0.15, 2.5)
     ctx.stroke()
+    ctx.fillStyle = '#fff'
+    ctx.beginPath()
+    ctx.arc(x + 7, y + 1, 3, 0, Math.PI * 2)
+    ctx.fill()
+    if (t > 0.5) {
+      ctx.strokeStyle = '#ffe8d0'
+      ctx.lineWidth = 2
+      for (let i = 0; i < 8; i += 1) {
+        const a = (i / 8) * Math.PI * 2
+        const reach = 10 + (t - 0.5) * 16
+        ctx.beginPath()
+        ctx.moveTo(toX + Math.cos(a) * 4, toY + Math.sin(a) * 4)
+        ctx.lineTo(toX + Math.cos(a) * reach, toY + Math.sin(a) * reach)
+        ctx.stroke()
+      }
+    }
+  } else {
+    const slash = (ox: number, oy: number, w: number, c: string) => {
+      ctx.strokeStyle = c
+      ctx.lineWidth = w
+      ctx.beginPath()
+      ctx.moveTo(x - 16 + ox, y - 7 + oy)
+      ctx.lineTo(x + 18 + ox, y + 5 + oy)
+      ctx.moveTo(x - 14 + ox, y + 9 + oy)
+      ctx.lineTo(x + 16 + ox, y - 5 + oy)
+      ctx.stroke()
+    }
+    slash(0, 0, 6, shade(color, -40))
+    slash(0, 0, 3, color)
+    slash(0, 0, 1, '#fff')
   }
+  ctx.globalAlpha = fade
   burst(ctx, toX, toY, t, color)
   ctx.restore()
 }

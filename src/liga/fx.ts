@@ -31,6 +31,26 @@ export const TYPE_COLOR: Record<LigaType, string> = {
   steel: '#b8b8d0',
 }
 
+export const TYPE_INK: Record<LigaType, string> = {
+  normal: '#201810',
+  fire: '#1a0c08',
+  water: '#f4f8fc',
+  electric: '#201808',
+  grass: '#0c180c',
+  ice: '#102028',
+  fighting: '#fff4f0',
+  poison: '#fcf4ff',
+  ground: '#201808',
+  flying: '#102028',
+  psychic: '#1a0810',
+  bug: '#141808',
+  rock: '#1c1408',
+  ghost: '#f4f0fc',
+  dragon: '#f6f2ff',
+  dark: '#f8f4ec',
+  steel: '#14141c',
+}
+
 export const FIELD_THEME: Record<
   LigaTrainerId,
   { sky: string; sky2: string; wall: string; floor: string; accent: string; platform: string }
