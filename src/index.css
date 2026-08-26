@@ -3008,11 +3008,11 @@ body.is-liga-wide {
   bottom: 10px;
   margin: 0;
   padding: 12px 16px 14px;
-  color: #f4f6fa;
-  background: linear-gradient(#5c6478, #3e4658);
-  border: 4px solid #1c2434;
-  border-radius: 14px;
-  box-shadow: inset 0 0 0 3px #c8d0e0, 0 4px 0 #12161e;
+  color: #e6e2d6;
+  background: #16141f;
+  border: 4px solid #5c5078;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 3px #2a2438;
 }
 
 .liga-dialog::before,
@@ -3023,9 +3023,9 @@ body.is-liga-wide {
   left: 14px;
   width: 20px;
   height: 11px;
-  background: #e04830;
+  background: #e0b060;
   border-radius: 4px 4px 0 0;
-  box-shadow: 0 0 0 2px #1c2434;
+  box-shadow: 0 0 0 2px #5c5078;
 }
 
 @media (max-width: 900px), (hover: none) {
@@ -3035,8 +3035,8 @@ body.is-liga-wide {
     bottom: 6px;
     padding: 6px 10px 8px;
     border-width: 3px;
-    border-radius: 10px;
-    box-shadow: inset 0 0 0 2px #c8d0e0, 0 3px 0 #12161e;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 2px #2a2438;
   }
 
   .liga-dialog::before {
@@ -3075,7 +3075,7 @@ body.is-liga-wide {
   height: 100%;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  color: #201828;
+  color: #e6e2d6;
   position: relative;
   container-type: size;
   container-name: liga;
@@ -3088,13 +3088,11 @@ body.is-liga-wide {
   max-width: 13.5em;
   min-width: 10.5em;
   padding: 10px 12px 12px;
-  background: linear-gradient(#fffef8 0%, #f3e6c8 62%, #e4d2a8 100%);
-  border: 3px solid #24382c;
-  border-radius: 10px 5px 12px 6px;
-  box-shadow:
-    5px 6px 0 #15241c,
-    inset 0 2px 0 #fff,
-    inset 0 -3px 0 rgba(72, 56, 28, 0.22);
+  color: #ece8dc;
+  background: #221e2e;
+  border: 1px solid #4a4460;
+  border-radius: 8px;
+  box-shadow: none;
   font-size: 20px;
   display: flex;
   flex-direction: column;
@@ -3128,7 +3126,7 @@ body.is-liga-wide {
 .liga-hud em {
   font-style: normal;
   font-size: 0.82em;
-  color: #5a5040;
+  color: #e09070;
 }
 
 .liga-types {
@@ -3172,7 +3170,7 @@ body.is-liga-wide {
   grid-template-columns: 1.15fr 1.2fr;
   gap: 10px;
   padding: 10px 12px 12px;
-  background: linear-gradient(#2a3040, #1a202c);
+  background: #121018;
   min-height: 34%;
 }
 
@@ -3348,27 +3346,28 @@ body.is-liga-wide {
 
 .liga-textbox {
   padding: 12px 16px 14px;
-  color: #f4f6fa;
-  background: linear-gradient(#5c6478, #3e4658);
-  border: 5px solid #1c2434;
-  border-radius: 16px;
-  box-shadow: inset 0 0 0 3px #c8d0e0, 0 5px 0 #12161e;
+  color: #e6e2d6;
+  background: #16141f;
+  border: 4px solid #5c5078;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 3px #2a2438;
 }
 
 .liga-textbox p,
 .liga-dialog p {
   margin: 0;
-  text-shadow: 0 2px 0 #1c2434;
+  text-shadow: none;
   line-height: 1.25;
 }
 
 .liga-cmd {
-  background: linear-gradient(#f7edd4, #e8d8b4);
-  border: 6px solid #3c2870;
-  border-radius: 20px;
-  box-shadow: inset 0 0 0 3px #c8b890, 0 5px 0 #1c1438;
-  color: #201828;
+  background: #16141f;
+  border: 4px solid #5c5078;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 3px #2a2438;
+  color: #e6e2d6;
   min-width: 0;
+  overflow-x: hidden;
   font-size: 22px;
   animation: liga-pop 0.16s ease-out;
 }
@@ -3410,7 +3409,7 @@ body.is-liga-wide {
 
 .liga-gba-grid li.is-cursor,
 .liga-gba-list li.is-cursor {
-  transform: translateX(3px);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .liga-gba-grid li.is-cursor::before,
@@ -3421,7 +3420,7 @@ body.is-liga-wide {
   top: 0.45em;
   border-style: solid;
   border-width: 6px 0 6px 8px;
-  border-color: transparent transparent transparent #201828;
+  border-color: transparent transparent transparent #f0d070;
   animation: liga-caret 0.45s steps(2) infinite;
 }
 
@@ -3442,8 +3441,9 @@ body.is-liga-wide {
   justify-content: center;
   gap: 4px;
   padding: 8px 12px 8px 8px;
-  border-left: 3px solid #3c2870;
+  border-left: 1px solid #4a4460;
   min-width: 6.5em;
+  color: #b8b0c8;
 }
 
 .liga-pp p {
@@ -3454,7 +3454,8 @@ body.is-liga-wide {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   max-height: 22vh;
 }
 
@@ -3466,10 +3467,11 @@ body.is-liga-wide {
   padding-top: 3px;
   padding-bottom: 3px;
   padding-right: 8px;
+  min-width: 0;
 }
 
 .liga-gba-list li.is-cursor {
-  background: rgba(60, 40, 112, 0.12);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .liga-item-icon {
@@ -3520,14 +3522,15 @@ body.is-liga-wide {
   position: relative;
   padding: 4px 8px 5px 16px;
   border-radius: 8px;
-  background: linear-gradient(#fff8e8, #ead8b0);
-  border: 3px solid #4a3860;
-  box-shadow: inset 0 1px 0 #fff, 2px 3px 0 rgba(28, 20, 56, 0.45);
+  color: #ece8dc;
+  background: #221e2e;
+  border: 1px solid #4a4460;
+  box-shadow: none;
 }
 
 .liga-party li.is-cursor {
-  background: linear-gradient(#fffef4, #f4e6b8);
-  box-shadow: inset 0 0 0 2px #f0d050, 2px 3px 0 rgba(28, 20, 56, 0.45);
+  background: #2e2840;
+  box-shadow: inset 0 0 0 1px #e0b060;
 }
 
 .liga-party li.is-cursor::before {
@@ -3538,7 +3541,7 @@ body.is-liga-wide {
   margin-top: -6px;
   border-style: solid;
   border-width: 6px 0 6px 8px;
-  border-color: transparent transparent transparent #201828;
+  border-color: transparent transparent transparent #f0d070;
   animation: liga-caret 0.45s steps(2) infinite;
 }
 
@@ -3551,9 +3554,9 @@ body.is-liga-wide {
   height: 40px;
   image-rendering: pixelated;
   flex: 0 0 auto;
-  background: #d4c090;
+  background: #16141f;
   border-radius: 4px;
-  box-shadow: inset 0 0 0 2px #c0a870;
+  box-shadow: inset 0 0 0 1px #3a3450;
 }
 
 .liga-party-info {
@@ -3672,7 +3675,7 @@ body.is-liga-wide {
 
 .liga-hp-num {
   font-size: 15px;
-  color: #201828;
+  color: #c8c0b4;
   min-width: 4.5em;
   white-space: nowrap;
 }
@@ -3708,7 +3711,7 @@ body.is-liga-wide {
 }
 
 .liga-hud .liga-hp-num {
-  color: #201828;
+  color: #c8c0b4;
 }
 
 @container liga (max-width: 720px) or (max-height: 520px) {
@@ -3719,12 +3722,9 @@ body.is-liga-wide {
     font-size: 12px;
     padding: 4px 6px 5px;
     gap: 2px;
-    border-width: 2px;
-    border-radius: 6px 3px 8px 4px;
-    box-shadow:
-      3px 3px 0 #15241c,
-      inset 0 1px 0 #fff,
-      inset 0 -2px 0 rgba(72, 56, 28, 0.22);
+    border-width: 1px;
+    border-radius: 6px;
+    box-shadow: none;
   }
 
   .liga-hud.is-foe {
@@ -3786,8 +3786,8 @@ body.is-liga-wide {
   .liga-textbox {
     padding: 5px 8px 6px;
     border-width: 3px;
-    border-radius: 8px;
-    box-shadow: inset 0 0 0 2px #c8d0e0, 0 3px 0 #12161e;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 2px #2a2438;
     font-size: 12px;
   }
 
@@ -3805,8 +3805,8 @@ body.is-liga-wide {
   .liga-cmd {
     font-size: 13px;
     border-width: 3px;
-    border-radius: 10px;
-    box-shadow: inset 0 0 0 2px #c8b890, 0 3px 0 #1c1438;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 2px #2a2438;
   }
 
   .liga-gba-grid,
@@ -3910,9 +3910,9 @@ body.is-liga-wide {
   .liga-party li {
     padding: 2px 4px 2px 12px;
     gap: 4px;
-    border-width: 2px;
+    border-width: 1px;
     border-radius: 5px;
-    box-shadow: inset 0 1px 0 #fff, 1px 2px 0 rgba(28, 20, 56, 0.45);
+    box-shadow: none;
   }
 
   .liga-party li.is-cursor::before {
