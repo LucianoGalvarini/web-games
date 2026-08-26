@@ -34,24 +34,45 @@ function holeOf(spot: ManualSpot | undefined): Hole | null {
   }
 }
 
+const CARD_MARGIN = 16
+const MIN_SPACE = 220
+
 function cardStyle(hole: Hole | null): CSSProperties {
-  const width = Math.min(380, window.innerWidth - 32)
+  const width = Math.min(380, window.innerWidth - CARD_MARGIN * 2)
+
   if (!hole) {
     return {
       top: '50%',
       left: '50%',
       width,
+      maxHeight: window.innerHeight - CARD_MARGIN * 2,
       transform: 'translate(-50%, -50%)',
     }
   }
-  const below = hole.top + hole.height + 16
-  const fitsBelow = below + 240 < window.innerHeight
-  const top = fitsBelow ? below : Math.max(16, hole.top - 16 - 220)
-  let left = hole.left
-  if (left + width > window.innerWidth - 16) {
-    left = window.innerWidth - width - 16
+
+  const spaceBelow = window.innerHeight - (hole.top + hole.height) - CARD_MARGIN
+  const spaceAbove = hole.top - CARD_MARGIN
+
+  let top: number
+  if (spaceBelow >= MIN_SPACE || spaceBelow >= spaceAbove) {
+    top = hole.top + hole.height + CARD_MARGIN
+  } else {
+    top = Math.max(CARD_MARGIN, hole.top - CARD_MARGIN - spaceAbove)
   }
-  return { top, left, width }
+
+  // If the highlighted region is taller than the viewport (a tall board, say),
+  // neither "below" nor "above" has room — pin the card near the top instead
+  // of letting it drift off-screen, and let it scroll internally if it's tall.
+  const maxTop = Math.max(CARD_MARGIN, window.innerHeight - CARD_MARGIN - MIN_SPACE)
+  top = Math.min(Math.max(CARD_MARGIN, top), maxTop)
+
+  let left = hole.left
+  if (left + width > window.innerWidth - CARD_MARGIN) {
+    left = window.innerWidth - width - CARD_MARGIN
+  }
+  left = Math.max(CARD_MARGIN, left)
+
+  return { top, left, width, maxHeight: window.innerHeight - top - CARD_MARGIN }
 }
 
 export function ManualTour({ open, title = 'Manual', steps, onClose }: ManualTourProps) {
@@ -71,7 +92,12 @@ export function ManualTour({ open, title = 'Manual', steps, onClose }: ManualTou
     if (!open) {
       return
     }
-    const measure = () => setHole(holeOf(step?.spot))
+    const spot = step?.spot
+    const node = spot ? document.querySelector(`[data-manual="${spot}"]`) : null
+    if (node instanceof HTMLElement) {
+      node.scrollIntoView({ block: 'center', behavior: 'auto' })
+    }
+    const measure = () => setHole(holeOf(spot))
     measure()
     window.addEventListener('resize', measure)
     window.addEventListener('scroll', measure, true)

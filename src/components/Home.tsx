@@ -11,7 +11,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Once juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Doce juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -245,6 +245,51 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">FPS</p>
             <h2>Doom</h2>
             <p>Shareware de 1993 en el navegador. Primer episodio, teclado y ratón.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('shogi')}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="16" y="4" width="58" height="42" rx="4" fill="#c9a066" />
+            <g stroke="#5b3918" strokeWidth="0.7" opacity="0.85">
+              {Array.from({ length: 6 }, (_, i) => (
+                <line key={`v${i}`} x1={20 + i * 10} y1="8.5" x2={20 + i * 10} y2="41.5" />
+              ))}
+              {Array.from({ length: 5 }, (_, i) => (
+                <line key={`h${i}`} x1="20" y1={8.5 + i * 8.25} x2="70" y2={8.5 + i * 8.25} />
+              ))}
+            </g>
+            <path d="M38.5 14.7l4.5-5.4 4.5 5.4-1.1 5.6h-6.8z" fill="#f0dfb8" stroke="#5b3918" strokeWidth="0.9" />
+            <text
+              x="43"
+              y="18.9"
+              fontSize="5.4"
+              textAnchor="middle"
+              fontFamily="'Noto Serif JP', serif"
+              fontWeight="700"
+              fill="#2d190c"
+            >
+              王
+            </text>
+            <g transform="rotate(180 51.5 33.4)">
+              <path d="M47 30.7l4.5-5.4 4.5 5.4-1.1 5.6h-6.8z" fill="#4a3320" stroke="#241608" strokeWidth="0.9" />
+              <text
+                x="51.5"
+                y="34.9"
+                fontSize="5.4"
+                textAnchor="middle"
+                fontFamily="'Noto Serif JP', serif"
+                fontWeight="700"
+                fill="#f0dfb8"
+              >
+                歩
+              </text>
+            </g>
+          </svg>
+          <div>
+            <p className="eyebrow">Japón</p>
+            <h2>Shogi</h2>
+            <p>Ajedrez japonés de 9×9. Las piezas comidas vuelven a la mano y se pueden tirar.</p>
           </div>
         </button>
 
