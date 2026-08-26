@@ -2321,7 +2321,8 @@ button.truco-card:disabled {
   letter-spacing: 0.02em;
 }
 
-.liga-screen:fullscreen {
+.liga-screen:fullscreen,
+.liga-screen.is-wide {
   aspect-ratio: auto;
   max-height: none;
   width: 100%;
@@ -2333,14 +2334,26 @@ button.truco-card:disabled {
   justify-content: center;
 }
 
-.liga-screen:fullscreen .liga-canvas,
-.liga-screen:fullscreen .liga-battle {
-  width: min(100vw, calc(100vh * 13 / 11));
-  height: min(100vh, calc(100vw * 11 / 13));
+.liga-screen.is-wide:not(:fullscreen) {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  height: 100dvh;
+  width: 100vw;
 }
 
-.liga-screen:fullscreen .liga-chrome {
+.liga-screen:fullscreen .liga-stage,
+.liga-screen.is-wide .liga-stage {
+  width: min(100vw, calc(100dvh * 13 / 11));
+  height: min(100dvh, calc(100vw * 11 / 13));
+  flex: 0 0 auto;
+}
+
+.liga-screen:fullscreen .liga-chrome,
+.liga-screen.is-wide .liga-chrome {
   position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
 }
 
 .liga-chrome {
@@ -2372,11 +2385,243 @@ button.truco-card:disabled {
   width: 148px;
 }
 
+.liga-pad {
+  display: none;
+  pointer-events: none;
+  z-index: 9;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.liga-dpad,
+.liga-pad-ab,
+.liga-pad-btn {
+  pointer-events: auto;
+}
+
+.liga-dpad {
+  display: grid;
+  grid-template-columns: 52px 52px 52px;
+  grid-template-rows: 52px 52px 52px;
+  grid-template-areas:
+    ". n ."
+    "w . e"
+    ". s .";
+  gap: 4px;
+}
+
+.liga-pad-btn {
+  margin: 0;
+  padding: 0;
+  border: 3px solid #1c1810;
+  color: #f4ead0;
+  font-family: VT323, "Courier New", monospace;
+  font-size: 22px;
+  line-height: 1;
+  background: #3a3230;
+  box-shadow: 0 3px 0 #12100c, inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+
+.liga-pad-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #12100c;
+}
+
+.liga-pad-btn.is-dir {
+  border-radius: 8px;
+}
+
+.liga-pad-btn.is-n {
+  grid-area: n;
+}
+
+.liga-pad-btn.is-w {
+  grid-area: w;
+}
+
+.liga-pad-btn.is-e {
+  grid-area: e;
+}
+
+.liga-pad-btn.is-s {
+  grid-area: s;
+}
+
+.liga-pad-ab {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.liga-pad-btn.is-turbo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  font-size: 13px;
+  background: #5a5040;
+}
+
+.liga-pad-btn.is-b {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #3d5aa8;
+}
+
+.liga-pad-btn.is-a {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #c44848;
+}
+
+.liga-rotate {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: 10px 16px;
+  background: rgba(12, 10, 16, 0.86);
+  color: #f0e8d0;
+  border: 3px solid #e4b45a;
+  border-radius: 10px;
+  font-size: 22px;
+}
+
+.liga-screen:fullscreen .liga-pad,
+.liga-screen.is-wide .liga-pad {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background: none;
+  min-height: 0;
+  padding: 0;
+}
+
+.liga-screen:fullscreen .liga-dpad,
+.liga-screen.is-wide .liga-dpad {
+  position: absolute;
+  left: max(10px, env(safe-area-inset-left));
+  bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.liga-screen:fullscreen .liga-pad-ab,
+.liga-screen.is-wide .liga-pad-ab {
+  position: absolute;
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
+  .liga-screen:fullscreen .liga-pad,
+  .liga-screen.is-wide .liga-pad {
+    display: none;
+  }
+}
+
+body.is-liga-wide {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.app.is-liga-wide {
+  padding: 0;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.app.is-liga-wide .table-hud,
+.app.is-liga-wide .liga-shell .panel {
+  display: none;
+}
+
+.app.is-liga-wide .liga-shell {
+  display: block;
+  max-width: none;
+  margin: 0;
+}
+
+.app.is-liga-wide .liga-table {
+  max-width: none;
+}
+
+@media (max-width: 980px) {
+  .app:has(.liga-shell) {
+    padding: 10px 8px 16px;
+  }
+
+  .app:has(.liga-shell):has(.table-hud) {
+    padding-top: 72px;
+  }
+
+  .liga-shell {
+    grid-template-areas:
+      "board"
+      "controls"
+      "stats";
+    gap: 12px;
+  }
+
+  .liga-shell .lede {
+    display: none;
+  }
+
+  .liga-shell .panel {
+    padding: 14px 12px;
+  }
+
+  .liga-shell .panel h1 {
+    font-size: 32px;
+  }
+
+  .liga-screen {
+    font-size: 18px;
+  }
+}
+
+.liga-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
 .liga-canvas {
   display: block;
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
+}
+
+@media (max-width: 900px), (hover: none) {
+  .liga-screen:not(.is-wide):not(:fullscreen) {
+    aspect-ratio: auto;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .liga-screen:not(.is-wide):not(:fullscreen) .liga-stage {
+    height: auto;
+    aspect-ratio: 13 / 11;
+    flex: 0 0 auto;
+  }
+
+  .liga-screen:not(.is-wide):not(:fullscreen) .liga-pad {
+    display: flex;
+    position: relative;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 8px 12px max(10px, env(safe-area-inset-bottom));
+    background: #1a1418;
+    min-height: 156px;
+  }
 }
 
 .liga-dialog {
@@ -2430,6 +2675,7 @@ button.truco-card:disabled {
 }
 
 .liga-battle {
+  width: 100%;
   height: 100%;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;

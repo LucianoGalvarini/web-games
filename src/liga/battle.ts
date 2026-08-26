@@ -569,7 +569,17 @@ function withSend(steps: LigaBattle['lastFx'], before: LigaBattle, after: LigaBa
   if (!incoming) {
     return steps
   }
-  return [...steps, { kind: 'send', side: 'foe', moveId: 0, speciesId: incoming.speciesId }]
+  return [
+    ...steps,
+    {
+      kind: 'send',
+      side: 'foe',
+      moveId: 0,
+      speciesId: incoming.speciesId,
+      playerHp: hpOf(after, 'player'),
+      foeHp: incoming.hp,
+    },
+  ]
 }
 
 function fxFromFoe(prev: LigaBattle, after: { battle: LigaBattle; moveId: number | null; factor: number; note: string | null }): LigaBattle['lastFx'] {
@@ -593,18 +603,44 @@ export function playTurn(
       return { battle, itemId: null, result: 'ongoing' }
     }
     if (battle.mustSwitch) {
+      const incoming = slotOf(switched.playerParty, switched.playerActive)
       return {
         ...settle({
           ...switched,
-          lastFx: [{ kind: 'send', side: 'player', moveId: 0, speciesId: slotOf(switched.playerParty, switched.playerActive).speciesId }],
+          lastFx: [
+            {
+              kind: 'send',
+              side: 'player',
+              moveId: 0,
+              speciesId: incoming.speciesId,
+              playerHp: incoming.hp,
+              foeHp: hpOf(switched, 'foe'),
+            },
+          ],
         }),
         itemId: null,
       }
     }
     const after = foeActs(switched, difficulty, random)
+    const recalled = slotOf(battle.playerParty, battle.playerActive)
+    const incoming = slotOf(switched.playerParty, switched.playerActive)
     const steps: LigaBattle['lastFx'] = [
-      { kind: 'recall', side: 'player', moveId: 0, speciesId: slotOf(battle.playerParty, battle.playerActive).speciesId },
-      { kind: 'send', side: 'player', moveId: 0, speciesId: slotOf(switched.playerParty, switched.playerActive).speciesId },
+      {
+        kind: 'recall',
+        side: 'player',
+        moveId: 0,
+        speciesId: recalled.speciesId,
+        playerHp: recalled.hp,
+        foeHp: hpOf(battle, 'foe'),
+      },
+      {
+        kind: 'send',
+        side: 'player',
+        moveId: 0,
+        speciesId: incoming.speciesId,
+        playerHp: incoming.hp,
+        foeHp: hpOf(switched, 'foe'),
+      },
       ...fxFromFoe(switched, after),
     ]
     const settled = settle({ ...after.battle, lastFx: steps })

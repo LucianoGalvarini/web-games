@@ -4,6 +4,10 @@ import type { LigaDir, LigaRoomId, LigaState, LigaTrainerId } from './types'
 
 export type LigaTile = 'wall' | 'floor' | 'door-n' | 'door-s'
 
+export type LigaPropKind = 'torch' | 'plant' | 'statue' | 'pillar' | 'table'
+
+export type LigaProp = { kind: LigaPropKind; x: number; y: number }
+
 export type LigaRoomDef = {
   id: LigaRoomId
   tiles: LigaTile[][]
@@ -52,6 +56,33 @@ export const ROOMS: Record<LigaRoomId, LigaRoomDef> = {
   drake: buildRoom('drake', true, true, true),
   steven: buildRoom('steven', true, true, true),
   hall: buildRoom('hall', false, true, false),
+}
+
+const ROOM_PROPS: LigaProp[] = [
+  { kind: 'torch', x: 1, y: 2 },
+  { kind: 'torch', x: 11, y: 2 },
+  { kind: 'pillar', x: 2, y: 2 },
+  { kind: 'pillar', x: 10, y: 2 },
+  { kind: 'statue', x: 1, y: 4 },
+  { kind: 'statue', x: 11, y: 4 },
+  { kind: 'plant', x: 1, y: 6 },
+  { kind: 'plant', x: 11, y: 6 },
+]
+
+const HALL_PROPS: LigaProp[] = [
+  { kind: 'table', x: 3, y: 3 },
+  { kind: 'table', x: 8, y: 3 },
+]
+
+export function propsOf(room: LigaRoomId): LigaProp[] {
+  return room === 'hall' ? [...ROOM_PROPS, ...HALL_PROPS] : ROOM_PROPS
+}
+
+function propOccupies(prop: LigaProp, x: number, y: number): boolean {
+  if (prop.kind === 'pillar') {
+    return prop.x === x && (y === prop.y || y === prop.y + 1)
+  }
+  return prop.x === x && prop.y === y
 }
 
 export function roomOf(id: LigaRoomId): LigaRoomDef {
@@ -106,6 +137,9 @@ export function walkable(state: LigaState, x: number, y: number): boolean {
   }
   const trainer = trainerPos(state, state.room)
   if (trainer && samePoint(trainer, { x, y })) {
+    return false
+  }
+  if (propsOf(state.room).some((prop) => propOccupies(prop, x, y))) {
     return false
   }
   return true

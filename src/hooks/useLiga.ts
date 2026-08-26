@@ -69,6 +69,7 @@ export function useLiga() {
   const speechReadyRef = useRef(true)
   const bagRef = useRef(listedBag(state.bag))
   const fieldRef = useRef(field)
+  const heldRef = useRef<Partial<Record<LigaDir, boolean>>>({})
   stateRef.current = state
   walkRef.current = walk
   difficultyRef.current = difficulty
@@ -141,6 +142,7 @@ export function useLiga() {
     setSpeechSkip(false)
     setTurbo(false)
     setField(null)
+    heldRef.current = {}
   }, [])
 
   const changeDifficulty = useCallback(
@@ -355,8 +357,15 @@ export function useLiga() {
         const incoming =
           step.side === 'player' ? battle?.playerParty[battle.playerActive] : battle?.foeParty[battle.foeActive]
         if (incoming) {
+          const shown = cloneSlot(incoming)
+          if (step.side === 'player' && step.playerHp !== undefined) {
+            shown.hp = step.playerHp
+          }
+          if (step.side === 'foe' && step.foeHp !== undefined) {
+            shown.hp = step.foeHp
+          }
           setField((currentField) =>
-            currentField ? { ...currentField, [step.side]: cloneSlot(incoming) } : currentField,
+            currentField ? { ...currentField, [step.side]: shown } : currentField,
           )
         }
       }
@@ -436,107 +445,15 @@ export function useLiga() {
     }
   }, [play, state.fxQueue])
 
-  useEffect(() => {
-    const held: Partial<Record<LigaDir, boolean>> = {}
-
-    const confirmBattle = () => {
-      const current = stateRef.current
-      const battle = current.battle
-      if (!battle || animatingRef.current) {
-        return
-      }
-      const index = cursorRef.current
-      const pick = itemPickRef.current
-      playSfx('ligaBeep')
-      if (battle.mustSwitch || battle.menu === 'party' || pick) {
-        const slot = battle.playerParty[index]
-        if (!slot) {
-          return
-        }
-        if (pick) {
-          if (!itemUsable(pick, battle.playerParty, index, battle.playerActive)) {
-            playSfx('error')
-            return
-          }
-          play({ kind: 'item', itemId: pick, target: index })
-          setItemPick(null)
-          return
-        }
-        if (slot.hp <= 0 || index === battle.playerActive) {
-          playSfx('error')
-          return
-        }
-        play({ kind: 'switch', index })
-        return
-      }
-      if (battle.menu === 'fight') {
-        const used = battle.playerParty[battle.playerActive]?.moves[index]
-        if (!used || used.pp <= 0) {
-          playSfx('error')
-          return
-        }
-        play({ kind: 'move', index })
-        return
-      }
-      if (battle.menu === 'bag') {
-        const item = bagRef.current[index]
-        if (!item) {
-          playSfx('error')
-          return
-        }
-        if (item.id === 'x-attack' || item.id === 'x-sp-atk' || item.id === 'x-speed') {
-          play({ kind: 'item', itemId: item.id, target: battle.playerActive })
-          return
-        }
-        setItemPick(item.id)
-        setCursor(0)
-        return
-      }
-      if (index === 0) {
-        play({ kind: 'open', menu: 'fight' })
-        return
-      }
-      if (index === 1) {
-        play({ kind: 'open', menu: 'bag' })
-        return
-      }
-      if (index === 2) {
-        play({ kind: 'open', menu: 'party' })
-        return
-      }
-      playSfx('error')
-      setHint('¡No se puede huir de la Liga!')
-    }
-
-    const cancelBattle = () => {
-      const battle = stateRef.current.battle
-      if (!battle || battle.mustSwitch || animatingRef.current) {
-        return
-      }
-      playSfx('click')
-      if (itemPickRef.current) {
-        setItemPick(null)
-        setCursor(0)
-        return
-      }
-      if (battle.menu !== 'root') {
-        play({ kind: 'open', menu: 'root' })
-      }
-    }
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (isTurboKey(event.key)) {
-        event.preventDefault()
+  const pressDown = useCallback(
+    (key: string) => {
+      if (isTurboKey(key)) {
         turboRef.current = true
         setTurbo(true)
         return
       }
-      if (event.repeat) {
-        return
-      }
       const current = stateRef.current
-      if (isAKey(event.key)) {
-        event.preventDefault()
+      if (isAKey(key)) {
         if ((current.phase === 'dialog' || current.phase === 'battle') && !speechReadyRef.current) {
           setSpeechSkip(true)
           return
@@ -547,12 +464,75 @@ export function useLiga() {
           return
         }
         if (current.phase === 'battle') {
-          confirmBattle()
+          const battle = current.battle
+          if (!battle || animatingRef.current) {
+            return
+          }
+          const index = cursorRef.current
+          const pick = itemPickRef.current
+          playSfx('ligaBeep')
+          if (battle.mustSwitch || battle.menu === 'party' || pick) {
+            const slot = battle.playerParty[index]
+            if (!slot) {
+              return
+            }
+            if (pick) {
+              if (!itemUsable(pick, battle.playerParty, index, battle.playerActive)) {
+                playSfx('error')
+                return
+              }
+              play({ kind: 'item', itemId: pick, target: index })
+              setItemPick(null)
+              return
+            }
+            if (slot.hp <= 0 || index === battle.playerActive) {
+              playSfx('error')
+              return
+            }
+            play({ kind: 'switch', index })
+            return
+          }
+          if (battle.menu === 'fight') {
+            const used = battle.playerParty[battle.playerActive]?.moves[index]
+            if (!used || used.pp <= 0) {
+              playSfx('error')
+              return
+            }
+            play({ kind: 'move', index })
+            return
+          }
+          if (battle.menu === 'bag') {
+            const item = bagRef.current[index]
+            if (!item) {
+              playSfx('error')
+              return
+            }
+            if (item.id === 'x-attack' || item.id === 'x-sp-atk' || item.id === 'x-speed') {
+              play({ kind: 'item', itemId: item.id, target: battle.playerActive })
+              return
+            }
+            setItemPick(item.id)
+            setCursor(0)
+            return
+          }
+          if (index === 0) {
+            play({ kind: 'open', menu: 'fight' })
+            return
+          }
+          if (index === 1) {
+            play({ kind: 'open', menu: 'bag' })
+            return
+          }
+          if (index === 2) {
+            play({ kind: 'open', menu: 'party' })
+            return
+          }
+          playSfx('error')
+          setHint('¡No se puede huir de la Liga!')
         }
         return
       }
-      if (isBKey(event.key)) {
-        event.preventDefault()
+      if (isBKey(key)) {
         if (current.phase === 'dialog') {
           if (!speechReadyRef.current) {
             setSpeechSkip(true)
@@ -562,18 +542,27 @@ export function useLiga() {
           setSpeechSkip(false)
           return
         }
-        if (current.phase === 'battle') {
-          cancelBattle()
+        const battle = current.battle
+        if (!battle || battle.mustSwitch || animatingRef.current) {
+          return
+        }
+        playSfx('click')
+        if (itemPickRef.current) {
+          setItemPick(null)
+          setCursor(0)
+          return
+        }
+        if (battle.menu !== 'root') {
+          play({ kind: 'open', menu: 'root' })
         }
         return
       }
-      const dir = KEY_DIR[event.key]
+      const dir = KEY_DIR[key]
       if (dir === undefined) {
         return
       }
-      event.preventDefault()
       if (current.phase === 'walk') {
-        held[dir] = true
+        heldRef.current[dir] = true
         play({ kind: 'step', dir })
         return
       }
@@ -596,24 +585,41 @@ export function useLiga() {
         cols = 1
       }
       setCursor((value) => moveCursor(value, count, dir, cols))
-    }
+    },
+    [play],
+  )
 
+  const pressUp = useCallback((key: string) => {
+    if (isTurboKey(key)) {
+      turboRef.current = false
+      setTurbo(false)
+    }
+    const dir = KEY_DIR[key]
+    if (dir) {
+      heldRef.current[dir] = false
+    }
+  }, [])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isTurboKey(event.key) || isAKey(event.key) || isBKey(event.key) || KEY_DIR[event.key]) {
+        event.preventDefault()
+      }
+      if (event.repeat) {
+        return
+      }
+      pressDown(event.key)
+    }
     const onKeyUp = (event: KeyboardEvent) => {
-      if (isTurboKey(event.key)) {
-        turboRef.current = false
-        setTurbo(false)
-      }
-      const dir = KEY_DIR[event.key]
-      if (dir) {
-        held[dir] = false
-      }
+      pressUp(event.key)
     }
-
     let raf = 0
     const loop = () => {
       const current = stateRef.current
       if (!walkRef.current && current.phase === 'walk') {
-        const dir = (['up', 'down', 'left', 'right'] as const).find((key) => held[key] && canStep(current, key))
+        const dir = (['up', 'down', 'left', 'right'] as const).find(
+          (key) => heldRef.current[key] && canStep(current, key),
+        )
         if (dir) {
           play({ kind: 'step', dir })
         }
@@ -628,7 +634,7 @@ export function useLiga() {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
     }
-  }, [play])
+  }, [play, pressDown, pressUp])
 
   const statusText = useMemo(() => {
     if (state.phase === 'won') {
@@ -667,6 +673,8 @@ export function useLiga() {
     },
     statusText,
     play,
+    pressDown,
+    pressUp,
     resetGame,
     changeDifficulty,
   }

@@ -11,6 +11,7 @@ import { LigaChrome } from './liga/LigaChrome'
 import { LigaHp } from './liga/LigaHp'
 import { LigaItemIcon } from './liga/LigaItemIcon'
 import { LigaMap } from './liga/LigaMap'
+import { LigaPad } from './liga/LigaPad'
 import { LigaSpeech } from './liga/LigaSpeech'
 import { LigaTypes } from './liga/LigaTypes'
 import { ManualTour } from './ManualTour'
@@ -21,31 +22,112 @@ type LigaGameProps = {
   onBack: () => void
 }
 
+type FsDoc = Document & {
+  webkitFullscreenElement?: Element | null
+  webkitExitFullscreen?: () => Promise<void> | void
+}
+
+type FsEl = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void
+}
+
+function fullscreenNode(): Element | null {
+  const doc = document as FsDoc
+  return document.fullscreenElement ?? doc.webkitFullscreenElement ?? null
+}
+
 export function LigaGame({ onBack }: LigaGameProps) {
   const game = useLiga()
   const [rulesOpen, setRulesOpen] = useState(false)
   const [wide, setWide] = useState(false)
+  const [portrait, setPortrait] = useState(false)
   const screenRef = useRef<HTMLDivElement>(null)
+  const nativeFs = useRef(false)
   const { state } = game
   const beaten = TRAINER_ORDER.filter((id) => state.trainers[id].beaten).length
+
+  const lockLandscape = useCallback(async () => {
+    const orientation = screen.orientation as ScreenOrientation & { lock?: (type: string) => Promise<void> }
+    try {
+      await orientation.lock?.('landscape')
+    } catch {
+      /* el celu puede ignorar el lock si no hay fullscreen */
+    }
+  }, [])
+
+  const leaveWide = useCallback(() => {
+    const doc = document as FsDoc
+    if (fullscreenNode()) {
+      void (document.exitFullscreen?.() ?? doc.webkitExitFullscreen?.())
+    }
+    try {
+      screen.orientation.unlock()
+    } catch {
+      /* noop */
+    }
+    nativeFs.current = false
+    setWide(false)
+    document.body.classList.remove('is-liga-wide')
+  }, [])
 
   const toggleWide = useCallback(() => {
     const node = screenRef.current
     if (!node) {
       return
     }
-    if (document.fullscreenElement) {
-      void document.exitFullscreen()
+    if (fullscreenNode() || wide) {
+      leaveWide()
       return
     }
-    void node.requestFullscreen()
-  }, [])
+    const box = node as FsEl
+    const go = box.requestFullscreen?.() ?? box.webkitRequestFullscreen?.()
+    setWide(true)
+    document.body.classList.add('is-liga-wide')
+    void Promise.resolve(go)
+      .then(() => {
+        if (fullscreenNode()) {
+          nativeFs.current = true
+        }
+        return lockLandscape()
+      })
+      .catch(() => lockLandscape())
+  }, [leaveWide, lockLandscape, wide])
 
   useEffect(() => {
-    const onFull = () => setWide(Boolean(document.fullscreenElement))
+    const onFull = () => {
+      if (fullscreenNode()) {
+        nativeFs.current = true
+        setWide(true)
+        document.body.classList.add('is-liga-wide')
+        void lockLandscape()
+        return
+      }
+      if (!nativeFs.current) {
+        return
+      }
+      nativeFs.current = false
+      try {
+        screen.orientation.unlock()
+      } catch {
+        /* noop */
+      }
+      setWide(false)
+      document.body.classList.remove('is-liga-wide')
+    }
+    const onOrient = () => setPortrait(window.matchMedia('(orientation: portrait)').matches)
+    onOrient()
     document.addEventListener('fullscreenchange', onFull)
-    return () => document.removeEventListener('fullscreenchange', onFull)
-  }, [])
+    document.addEventListener('webkitfullscreenchange' as 'fullscreenchange', onFull)
+    window.addEventListener('orientationchange', onOrient)
+    window.addEventListener('resize', onOrient)
+    return () => {
+      document.removeEventListener('fullscreenchange', onFull)
+      document.removeEventListener('webkitfullscreenchange' as 'fullscreenchange', onFull)
+      window.removeEventListener('orientationchange', onOrient)
+      window.removeEventListener('resize', onOrient)
+      document.body.classList.remove('is-liga-wide')
+    }
+  }, [lockLandscape])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -63,7 +145,7 @@ export function LigaGame({ onBack }: LigaGameProps) {
   }, [toggleWide])
 
   return (
-    <div className="app">
+    <div className={`app${wide ? ' is-liga-wide' : ''}`}>
       <TableHud onManual={() => setRulesOpen(true)} />
       <div className="shell liga-shell">
         <aside className="panel panel-controls" data-manual="controls">
@@ -100,37 +182,41 @@ export function LigaGame({ onBack }: LigaGameProps) {
         </aside>
 
         <main className="table liga-table" data-manual="board">
-          <div ref={screenRef} className="liga-screen">
+          <div ref={screenRef} className={`liga-screen${wide ? ' is-wide' : ''}`}>
             <LigaChrome wide={wide} onToggleWide={toggleWide} />
-            {state.phase === 'battle' && state.battle ? (
-              <LigaBattleView
-                battle={state.battle}
-                bag={game.bag}
-                itemPick={game.itemPick}
-                cursor={game.cursor}
-                animating={game.animating}
-                anim={game.anim}
-                field={game.field}
-                turbo={game.turbo}
-                hint={game.hint}
-                speechSkip={game.speechSkip}
-                onSpeechReady={game.setSpeechReady}
-              />
-            ) : (
-              <>
-                <LigaMap state={state} walk={game.walk} walkT={game.walkT} />
-                {state.dialog ? (
-                  <div className="liga-dialog">
-                    <LigaSpeech
-                      text={state.dialog}
-                      turbo={game.turbo}
-                      reveal={game.speechSkip}
-                      onReady={game.setSpeechReady}
-                    />
-                  </div>
-                ) : null}
-              </>
-            )}
+            {wide && portrait ? <p className="liga-rotate">Girar el celular</p> : null}
+            <div className="liga-stage">
+              {state.phase === 'battle' && state.battle ? (
+                <LigaBattleView
+                  battle={state.battle}
+                  bag={game.bag}
+                  itemPick={game.itemPick}
+                  cursor={game.cursor}
+                  animating={game.animating}
+                  anim={game.anim}
+                  field={game.field}
+                  turbo={game.turbo}
+                  hint={game.hint}
+                  speechSkip={game.speechSkip}
+                  onSpeechReady={game.setSpeechReady}
+                />
+              ) : (
+                <>
+                  <LigaMap state={state} walk={game.walk} walkT={game.walkT} />
+                  {state.dialog ? (
+                    <div className="liga-dialog">
+                      <LigaSpeech
+                        text={state.dialog}
+                        turbo={game.turbo}
+                        reveal={game.speechSkip}
+                        onReady={game.setSpeechReady}
+                      />
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
+            <LigaPad onDown={game.pressDown} onUp={game.pressUp} />
           </div>
         </main>
 

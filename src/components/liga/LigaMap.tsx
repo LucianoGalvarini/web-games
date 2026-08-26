@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { ROOM_COLS, ROOM_ROWS, TILE } from '../../liga/constants'
-import { doorOpen, roomOf, trainerPos } from '../../liga/map'
+import { doorOpen, propsOf, roomOf, trainerPos } from '../../liga/map'
 import type { LigaDir, LigaRoomId, LigaState, LigaTrainerId } from '../../liga/types'
 import type { Point } from '../../shared/point'
 
@@ -58,38 +58,43 @@ function drawPerson(
   const skin = '#f0d59a'
   const shade = '#241910'
   const shoe = '#3a2418'
+  const side = dir === 'left' || dir === 'right'
+  const ox = dir === 'right' ? 1 : 0
   ctx.fillStyle = 'rgba(0,0,0,0.35)'
-  ctx.fillRect(px + 3, py + 14, 10, 3)
+  ctx.fillRect(px + 4, py + 14, side ? 7 : 8, 2)
   ctx.fillStyle = shoe
-  if (dir === 'left' || dir === 'right') {
-    ctx.fillRect(px + (dir === 'right' ? 4 : 3) + stride, py + 13 - bob, 4, 3)
-    ctx.fillRect(px + (dir === 'right' ? 9 : 8) - stride, py + 13 - bob, 4, 3)
+  if (side) {
+    ctx.fillRect(px + 5 + ox - stride, py + 13 - bob, 3, 3)
+    ctx.fillRect(px + 8 + ox + stride, py + 13 - bob, 3, 3)
   } else {
-    ctx.fillRect(px + 3, py + 13 - bob, 4, 3)
-    ctx.fillRect(px + 9, py + 13 - bob, 4, 3)
+    ctx.fillRect(px + 4, py + 13 - bob, 3, 3)
+    ctx.fillRect(px + 9, py + 13 - bob, 3, 3)
   }
-  ctx.fillStyle = shadeHex(body, -30)
-  ctx.fillRect(px + 5, py + 10 - bob, 2, 4)
-  ctx.fillRect(px + 9, py + 10 - bob, 2, 4)
+  ctx.fillStyle = shadeHex(body, -28)
+  ctx.fillRect(px + (side ? 6 + ox : 5), py + 10 - bob, 2, 4)
+  ctx.fillRect(px + (side ? 8 + ox : 9), py + 10 - bob, 2, 4)
   ctx.fillStyle = body
-  ctx.fillRect(px + 4, py + 7 - bob, 8, 6)
-  ctx.fillStyle = shadeHex(body, 28)
-  ctx.fillRect(px + 5, py + 8 - bob, 6, 2)
+  ctx.fillRect(px + (side ? 5 + ox : 5), py + 7 - bob, side ? 5 : 6, 6)
+  ctx.fillStyle = shadeHex(body, 24)
+  ctx.fillRect(px + (side ? 6 + ox : 6), py + 8 - bob, side ? 3 : 4, 2)
+  ctx.fillStyle = body
   if (dir === 'left') {
-    ctx.fillStyle = body
-    ctx.fillRect(px + 2, py + 8 - bob, 3, 5)
+    ctx.fillRect(px + 4, py + 8 - bob, 2, 4)
   } else if (dir === 'right') {
-    ctx.fillStyle = body
-    ctx.fillRect(px + 11, py + 8 - bob, 3, 5)
+    ctx.fillRect(px + 10, py + 8 - bob, 2, 4)
   } else {
-    ctx.fillStyle = body
-    ctx.fillRect(px + 3, py + 8 - bob, 2, 5)
-    ctx.fillRect(px + 11, py + 8 - bob, 2, 5)
+    ctx.fillRect(px + 4, py + 8 - bob, 2, 4)
+    ctx.fillRect(px + 10, py + 8 - bob, 2, 4)
   }
   ctx.fillStyle = skin
-  ctx.fillRect(px + 5, py + 3 - bob, 6, 5)
+  ctx.fillRect(px + (side ? 5 + ox : 5), py + 3 - bob, side ? 5 : 6, 5)
   ctx.fillStyle = cap
-  ctx.fillRect(px + 4, py + 1 - bob, 8, 3)
+  if (side) {
+    ctx.fillRect(px + 4 + ox, py + 1 - bob, 7, 3)
+    ctx.fillRect(px + (dir === 'right' ? 11 : 3), py + 3 - bob, 2, 1)
+  } else {
+    ctx.fillRect(px + 4, py + 1 - bob, 8, 3)
+  }
   if (dir === 'down') {
     ctx.fillRect(px + 4, py + 3 - bob, 8, 1)
   }
@@ -139,16 +144,22 @@ function drawDecor(ctx: CanvasRenderingContext2D, room: LigaRoomId, palette: (ty
   const flame = room === 'drake' ? '#f07838' : room === 'glacia' ? '#d8f4ff' : '#f0a038'
   const leaf = room === 'phoebe' ? '#c8b8e0' : room === 'glacia' ? '#9cc8b0' : '#3d8a4a'
   const stone = room === 'steven' ? '#9aa8b8' : shadeHex(palette.wall, 40)
-  drawTorch(ctx, 1, 2, flame)
-  drawTorch(ctx, 11, 2, flame)
-    drawPlant(ctx, 1, 6, leaf, '#8a5030')
-  drawPlant(ctx, 11, 6, leaf, '#8a5030')
-  drawStatue(ctx, 1, 4, stone)
-  drawStatue(ctx, 11, 4, stone)
-  if (room === 'hall') {
-    ctx.fillStyle = '#c8a048'
-    ctx.fillRect(3 * TILE + 2, 3 * TILE + 2, 12, 10)
-    ctx.fillRect(8 * TILE + 2, 3 * TILE + 2, 12, 10)
+  for (const prop of propsOf(room)) {
+    if (prop.kind === 'torch') {
+      drawTorch(ctx, prop.x, prop.y, flame)
+    } else if (prop.kind === 'plant') {
+      drawPlant(ctx, prop.x, prop.y, leaf, '#8a5030')
+    } else if (prop.kind === 'statue') {
+      drawStatue(ctx, prop.x, prop.y, stone)
+    } else if (prop.kind === 'pillar') {
+      ctx.fillStyle = shadeHex(palette.wall, 36)
+      ctx.fillRect(prop.x * TILE + 5, prop.y * TILE, 6, TILE * 2)
+      ctx.fillStyle = palette.carpet
+      ctx.fillRect(prop.x * TILE + 3, prop.y * TILE - 3, 10, 5)
+    } else {
+      ctx.fillStyle = '#c8a048'
+      ctx.fillRect(prop.x * TILE + 2, prop.y * TILE + 2, 12, 10)
+    }
   }
 }
 
@@ -200,12 +211,6 @@ export function LigaMap({ state, walk, walkT }: LigaMapProps) {
       }
     }
     drawDecor(ctx, state.room, palette)
-    for (const px of [2, 10]) {
-      ctx.fillStyle = shadeHex(palette.wall, 36)
-      ctx.fillRect(px * TILE + 5, 2 * TILE, 6, TILE * 2)
-      ctx.fillStyle = palette.carpet
-      ctx.fillRect(px * TILE + 3, 2 * TILE - 3, 10, 5)
-    }
     if (trainer && trainerId) {
       ctx.fillStyle = shadeHex(palette.carpet, -24)
       ctx.fillRect((trainer.x - 1) * TILE, (trainer.y + 1) * TILE - 2, TILE * 3, 6)
@@ -216,7 +221,7 @@ export function LigaMap({ state, walk, walkT }: LigaMapProps) {
     const px = walk ? lerp(walk.from.x, walk.to.x, walkT) : state.player.x
     const py = walk ? lerp(walk.from.y, walk.to.y, walkT) : state.player.y
     const dir = walk?.dir ?? state.facing
-    drawPerson(ctx, px * TILE, py * TILE, dir, '#3d6b9a', '#c45c48', walk ? walkT : 0)
+    drawPerson(ctx, Math.round(px * TILE), Math.round(py * TILE), dir, '#3d6b9a', '#c45c48', walk ? walkT : 0)
   }, [open, palette, room.tiles, state.facing, state.player.x, state.player.y, state.room, trainer, trainerId, walk, walkT])
 
   return (

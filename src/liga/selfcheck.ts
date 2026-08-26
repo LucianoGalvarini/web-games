@@ -80,6 +80,23 @@ assert(
   'El golpe enemigo baja los PS después de curar.',
 )
 
+const outgoing = { ...makeSlot(speciesOf(382), 50, 31, 0), spe: 1 }
+const incoming = { ...makeSlot(speciesOf(332), 50, 31, 0), spe: 1 }
+const switchFoe = { ...makeSlot(speciesOf(229), 50, 31, 0), spe: 200 }
+const switchTurn = playTurn(
+  startBattle([outgoing, incoming], [switchFoe], 'sidney'),
+  { kind: 'switch', index: 1 },
+  'easy',
+  () => 0,
+)
+const sendFx = switchTurn.battle.lastFx.find((step) => step.kind === 'send')
+const hitFx = switchTurn.battle.lastFx.find((step) => step.kind === 'move')
+assert(switchTurn.battle.lastFx[0]?.kind === 'recall', 'Primero se retira el Pokémon activo.')
+assert(sendFx?.speciesId === incoming.speciesId, 'Después entra el reemplazo.')
+assert(sendFx?.playerHp === incoming.hp, 'El reemplazo entra con sus PS actuales, no con el daño posterior.')
+assert(hitFx?.kind === 'move', 'El rival ataca después de que entra el reemplazo.')
+assert((hitFx?.playerHp ?? incoming.hp) <= (sendFx?.playerHp ?? incoming.hp), 'El daño llega después de la entrada.')
+
 const waveUser = { ...makeSlot(speciesOf(26), 50, 31, 0), spe: 200, moves: [{ moveId: 86, pp: 20 }] }
 const grounded = { ...makeSlot(speciesOf(28), 50, 0, 0), spe: 1, moves: [{ moveId: 89, pp: 10 }] }
 assert(estimatedDamage(waveUser, grounded, 0) === 0, 'Onda Trueno no puntúa contra Tierra.')
@@ -117,6 +134,10 @@ assert(game.player.x >= 0 && game.player.x < ROOM_COLS, 'El jugador nace en la s
 assert(game.player.y >= 0 && game.player.y < ROOM_ROWS, 'El jugador nace en la sala.')
 assert(tileAt(game.room, 0, 0) === 'wall', 'Las esquinas son pared.')
 assert(!walkable(game, 0, 0), 'No se camina sobre paredes.')
+assert(!walkable(game, 1, 6), 'No se camina sobre las plantas.')
+assert(!walkable(game, 1, 4), 'No se camina sobre las estatuas.')
+assert(!walkable(game, 2, 2), 'No se camina sobre las columnas.')
+assert(!walkable(game, 2, 3), 'La columna ocupa dos casillas.')
 
 let walked = applyAction(game, { kind: 'step', dir: 'left' }, () => 0)
 assert(walked.facing === 'left', 'Girar actualiza la mirada.')
