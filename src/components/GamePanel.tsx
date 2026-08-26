@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { difficultyLabel } from '../shared/difficulty'
 import { isCpuTurn, playerLabel } from '../shared/player'
 import type { Difficulty, GameMode, Player, Winner } from '../shared/types'
@@ -23,7 +24,8 @@ type GamePanelProps = {
   canEndTurn?: boolean
   canUndo: boolean
   counts: { white: number; black: number }
-  countDetail?: (player: Player, onBoard: number) => string
+  countDetail?: (player: Player, onBoard: number) => ReactNode
+  statsExtra?: ReactNode
   variantOptions?: VariantOption[]
   variant?: string
   onVariant?: (id: string) => void
@@ -52,6 +54,7 @@ export function GamePanel({
   canUndo,
   counts,
   countDetail,
+  statsExtra,
   variantOptions,
   variant,
   onVariant,
@@ -185,17 +188,18 @@ export function GamePanel({
             <span className="swatch white" />
             <div>
               <strong>{sideLabel('white')}</strong>
-              <span>{detail('white', counts.white)}</span>
+              <div className="score-detail">{detail('white', counts.white)}</div>
             </div>
           </div>
           <div className={`score ${current === 'black' && !winner ? 'is-active' : ''}`}>
             <span className="swatch black" />
             <div>
               <strong>{sideLabel('black')}</strong>
-              <span>{detail('black', counts.black)}</span>
+              <div className="score-detail">{detail('black', counts.black)}</div>
             </div>
           </div>
         </div>
+        {statsExtra}
       </aside>
     </>
   )

@@ -171,11 +171,11 @@ h2 {
 }
 
 .score strong,
-.score span {
+.score-detail {
   display: block;
 }
 
-.score span {
+.score-detail {
   color: var(--muted);
   font-size: 13px;
 }
@@ -1393,6 +1393,21 @@ h2 {
   background: rgba(228, 180, 90, 0.18);
 }
 
+.ajedrez-cell.is-capture::after {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  border: 3px solid var(--gold);
+  background: transparent;
+  pointer-events: none;
+}
+
+.ajedrez-cell.is-cursor {
+  outline: 2px solid rgba(240, 213, 154, 0.85);
+  outline-offset: -2px;
+}
+
 .ajedrez-cell.is-last {
   box-shadow: inset 0 0 0 100px rgba(228, 180, 90, 0.22);
 }
@@ -1446,14 +1461,20 @@ h2 {
   place-items: center;
   pointer-events: auto;
   cursor: pointer;
+  touch-action: none;
   transition:
     left 280ms cubic-bezier(0.34, 1.1, 0.4, 1),
     top 280ms cubic-bezier(0.34, 1.1, 0.4, 1);
 }
 
+.ajedrez-piece.is-dragging {
+  cursor: grabbing;
+}
+
 .ajedrez-glyph {
-  width: 82%;
-  height: 82%;
+  width: 88%;
+  height: 88%;
+  overflow: visible;
   filter: drop-shadow(0 2px 3px rgba(20, 10, 4, 0.45));
   animation: damasPiecePlace 220ms ease-out;
 }
@@ -1464,7 +1485,7 @@ h2 {
     drop-shadow(0 0 6px rgba(228, 180, 90, 0.7));
 }
 
-.ajedrez-piece.is-target .ajedrez-glyph {
+.ajedrez-piece.is-capture .ajedrez-glyph {
   filter:
     drop-shadow(0 2px 3px rgba(20, 10, 4, 0.45))
     drop-shadow(0 0 7px rgba(228, 180, 90, 0.85));
@@ -1490,12 +1511,22 @@ h2 {
   z-index: 2;
 }
 
+.ajedrez-promo-card {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
 .ajedrez-promo p {
-  margin: 0 0 10px;
+  margin: 0;
   text-align: center;
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 22px;
   color: var(--gold-2);
+}
+
+.ajedrez-promo-cancel {
+  min-width: 120px;
 }
 
 .ajedrez-promo-row {
@@ -1527,6 +1558,94 @@ h2 {
   width: 40px;
   height: 40px;
   animation: none;
+}
+
+.ajedrez-field:focus {
+  outline: none;
+}
+
+.ajedrez-field:focus-visible {
+  box-shadow:
+    inset 0 0 0 8px #5b3918,
+    inset 0 0 0 10px rgba(232, 194, 122, 0.55),
+    0 0 0 2px var(--gold);
+}
+
+.ajedrez-material {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-height: 18px;
+}
+
+.ajedrez-material-piece {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+}
+
+.ajedrez-material-piece .ajedrez-glyph {
+  width: 100%;
+  height: 100%;
+  animation: none;
+  filter: none;
+}
+
+.ajedrez-material-adv {
+  margin-left: 6px;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.ajedrez-log {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.ajedrez-log-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ajedrez-log-head .btn {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.ajedrez-log-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ajedrez-log-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 220px;
+  overflow: auto;
+  display: grid;
+  gap: 4px;
+}
+
+.ajedrez-log-list li {
+  display: grid;
+  grid-template-columns: 2.2em 1fr 1fr;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
+.ajedrez-log-n {
+  color: var(--muted);
 }
 
 .truco-shell {

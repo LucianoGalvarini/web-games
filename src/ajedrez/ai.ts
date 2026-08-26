@@ -1,5 +1,5 @@
 import type { Difficulty, Player } from '../shared/types'
-import { serializePosition } from './board'
+import { createInitialPosition, serializePosition } from './board'
 import { PIECE_VALUE } from './constants'
 import { applyMove, inCheck, legalMoves } from './moves'
 import type { ChessMove, ChessPosition, PieceKind } from './types'
@@ -34,15 +34,62 @@ const PST: Record<PieceKind, number[]> = {
   ],
 }
 
+const OPENING_LINES: Array<Array<[number, number]>> = [
+  [
+    [52, 36],
+    [12, 28],
+    [62, 45],
+    [1, 18],
+    [61, 25],
+  ],
+  [
+    [52, 36],
+    [12, 28],
+    [62, 45],
+    [1, 18],
+    [61, 34],
+  ],
+  [
+    [52, 36],
+    [10, 26],
+    [62, 45],
+  ],
+  [
+    [51, 35],
+    [11, 27],
+    [50, 34],
+  ],
+  [
+    [52, 36],
+    [12, 28],
+    [62, 45],
+    [6, 21],
+  ],
+  [
+    [62, 45],
+    [11, 27],
+  ],
+  [
+    [51, 35],
+    [6, 21],
+    [50, 34],
+  ],
+]
+
+const Q_DEPTH = 4
+
 type SearchLimit = {
   time: number
   expired: boolean
   nodes: number
 }
 
+type TtFlag = 'exact' | 'lower' | 'upper'
+
 type TtEntry = {
   depth: number
   score: number
+  flag: TtFlag
   best: ChessMove | null
 }
 
@@ -104,6 +151,130 @@ function tick(limit: SearchLimit | null): boolean {
   return limit.expired
 }
 
+function probe(
+  tt: Map<string, TtEntry> | null,
+  key: string,
+  depth: number,
+  alpha: number,
+  beta: number,
+): { score?: number; best: ChessMove | null } {
+  const cached = tt?.get(key)
+  if (!cached) {
+    return { best: null }
+  }
+  if (cached.depth < depth) {
+    return { best: cached.best }
+  }
+  if (cached.flag === 'exact') {
+    return { score: cached.score, best: cached.best }
+  }
+  if (cached.flag === 'lower' && cached.score >= beta) {
+    return { score: cached.score, best: cached.best }
+  }
+  if (cached.flag === 'upper' && cached.score <= alpha) {
+    return { score: cached.score, best: cached.best }
+  }
+  return { best: cached.best }
+}
+
+function store(
+  tt: Map<string, TtEntry> | null,
+  key: string,
+  depth: number,
+  score: number,
+  alpha: number,
+  beta: number,
+  best: ChessMove | null,
+  expired: boolean,
+): void {
+  if (!tt || expired) {
+    return
+  }
+  let flag: TtFlag = 'exact'
+  if (score <= alpha) {
+    flag = 'upper'
+  } else if (score >= beta) {
+    flag = 'lower'
+  }
+  tt.set(key, { depth, score, flag, best })
+}
+
+function mateScore(position: ChessPosition, ai: Player, depth: number): number {
+  if (inCheck(position.squares, position.current)) {
+    return position.current === ai ? -12_000 - depth : 12_000 + depth
+  }
+  return 0
+}
+
+function quiesce(
+  position: ChessPosition,
+  ai: Player,
+  alpha: number,
+  beta: number,
+  remain: number,
+  limit: SearchLimit | null,
+): number {
+  if (tick(limit) || remain < 0) {
+    return evaluate(position, ai)
+  }
+
+  const checked = inCheck(position.squares, position.current)
+  const maximizing = position.current === ai
+  const stand = evaluate(position, ai)
+  let localAlpha = alpha
+  let localBeta = beta
+
+  if (!checked) {
+    if (maximizing) {
+      if (stand >= localBeta) {
+        return stand
+      }
+      if (stand > localAlpha) {
+        localAlpha = stand
+      }
+    } else if (stand <= localAlpha) {
+      return stand
+    } else if (stand < localBeta) {
+      localBeta = stand
+    }
+  }
+
+  let moves = legalMoves(position)
+  if (moves.length === 0) {
+    return mateScore(position, ai, remain)
+  }
+  if (!checked) {
+    moves = moves.filter((move) => move.capture || move.promoteTo)
+    if (moves.length === 0) {
+      return stand
+    }
+  }
+
+  let best = maximizing ? (checked ? -Infinity : stand) : checked ? Infinity : stand
+  for (const move of ordered(position, moves, null)) {
+    const value = quiesce(applyMove(position, move), ai, localAlpha, localBeta, remain - 1, limit)
+    if (maximizing) {
+      if (value > best) {
+        best = value
+      }
+      if (best > localAlpha) {
+        localAlpha = best
+      }
+    } else {
+      if (value < best) {
+        best = value
+      }
+      if (best < localBeta) {
+        localBeta = best
+      }
+    }
+    if (localBeta <= localAlpha || limit?.expired) {
+      break
+    }
+  }
+  return best
+}
+
 function minimax(
   position: ChessPosition,
   ai: Player,
@@ -118,50 +289,51 @@ function minimax(
   }
 
   const key = tt ? serializePosition(position) : ''
-  const cached = tt?.get(key)
-  if (cached && cached.depth >= depth) {
+  const cached = probe(tt, key, depth, alpha, beta)
+  if (cached.score !== undefined) {
     return cached.score
   }
 
-  const moves = ordered(position, legalMoves(position), cached?.best ?? null)
+  const moves = ordered(position, legalMoves(position), cached.best)
   if (moves.length === 0) {
-    if (inCheck(position.squares, position.current)) {
-      return position.current === ai ? -12_000 - depth : 12_000 + depth
-    }
-    return 0
+    return mateScore(position, ai, depth)
   }
   if (depth === 0) {
+    if (tt || limit) {
+      return quiesce(position, ai, alpha, beta, Q_DEPTH, limit)
+    }
     return evaluate(position, ai)
   }
 
   const maximizing = position.current === ai
   let best = maximizing ? -Infinity : Infinity
   let bestMove: ChessMove | null = moves[0] ?? null
+  const originalAlpha = alpha
+  const originalBeta = beta
+  let localAlpha = alpha
+  let localBeta = beta
 
   for (const move of moves) {
-    const value = minimax(applyMove(position, move), ai, depth - 1, alpha, beta, tt, limit)
+    const value = minimax(applyMove(position, move), ai, depth - 1, localAlpha, localBeta, tt, limit)
     if (maximizing) {
       if (value > best) {
         best = value
         bestMove = move
       }
-      alpha = Math.max(alpha, best)
+      localAlpha = Math.max(localAlpha, best)
     } else {
       if (value < best) {
         best = value
         bestMove = move
       }
-      beta = Math.min(beta, best)
+      localBeta = Math.min(localBeta, best)
     }
-    if (beta <= alpha || limit?.expired) {
+    if (localBeta <= localAlpha || limit?.expired) {
       break
     }
   }
 
-  if (tt && !limit?.expired) {
-    tt.set(key, { depth, score: best, best: bestMove })
-  }
-
+  store(tt, key, depth, best, originalAlpha, originalBeta, bestMove, Boolean(limit?.expired))
   return best
 }
 
@@ -185,7 +357,7 @@ function searchRoot(
   tt: Map<string, TtEntry> | null,
   limit: SearchLimit | null,
 ): { move: ChessMove; scores: number[] } | null {
-  const orderedMoves = ordered(position, moves, tt?.get(serializePosition(position))?.best ?? null)
+  const orderedMoves = ordered(position, moves, tt ? probe(tt, serializePosition(position), depth, -Infinity, Infinity).best : null)
   const scores = orderedMoves.map((move) =>
     minimax(applyMove(position, move), ai, depth - 1, -Infinity, Infinity, tt, limit),
   )
@@ -193,6 +365,32 @@ function searchRoot(
     return null
   }
   return { move: pick(orderedMoves, scores, random), scores }
+}
+
+function bookMove(position: ChessPosition, random: () => number): ChessMove | null {
+  const key = serializePosition(position)
+  const matches: ChessMove[] = []
+  for (const line of OPENING_LINES) {
+    let cursor = createInitialPosition()
+    for (const [from, to] of line) {
+      if (serializePosition(cursor) === key) {
+        const legal = legalMoves(position).find((move) => move.from === from && move.to === to)
+        if (legal) {
+          matches.push(legal)
+        }
+        break
+      }
+      const step = legalMoves(cursor).find((move) => move.from === from && move.to === to)
+      if (!step) {
+        break
+      }
+      cursor = applyMove(cursor, step)
+    }
+  }
+  if (matches.length === 0) {
+    return null
+  }
+  return matches[Math.floor(random() * matches.length)] ?? null
 }
 
 export function chooseAiMove(
@@ -212,6 +410,13 @@ export function chooseAiMove(
       return captures[Math.floor(random() * captures.length)] ?? moves[0] ?? null
     }
     return moves[Math.floor(random() * moves.length)] ?? null
+  }
+
+  if (difficulty === 'hard' || difficulty === 'perfect') {
+    const booked = bookMove(position, random)
+    if (booked) {
+      return booked
+    }
   }
 
   if (difficulty === 'medium') {

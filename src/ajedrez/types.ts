@@ -33,3 +33,10 @@ export type ChessPosition = {
 }
 
 export type ChessOutcome = Player | 'draw' | null
+
+export type ChessEndReason = 'checkmate' | 'stalemate' | 'repetition' | 'fifty' | 'material'
+
+export type ChessResult = {
+  winner: ChessOutcome
+  reason: ChessEndReason | null
+}

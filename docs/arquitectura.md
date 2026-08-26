@@ -73,7 +73,7 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 
 - `shared/point.ts` y `shared/player.ts`: coordenadas, etiquetas y `isCpuTurn`.
 - `shared/types.ts`: `GameMode`, `Difficulty` (`easy` \| `medium` \| `hard` \| `perfect`), `GameId`.
-- `GamePanel`: modo, dificultad, color humano, selector de tablero/variante (Molino, Damas).
+- `GamePanel`: modo, dificultad, color humano, selector de tablero/variante (Molino, Damas). `statsExtra` opcional (historial SAN en Ajedrez).
 - `TableHud`: iconos fijos de manual y sonido, con etiqueta, arriba a la derecha, en todos los juegos. El de sonido abre una barra de 0 a 100.
 - `Stone`: la misma piedra SVG en Fanorona y Molino.
 - Resultado: `resultTitle` / `resultEyebrow` / `resultVariant` según modo y color humano.

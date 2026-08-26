@@ -1,14 +1,16 @@
 import { useState } from 'react'
+import { endReasonLabel, inCheck } from '../ajedrez'
+import { ChessBoard } from './ajedrez/ChessBoard'
+import { ChessLog } from './ajedrez/ChessLog'
+import { ChessMaterial } from './ajedrez/ChessMaterial'
+import { GamePanel } from './GamePanel'
+import { ManualTour } from './ManualTour'
+import { ResultOverlay } from './ResultOverlay'
 import { useAjedrez } from '../hooks/useAjedrez'
-import { inCheck } from '../ajedrez'
 import { isCpuTurn, playerLabel } from '../shared/player'
 import { resultEyebrow, resultTitle, resultVariant } from '../shared/result'
 import { AJEDREZ_MANUAL } from '../shared/manuals'
 import type { GameMode, Player, Winner } from '../shared/types'
-import { ChessBoard } from './ajedrez/ChessBoard'
-import { GamePanel } from './GamePanel'
-import { ManualTour } from './ManualTour'
-import { ResultOverlay } from './ResultOverlay'
 
 type AjedrezGameProps = {
   onBack: () => void
@@ -21,12 +23,13 @@ function statusText(
   humanColor: Player,
   thinking: boolean,
   checked: boolean,
+  reason: string,
 ): string {
   if (winner === 'draw') {
-    return 'Tablas.'
+    return reason || 'Tablas.'
   }
   if (winner) {
-    return `Ganaron las ${playerLabel(winner).toLowerCase()}.`
+    return `Ganaron las ${playerLabel(winner).toLowerCase()}. ${reason}`.trim()
   }
   if (thinking) {
     return 'La computadora está pensando…'
@@ -40,17 +43,11 @@ function statusText(
   return `Turno de ${playerLabel(current).toLowerCase()}.`
 }
 
-function resultDetail(winner: Winner): string {
-  if (winner === 'draw') {
-    return 'Ahogado, repetición, regla de 50 o material insuficiente.'
-  }
-  return 'Jaque mate.'
-}
-
 export function AjedrezGame({ onBack }: AjedrezGameProps) {
   const game = useAjedrez()
   const [rulesOpen, setRulesOpen] = useState(false)
   const checked = inCheck(game.position.squares, game.current)
+  const reason = endReasonLabel(game.endReason, game.winner)
 
   return (
     <div className="app">
@@ -59,7 +56,15 @@ export function AjedrezGame({ onBack }: AjedrezGameProps) {
           eyebrow="Tablero"
           title="Ajedrez"
           lede="Enroque, al paso y coronación. Las blancas empiezan."
-          status={statusText(game.winner, game.current, game.mode, game.humanColor, game.thinking, checked)}
+          status={statusText(
+            game.winner,
+            game.current,
+            game.mode,
+            game.humanColor,
+            game.thinking,
+            checked,
+            reason,
+          )}
           current={game.current}
           mode={game.mode}
           difficulty={game.difficulty}
@@ -69,7 +74,10 @@ export function AjedrezGame({ onBack }: AjedrezGameProps) {
           winner={game.winner}
           canUndo={game.canUndo}
           counts={game.counts}
-          countDetail={(player, onBoard) => `${onBoard} piezas · ${game.material[player]}`}
+          countDetail={(player) => (
+            <ChessMaterial player={player} kinds={game.captured[player]} advantage={game.advantage[player]} />
+          )}
+          statsExtra={<ChessLog log={game.log} onCopy={() => void game.copyPgn()} />}
           onUndo={game.undo}
           onReset={() => game.resetGame()}
           onMode={game.changeMode}
@@ -82,15 +90,23 @@ export function AjedrezGame({ onBack }: AjedrezGameProps) {
           <ChessBoard
             pieces={game.pieces}
             selected={game.selected}
+            cursor={game.cursor}
+            current={game.current}
             targets={game.targets}
+            captures={game.captures}
             lastFrom={game.lastFrom}
             lastTo={game.lastTo}
             checkIndex={game.checkIndex}
             flipped={game.flipped}
             disabled={game.thinking || Boolean(game.winner)}
             promoting={game.promoting}
+            announce={game.announce}
             onSelect={game.selectIndex}
             onPromote={game.promote}
+            onCancelPromote={game.cancelPromote}
+            onClear={game.clearSelection}
+            onCursor={game.setCursor}
+            onUndo={game.undo}
           />
         </main>
       </div>
@@ -100,7 +116,7 @@ export function AjedrezGame({ onBack }: AjedrezGameProps) {
         open={Boolean(game.winner)}
         eyebrow={resultEyebrow(game.winner, game.mode, game.humanColor)}
         title={resultTitle(game.winner, game.mode, game.humanColor)}
-        detail={resultDetail(game.winner)}
+        detail={reason}
         variant={resultVariant(game.winner, game.mode, game.humanColor)}
         onRematch={() => game.resetGame()}
         onMenu={onBack}
