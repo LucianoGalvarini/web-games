@@ -27,7 +27,11 @@ export function moveCursor(index: number, count: number, dir: LigaDir, cols: num
 }
 
 export function isAKey(key: string): boolean {
-  return key === 'z' || key === 'Z' || key === 'Enter'
+  return key === 'z' || key === 'Z'
+}
+
+export function isStartKey(key: string): boolean {
+  return key === 'Enter'
 }
 
 export function isBKey(key: string): boolean {

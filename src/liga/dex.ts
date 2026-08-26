@@ -1,5 +1,6 @@
 import movesJson from './data/moves.json'
 import speciesJson from './data/species.json'
+import { assignMoves } from './movesets'
 import type { LigaEffect, LigaMove, LigaSpecies, LigaType } from './types'
 
 const GEN3_MOVE_STATS: Record<string, Partial<Pick<LigaMove, 'power' | 'accuracy' | 'pp'>>> = {
@@ -70,8 +71,11 @@ function withGen3Stats(move: LigaMove): LigaMove {
   return { ...next, statusChance }
 }
 
-export const SPECIES: LigaSpecies[] = speciesJson as LigaSpecies[]
 export const MOVES: LigaMove[] = (movesJson as LigaMove[]).map(withGen3Stats)
+export const SPECIES: LigaSpecies[] = (speciesJson as LigaSpecies[]).map((entry) => ({
+  ...entry,
+  moves: assignMoves(entry, MOVES),
+}))
 
 const speciesById = new Map(SPECIES.map((entry) => [entry.id, entry]))
 const movesById = new Map(MOVES.map((entry) => [entry.id, entry]))

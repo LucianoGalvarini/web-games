@@ -2294,7 +2294,15 @@ button.truco-card:disabled {
 }
 
 .liga-shell {
-  --controls-col: 360px;
+  --controls-col: 0px;
+  --stats-col: 0px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "board";
+  max-width: 1100px;
+}
+
+.app.is-liga-play {
+  padding: 16px 12px 24px;
 }
 
 .liga-table {
@@ -2465,6 +2473,14 @@ button.truco-card:disabled {
   background: #5a5040;
 }
 
+.liga-pad-btn.is-start {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  font-size: 12px;
+  background: #3d6848;
+}
+
 .liga-pad-btn.is-b {
   width: 52px;
   height: 52px;
@@ -2561,10 +2577,7 @@ body.is-liga-wide {
   }
 
   .liga-shell {
-    grid-template-areas:
-      "board"
-      "controls"
-      "stats";
+    grid-template-areas: "board";
     gap: 12px;
   }
 
@@ -2590,6 +2603,370 @@ body.is-liga-wide {
   width: 100%;
   height: 100%;
   min-height: 0;
+}
+
+.liga-field-menu {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+}
+
+.liga-start-box,
+.liga-start-panel {
+  pointer-events: auto;
+  color: #e6e2d6;
+  background: #16141f;
+  border: 4px solid #5c5078;
+  box-shadow: inset 0 0 0 3px #2a2438;
+  font-family: VT323, "Courier New", monospace;
+}
+
+.liga-start-box {
+  position: absolute;
+  top: 12%;
+  right: 4%;
+  min-width: 10.5em;
+  padding: 8px 10px 10px;
+}
+
+.liga-start-box.is-option {
+  min-width: 12em;
+}
+
+.liga-start-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #4a4460;
+  font-size: 0.78em;
+  color: #b8b0c8;
+}
+
+.liga-start-box ul,
+.liga-start-panel > ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.liga-start-box li {
+  position: relative;
+  padding: 3px 6px 3px 16px;
+  border-radius: 4px;
+}
+
+.liga-start-box li.is-cursor {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.liga-start-box li.is-cursor::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0.5em;
+  border-style: solid;
+  border-width: 5px 0 5px 7px;
+  border-color: transparent transparent transparent #f0d070;
+  animation: liga-caret 0.45s steps(2) infinite;
+}
+
+.liga-opt-label {
+  margin: 0 0 4px;
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8298;
+}
+
+.liga-diff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 8px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid #4a4460;
+}
+
+.liga-diff-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 16px;
+}
+
+.liga-diff-mark {
+  width: 0.7em;
+  height: 0.7em;
+  flex: 0 0 auto;
+  border: 1px solid rgba(230, 226, 214, 0.35);
+  border-radius: 50%;
+  background: transparent;
+}
+
+.liga-diff-list li.is-on {
+  color: #f0d080;
+}
+
+.liga-diff-list li.is-on .liga-diff-mark {
+  background: #e0b060;
+  border-color: #e8c878;
+  box-shadow: 0 0 7px rgba(224, 176, 96, 0.55);
+}
+
+.liga-opt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.liga-start-panel {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 7%;
+  bottom: 7%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 8px 10px;
+  min-height: 0;
+}
+
+.liga-field-menu.is-party .liga-start-panel {
+  display: flex;
+  flex-direction: column;
+  top: 8%;
+  bottom: auto;
+  max-height: 84%;
+  height: max-content;
+  overflow: hidden;
+}
+
+.liga-start-panel > p {
+  margin: 0 0 8px;
+  color: #b8b0c8;
+  flex: 0 0 auto;
+}
+
+.liga-start-panel .liga-party {
+  flex: 0 0 auto;
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+  padding: 2px;
+  gap: 8px 12px;
+  align-content: start;
+  grid-template-rows: auto;
+}
+
+.liga-start-panel .liga-party li {
+  color: #ece8dc;
+  background: #221e2e;
+  border: 1px solid #4a4460;
+  box-shadow: none;
+  min-height: 0;
+  padding: 6px 10px 6px 18px;
+  align-items: center;
+}
+
+.liga-start-panel .liga-party li.is-cursor {
+  background: #2e2840;
+  box-shadow: inset 0 0 0 1px #e0b060;
+}
+
+.liga-start-panel .liga-party li.is-cursor::before {
+  border-color: transparent transparent transparent #f0d070;
+}
+
+.liga-start-panel .liga-party li.is-lead {
+  border-color: #c47850;
+}
+
+.liga-start-panel .liga-party li.is-swap {
+  box-shadow: inset 0 0 0 1px #e05848;
+}
+
+.liga-start-panel .liga-party img {
+  width: 48px;
+  height: 48px;
+  background: #16141f;
+  box-shadow: inset 0 0 0 1px #3a3450;
+}
+
+.liga-start-panel .liga-party-info {
+  gap: 2px;
+}
+
+.liga-start-panel .liga-party-info strong {
+  font-size: 15px;
+}
+
+.liga-start-panel .liga-party-info em {
+  color: #e09070;
+}
+
+.liga-start-panel .liga-party .liga-type {
+  font-size: 9px;
+}
+
+.liga-start-panel .liga-party .liga-hp-track {
+  height: 7px;
+}
+
+.liga-start-panel .liga-party .liga-hp-num,
+.liga-start-panel .liga-party .liga-hp-lab {
+  font-size: 11px;
+}
+
+.liga-start-panel .liga-move-read {
+  color: #9a8e82;
+  font-size: 10px;
+}
+
+.liga-start-panel .liga-hp-num {
+  color: #c8c0b4;
+}
+
+.liga-start-panel .liga-gba-list {
+  overflow-x: hidden;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.liga-start-panel .liga-gba-list li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.liga-start-panel .liga-gba-list li.is-cursor {
+  background: rgba(255, 255, 255, 0.08);
+  transform: none;
+}
+
+.liga-start-panel .liga-gba-list li.is-cursor::before {
+  border-color: transparent transparent transparent #f0d070;
+}
+
+.liga-party li.is-swap {
+  box-shadow: inset 0 0 0 2px #e04830, 2px 3px 0 rgba(28, 20, 56, 0.45);
+}
+
+.liga-party li.is-lead {
+  border-color: #c45038;
+}
+
+.liga-move-read {
+  display: block;
+  font-size: 10px;
+  color: #5a5040;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liga-dock {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 4.6em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.liga-dock li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  min-width: 0;
+  padding: 8px 4px 5px;
+  color: #f6f3ea;
+  background: rgba(18, 12, 28, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: none;
+  backdrop-filter: blur(3px);
+  font-family: VT323, "Courier New", monospace;
+  text-shadow: 0 1px 2px rgba(8, 6, 14, 0.85);
+}
+
+.liga-dock li.is-lead {
+  background: rgba(28, 16, 22, 0.36);
+  border-color: rgba(255, 196, 120, 0.42);
+}
+
+.liga-dock li.is-faint {
+  opacity: 0.4;
+}
+
+.liga-dock img {
+  display: block;
+  width: 56px;
+  height: 56px;
+  margin: 0 0 2px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.45));
+}
+
+.liga-dock strong {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.liga-dock em {
+  position: absolute;
+  top: -0.55em;
+  left: -0.55em;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  min-width: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-style: normal;
+  line-height: 1;
+  text-align: center;
+  color: #f6f3ea;
+  background: rgba(12, 10, 20, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 50%;
+  text-shadow: none;
+}
+
+.liga-dock .liga-hp {
+  width: 100%;
+  margin-top: 3px;
+  gap: 0;
+}
+
+.liga-dock .liga-hp-track {
+  height: 3px;
+  border: 0;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: none;
+}
+
+.liga-dock .liga-hp-fill::after {
+  display: none;
 }
 
 .liga-canvas {
@@ -3483,6 +3860,44 @@ body.is-liga-wide {
   .liga-gba-list img {
     width: 16px;
     height: 16px;
+  }
+
+  .liga-dock {
+    left: 8px;
+    top: 6px;
+    width: 3.6em;
+    gap: 6px;
+  }
+
+  .liga-dock li {
+    padding: 7px 3px 4px;
+    border-radius: 6px;
+  }
+
+  .liga-dock img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .liga-dock strong {
+    font-size: 9px;
+  }
+
+  .liga-dock em {
+    top: -0.5em;
+    left: -0.5em;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+  }
+
+  .liga-start-panel .liga-party {
+    height: auto;
+    overflow: hidden;
+  }
+
+  .liga-start-panel .liga-party li {
+    box-shadow: none;
   }
 
   .liga-party {

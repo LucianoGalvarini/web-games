@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { applyAction, createGame, listedBag } from '../liga/apply'
 import { itemUsable } from '../liga/battle'
 import { DIFFICULTIES, KEY_DIR, PRESETS, WALK_MS } from '../liga/constants'
-import { isAKey, isBKey, isTurboKey, moveCursor } from '../liga/cursor'
+import { isAKey, isBKey, isStartKey, isTurboKey, moveCursor } from '../liga/cursor'
 import { moveOf, speciesOf } from '../liga/dex'
 import { sfxForType, type LigaAnim } from '../liga/fx'
+import { FIELD_PARTY_COLS, FIELD_ROOT_COUNT, fieldOptionCount, rootCursorOf, type LigaFieldScreen } from '../liga/fieldMenu'
 import { ITEM_LABELS } from '../liga/labels'
 import { canStep } from '../liga/map'
 import { cloneSlot } from '../liga/team'
@@ -45,7 +46,7 @@ function cue(prev: LigaState, next: LigaState, action: LigaAction): void {
   }
 }
 
-export function useLiga() {
+export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } = {}) {
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [state, setState] = useState<LigaState>(() => createGame('medium'))
   const [walk, setWalk] = useState<WalkAnim | null>(null)
@@ -57,6 +58,8 @@ export function useLiga() {
   const [turbo, setTurbo] = useState(false)
   const [hint, setHint] = useState<string | null>(null)
   const [speechSkip, setSpeechSkip] = useState(false)
+  const [fieldMenu, setFieldMenu] = useState<LigaFieldScreen | null>(null)
+  const [swapFrom, setSwapFrom] = useState<number | null>(null)
   const [field, setField] = useState<{ player: LigaSlot; foe: LigaSlot } | null>(null)
 
   const stateRef = useRef(state)
@@ -71,6 +74,10 @@ export function useLiga() {
   const fieldRef = useRef(field)
   const heldRef = useRef<Partial<Record<LigaDir, boolean>>>({})
   const holdAckRef = useRef(false)
+  const fieldMenuRef = useRef(fieldMenu)
+  const swapFromRef = useRef(swapFrom)
+  const handlersRef = useRef(handlers)
+  handlersRef.current = handlers
   stateRef.current = state
   walkRef.current = walk
   difficultyRef.current = difficulty
@@ -79,6 +86,8 @@ export function useLiga() {
   animatingRef.current = animating
   turboRef.current = turbo
   fieldRef.current = field
+  fieldMenuRef.current = fieldMenu
+  swapFromRef.current = swapFrom
 
   const bag = useMemo(() => listedBag(state.bag), [state.bag])
   bagRef.current = bag
@@ -143,6 +152,8 @@ export function useLiga() {
     setSpeechSkip(false)
     setTurbo(false)
     setField(null)
+    setFieldMenu(null)
+    setSwapFrom(null)
     heldRef.current = {}
   }, [])
 
@@ -489,6 +500,122 @@ export function useLiga() {
         return
       }
       const current = stateRef.current
+      const closeField = () => {
+        setFieldMenu(null)
+        setSwapFrom(null)
+        setCursor(0)
+      }
+      if (isStartKey(key)) {
+        if (current.phase === 'battle' || animatingRef.current) {
+          return
+        }
+        if (fieldMenuRef.current) {
+          closeField()
+          playSfx('click')
+          return
+        }
+        if (current.phase !== 'walk') {
+          return
+        }
+        setFieldMenu('root')
+        setSwapFrom(null)
+        setCursor(0)
+        playSfx('ligaBeep')
+        return
+      }
+      if (fieldMenuRef.current) {
+        const screen = fieldMenuRef.current
+        if (isAKey(key)) {
+          playSfx('ligaBeep')
+          if (screen === 'root') {
+            if (cursorRef.current === 0) {
+              setFieldMenu('party')
+              setCursor(0)
+              return
+            }
+            if (cursorRef.current === 1) {
+              setFieldMenu('bag')
+              setCursor(0)
+              return
+            }
+            if (cursorRef.current === 2) {
+              setFieldMenu('option')
+              setCursor(0)
+              return
+            }
+            closeField()
+            resetGame()
+            return
+          }
+          if (screen === 'party') {
+            const index = cursorRef.current
+            if (!current.party[index]) {
+              return
+            }
+            if (swapFromRef.current === null) {
+              setSwapFrom(index)
+              return
+            }
+            if (swapFromRef.current === index) {
+              setSwapFrom(null)
+              return
+            }
+            play({ kind: 'reorder', from: swapFromRef.current, to: index })
+            setSwapFrom(null)
+            return
+          }
+          if (screen === 'option') {
+            const choice = cursorRef.current
+            if (choice < DIFFICULTIES.length) {
+              const next = DIFFICULTIES[choice]
+              if (next) {
+                closeField()
+                changeDifficulty(next)
+              }
+              return
+            }
+            if (choice === DIFFICULTIES.length) {
+              handlersRef.current.onHelp?.()
+              return
+            }
+            closeField()
+            handlersRef.current.onBack?.()
+          }
+          return
+        }
+        if (isBKey(key)) {
+          playSfx('click')
+          if (screen === 'party' && swapFromRef.current !== null) {
+            setSwapFrom(null)
+            return
+          }
+          if (screen === 'root') {
+            closeField()
+            return
+          }
+          setFieldMenu('root')
+          setSwapFrom(null)
+          setCursor(rootCursorOf(screen))
+          return
+        }
+        const dir = KEY_DIR[key]
+        if (!dir) {
+          return
+        }
+        playSfx('ligaBeep')
+        let count = FIELD_ROOT_COUNT
+        let cols = 1
+        if (screen === 'party') {
+          count = current.party.length
+          cols = FIELD_PARTY_COLS
+        } else if (screen === 'bag') {
+          count = Math.max(1, bagRef.current.length)
+        } else if (screen === 'option') {
+          count = fieldOptionCount(DIFFICULTIES)
+        }
+        setCursor((value) => moveCursor(value, count, dir, cols))
+        return
+      }
       if (isAKey(key)) {
         if ((current.phase === 'dialog' || current.phase === 'battle') && !speechReadyRef.current) {
           setSpeechSkip(true)
@@ -626,7 +753,7 @@ export function useLiga() {
       }
       setCursor((value) => moveCursor(value, count, dir, cols))
     },
-    [play],
+    [changeDifficulty, play, resetGame],
   )
 
   const pressUp = useCallback((key: string) => {
@@ -642,7 +769,7 @@ export function useLiga() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isTurboKey(event.key) || isAKey(event.key) || isBKey(event.key) || KEY_DIR[event.key]) {
+      if (isTurboKey(event.key) || isAKey(event.key) || isBKey(event.key) || isStartKey(event.key) || KEY_DIR[event.key]) {
         event.preventDefault()
       }
       if (event.repeat) {
@@ -656,7 +783,7 @@ export function useLiga() {
     let raf = 0
     const loop = () => {
       const current = stateRef.current
-      if (!walkRef.current && current.phase === 'walk') {
+      if (!walkRef.current && current.phase === 'walk' && !fieldMenuRef.current) {
         const dir = (['up', 'down', 'left', 'right'] as const).find(
           (key) => heldRef.current[key] && canStep(current, key),
         )
@@ -689,7 +816,7 @@ export function useLiga() {
     if (state.phase === 'dialog') {
       return 'Z sigue. Espacio acelera el texto.'
     }
-    return 'Flechas o WASD caminan. Z habla. Espacio acelera. F pantalla completa.'
+    return 'Enter abre el menú. Flechas caminan. Z habla. Espacio acelera. F pantalla completa.'
   }, [state.phase])
 
   return {
@@ -712,6 +839,8 @@ export function useLiga() {
       speechReadyRef.current = ready
     },
     statusText,
+    fieldMenu,
+    swapFrom,
     play,
     pressDown,
     pressUp,

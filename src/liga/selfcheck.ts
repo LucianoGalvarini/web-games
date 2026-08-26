@@ -1,7 +1,8 @@
 import { applyAction, createGame } from './apply'
 import { estimatedDamage, playTurn, startBattle } from './battle'
 import { DIFFICULTIES, PRESETS, ROOM_COLS, ROOM_ROWS } from './constants'
-import { isAKey, isBKey, isTurboKey, moveCursor } from './cursor'
+import { isAKey, isBKey, isStartKey, isTurboKey, moveCursor } from './cursor'
+import { FIELD_PARTY_COLS, rootCursorOf } from './fieldMenu'
 import { SPECIES, moveOf, speciesOf } from './dex'
 import { effectivenessLine } from './labels'
 import { facingTrainer, tileAt, trainerPos, walkable } from './map'
@@ -48,6 +49,46 @@ assert(effectivenessLine(0.25) === 'No es muy eficaz...', 'El ¼× no es muy efi
 assert(effectivenessLine(0.5) === 'No es muy eficaz...', 'El ½× no es muy eficaz.')
 assert(effectivenessLine(0, 'Groudon') === 'No afecta a Groudon...', 'El 0× no afecta.')
 assert(!SPECIES.some((entry) => entry.types.includes('fairy' as never)), 'No hay tipo Hada.')
+assert(
+  SPECIES.every((entry) => entry.moves.length === 4 && new Set(entry.moves).size === 4),
+  'Cada Pokémon tiene cuatro ataques distintos.',
+)
+assert(
+  !speciesOf(6).moves.some((id) => moveOf(id).type === 'water'),
+  'Charizard no tira ataques de Agua.',
+)
+assert(
+  !speciesOf(9).moves.some((id) => moveOf(id).type === 'fire'),
+  'Blastoise no tira ataques de Fuego.',
+)
+assert(
+  speciesOf(6).moves.some((id) => moveOf(id).type === 'fire'),
+  'Charizard lleva STAB de Fuego.',
+)
+assert(
+  speciesOf(6).moves.some((id) => moveOf(id).type === 'flying'),
+  'Charizard lleva STAB de Volador.',
+)
+assert(
+  !speciesOf(282).moves.includes(89),
+  'Gardevoir no usa Terremoto.',
+)
+assert(
+  SPECIES.every(
+    (entry) => !entry.types.includes('fire') || !entry.moves.some((id) => moveOf(id).type === 'water'),
+  ),
+  'Ningún tipo Fuego tira Agua.',
+)
+assert(
+  SPECIES.every(
+    (entry) => !entry.types.includes('water') || !entry.moves.some((id) => moveOf(id).type === 'fire'),
+  ),
+  'Ningún tipo Agua tira Fuego.',
+)
+assert(
+  SPECIES.filter((entry) => entry.moves.includes(63) && !entry.types.includes('normal')).length === 0,
+  'Hiperrayo queda para los tipo Normal.',
+)
 
 const quakeUser = { ...makeSlot(speciesOf(383), 50, 31, 0), spe: 200, moves: [{ moveId: 89, pp: 10 }] }
 const flyer = { ...makeSlot(speciesOf(18), 50, 0, 0), spe: 1, moves: [{ moveId: 16, pp: 10 }] }
@@ -198,11 +239,20 @@ atTrainer = applyAction(atTrainer, { kind: 'interact' }, () => 0)
 assert(atTrainer.phase === 'battle' && atTrainer.battle, 'El diálogo entra en combate.')
 assert(atTrainer.battle?.trainerId === 'sidney', 'El combate es contra Sixto.')
 
-assert(isAKey('z') && isBKey('x') && isTurboKey(' '), 'Z confirma, X cancela y espacio acelera.')
+assert(isAKey('z') && !isAKey('Enter') && isStartKey('Enter') && isBKey('x') && isTurboKey(' '), 'Z confirma, Enter abre el menú y X cancela.')
+assert(rootCursorOf('bag') === 1, 'Volver de la mochila deja el cursor en MOCHILA.')
+assert(rootCursorOf('option') === 2, 'Volver de opción deja el cursor en OPCIÓN.')
+assert(rootCursorOf('party') === 0, 'Volver del equipo deja el cursor en POKÉMON.')
+
+const swapped = applyAction(game, { kind: 'reorder', from: 0, to: 1 }, () => 0)
+assert(swapped.party[0]?.speciesId === game.party[1]?.speciesId, 'El menú puede cambiar quién sale primero.')
+assert(swapped.party[1]?.speciesId === game.party[0]?.speciesId, 'El intercambio de equipo es simétrico.')
 assert(moveCursor(0, 4, 'right', 2) === 1, 'El cursor de combate se mueve en grilla.')
 assert(moveCursor(0, 4, 'down', 2) === 2, 'Abajo en LUCHAR baja a POKÉMON.')
-assert(moveCursor(0, 6, 'right', 2) === 1, 'En el equipo, derecha cambia de columna.')
-assert(moveCursor(0, 6, 'down', 2) === 2, 'En el equipo, abajo baja de fila.')
+assert(moveCursor(0, 6, 'right', FIELD_PARTY_COLS) === 1, 'En el equipo, derecha cambia de columna.')
+assert(moveCursor(0, 6, 'down', FIELD_PARTY_COLS) === 2, 'En el equipo, abajo baja de fila.')
+assert(moveCursor(0, 6, 'left', FIELD_PARTY_COLS) === 1, 'En el equipo, izquierda va a la otra columna.')
+assert(moveCursor(1, 6, 'down', FIELD_PARTY_COLS) === 3, 'Abajo en la columna derecha baja un puesto.')
 
 let fight = atTrainer
 for (let n = 0; n < 500 && fight.phase === 'battle'; n += 1) {

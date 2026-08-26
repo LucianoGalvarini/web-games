@@ -89,6 +89,7 @@ export function LigaPad({ onDown, onUp }: LigaPadProps) {
         ))}
       </div>
       <div className="liga-pad-ab">
+        <PadKey code="Enter" label="ENT" className="liga-pad-btn is-start" onDown={onDown} onUp={onUp} />
         <PadKey code=" " label="SPC" className="liga-pad-btn is-turbo" onDown={onDown} onUp={onUp} />
         <PadKey code="x" label="X" className="liga-pad-btn is-b" onDown={onDown} onUp={onUp} />
         <PadKey code="z" label="Z" className="liga-pad-btn is-a" onDown={onDown} onUp={onUp} />

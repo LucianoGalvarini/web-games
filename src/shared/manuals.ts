@@ -290,8 +290,13 @@ export const LIGA_MANUAL: ManualStep[] = [
   },
   {
     title: 'Caminar',
-    body: 'WASD o flechas mueven. Z habla y confirma, X cancela. El texto sale de a poco: Espacio lo acelera, como el turbo de un emulador. F pone el recuadro en pantalla completa.',
-    tryIt: 'Subí por la alfombra y hablá con Sixto.',
+    body: 'WASD o flechas mueven. Enter abre el menú de la GBA. El equipo aparece a la izquierda, con nivel y barra de PS. Z habla y confirma, X cancela. Espacio acelera el texto. F pone el recuadro en pantalla completa.',
+    tryIt: 'Enter, mirá el equipo de la izquierda y subí a hablar con Sixto.',
+    spot: 'board',
+  },
+  {
+    title: 'Menú',
+    body: 'POKÉMON cambia el orden: el primero sale al combate. Z elige uno y Z otra vez lo intercambia. MOCHILA muestra objetos. OPCIÓN cambia dificultad, abre la ayuda o vuelve a elegir juego. REINICIAR empieza otra liga.',
     spot: 'board',
   },
   {
@@ -301,7 +306,7 @@ export const LIGA_MANUAL: ManualStep[] = [
   },
   {
     title: 'Dificultad',
-    body: 'Fácil trae más nivel, mejores stats y más curas. Perfecta recorta el equipo y la mochila. Reiniciar siempre reparte otros seis.',
-    spot: 'controls',
+    body: 'Fácil trae más nivel, mejores stats y más curas. Perfecta recorta el equipo y la mochila. Se cambia desde OPCIÓN en el menú. Reiniciar siempre reparte otros seis.',
+    spot: 'board',
   },
 ]

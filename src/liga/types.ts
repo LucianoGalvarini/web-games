@@ -154,3 +154,4 @@ export type LigaAction =
   | { kind: 'item'; itemId: LigaItemId; target: number }
   | { kind: 'switch'; index: number }
   | { kind: 'resolve' }
+  | { kind: 'reorder'; from: number; to: number }

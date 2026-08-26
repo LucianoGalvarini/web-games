@@ -161,6 +161,20 @@ export function applyAction(state: LigaState, action: LigaAction, random: () => 
   if (state.phase === 'won' || state.phase === 'lost') {
     return state
   }
+  if (action.kind === 'reorder') {
+    if (state.phase === 'battle' || state.battle) {
+      return state
+    }
+    const from = state.party[action.from]
+    const to = state.party[action.to]
+    if (!from || !to || action.from === action.to) {
+      return state
+    }
+    const party = cloneParty(state.party)
+    party[action.from] = to
+    party[action.to] = from
+    return { ...state, party }
+  }
   if (action.kind === 'step') {
     return stepTo(state, action.dir)
   }
