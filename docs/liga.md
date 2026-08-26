@@ -25,6 +25,6 @@ Fácil: nivel 65, IVs altos, más Restau. todo y Máx. revivir. Perfecta: nivel 
 | `fx.ts` | Temas de sala, color de tipos y sonidos de golpe |
 | `cursor.ts` | Grilla GBA: flechas, Z y X |
 
-Combate: STAB, tabla de tipos de gen 3, críticos 1/16, sin habilidades ni clima. Hiperrayo y Vuelo se resuelven en un turno.
+Combate: STAB, tabla de tipos de gen 3 (sin Hada; Acero resiste Fantasma y Siniestro), críticos 1/16, sin habilidades ni clima. Terremoto no afecta a Volador. Los movimientos de estado respetan inmunidades (Onda Trueno no paraliza Tierra). Hiperrayo y Vuelo se resuelven en un turno. Los poderes de los ataques usan los valores de Esmeralda.
 
 Para regenerar el dex: `node scripts/fetch-liga-dex.mjs`.

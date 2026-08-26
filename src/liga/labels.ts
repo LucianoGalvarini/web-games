@@ -81,15 +81,15 @@ export const STATUS_LABELS: Record<LigaStatus, string> = {
   sleep: 'DOR',
 }
 
-export function effectivenessLine(factor: number): string | null {
-  if (factor === 0) {
-    return 'No afectó al Pokémon rival.'
+export function effectivenessLine(factor: number, target?: string): string | null {
+  if (factor <= 0) {
+    return target ? `No afecta a ${target}...` : 'No afecta...'
   }
   if (factor >= 2) {
-    return '¡Es muy efectivo!'
+    return '¡Es muy eficaz!'
   }
   if (factor > 0 && factor < 1) {
-    return 'No es muy efectivo...'
+    return 'No es muy eficaz...'
   }
-  return null
+  return 'Es eficaz.'
 }

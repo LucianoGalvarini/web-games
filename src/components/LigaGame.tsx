@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLiga } from '../hooks/useLiga'
 import { PRESETS, TRAINER_ORDER } from '../liga/constants'
 import { speciesOf } from '../liga/dex'
-import { ITEM_LABELS, ROOM_LABELS, TRAINER_LABELS, TRAINER_TITLE, TYPE_LABELS } from '../liga/labels'
+import { ITEM_LABELS, ROOM_LABELS, TRAINER_LABELS, TRAINER_TITLE } from '../liga/labels'
 import { spriteUrl } from '../liga/sprites'
 import { speciesLabel } from '../liga/team'
 import { LIGA_MANUAL } from '../shared/manuals'
@@ -12,6 +12,7 @@ import { LigaHp } from './liga/LigaHp'
 import { LigaItemIcon } from './liga/LigaItemIcon'
 import { LigaMap } from './liga/LigaMap'
 import { LigaSpeech } from './liga/LigaSpeech'
+import { LigaTypes } from './liga/LigaTypes'
 import { ManualTour } from './ManualTour'
 import { ResultOverlay } from './ResultOverlay'
 import { TableHud } from './TableHud'
@@ -152,7 +153,7 @@ export function LigaGame({ onBack }: LigaGameProps) {
                 <div>
                   <strong>{speciesLabel(slot)}</strong>
                   <span>
-                    Nv.{slot.level} · {speciesOf(slot.speciesId).types.map((type) => TYPE_LABELS[type]).join(' / ')}
+                    Nv.{slot.level} · <LigaTypes types={speciesOf(slot.speciesId).types} />
                   </span>
                   <LigaHp hp={slot.hp} max={slot.maxHp} />
                 </div>

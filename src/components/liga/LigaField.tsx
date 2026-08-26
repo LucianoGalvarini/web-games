@@ -265,10 +265,11 @@ export function LigaField({ trainerId, playerId, foeId, anim }: LigaFieldProps) 
   const send = kind === 'send'
   const recall = kind === 'recall'
   const swap = send || recall
-  const playerLunge = kind === 'move' && anim?.side === 'player' ? Math.sin(Math.min(1, anim.t / 0.38) * Math.PI) * 18 : 0
-  const foeLunge = kind === 'move' && anim?.side === 'foe' ? Math.sin(Math.min(1, anim.t / 0.38) * Math.PI) * -18 : 0
-  const playerHit = kind === 'move' && anim?.side === 'foe' && anim.t > 0.5 ? Math.sin(anim.t * 52) * 5 : 0
-  const foeHit = kind === 'move' && anim?.side === 'player' && anim.t > 0.5 ? Math.sin(anim.t * 52) * 5 : 0
+  const impact = kind === 'move' && (anim?.factor ?? 1) !== 0
+  const playerLunge = impact && anim?.side === 'player' ? Math.sin(Math.min(1, anim.t / 0.38) * Math.PI) * 18 : 0
+  const foeLunge = impact && anim?.side === 'foe' ? Math.sin(Math.min(1, anim.t / 0.38) * Math.PI) * -18 : 0
+  const playerHit = impact && anim?.side === 'foe' && anim.t > 0.5 ? Math.sin(anim.t * 52) * 5 : 0
+  const foeHit = impact && anim?.side === 'player' && anim.t > 0.5 ? Math.sin(anim.t * 52) * 5 : 0
   const playerSink = faint && anim?.side === 'player' ? anim.t * 28 : 0
   const foeSink = faint && anim?.side === 'foe' ? anim.t * 28 : 0
   const playerFade = faint && anim?.side === 'player' ? 1 - anim.t : 1
@@ -276,8 +277,8 @@ export function LigaField({ trainerId, playerId, foeId, anim }: LigaFieldProps) 
   const playerScale =
     swap && anim?.side === 'player' ? (send ? 0.12 + anim.t * 0.88 : 1 - anim.t * 0.9) : 1
   const foeScale = swap && anim?.side === 'foe' ? (send ? 0.12 + anim.t * 0.88 : 1 - anim.t * 0.9) : 1
-  const shaking = Boolean(anim && kind === 'move' && anim.t > 0.5 && anim.t < 0.88)
-  const flash = Boolean(anim && ((kind === 'move' && anim.t > 0.5 && anim.t < 0.7) || (send && anim.t > 0.28 && anim.t < 0.48)))
+  const shaking = Boolean(anim && impact && anim.t > 0.5 && anim.t < 0.88)
+  const flash = Boolean(anim && ((impact && anim.t > 0.5 && anim.t < 0.7) || (send && anim.t > 0.28 && anim.t < 0.48)))
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -297,7 +298,7 @@ export function LigaField({ trainerId, playerId, foeId, anim }: LigaFieldProps) 
     }
     ctx.imageSmoothingEnabled = false
     ctx.clearRect(0, 0, W, H)
-    if (anim && kind === 'move') {
+    if (anim && impact) {
       const from = anim.side === 'player' ? { x: 70, y: 78 } : { x: 168, y: 42 }
       const to = anim.side === 'player' ? { x: 168, y: 42 } : { x: 70, y: 78 }
       drawFx(ctx, anim.type, from.x, from.y, to.x, to.y, anim.t)
@@ -306,7 +307,7 @@ export function LigaField({ trainerId, playerId, foeId, anim }: LigaFieldProps) 
       const pos = anim.side === 'player' ? { x: 58, y: 88 } : { x: 168, y: 50 }
       drawBall(ctx, pos.x, pos.y, anim.t)
     }
-  }, [anim, kind, swap])
+  }, [anim, impact, swap])
 
   return (
     <div className={`liga-field${shaking ? ' is-hit' : ''}`}>
@@ -317,7 +318,7 @@ export function LigaField({ trainerId, playerId, foeId, anim }: LigaFieldProps) 
           src={spriteUrl(foeId)}
           alt=""
           style={{
-            transform: `translate(${foeLunge + foeHit}px, ${foeSink + (anim?.side === 'foe' && kind === 'move' ? -6 : 0)}px) scale(${foeScale})`,
+            transform: `translate(${foeLunge + foeHit}px, ${foeSink + (anim?.side === 'foe' && impact ? -6 : 0)}px) scale(${foeScale})`,
             opacity: foeFade,
           }}
         />
@@ -328,7 +329,7 @@ export function LigaField({ trainerId, playerId, foeId, anim }: LigaFieldProps) 
           src={spriteUrl(playerId, true)}
           alt=""
           style={{
-            transform: `translate(${playerLunge + playerHit}px, ${playerSink + (anim?.side === 'player' && kind === 'move' ? -4 : 0)}px) scale(${playerScale})`,
+            transform: `translate(${playerLunge + playerHit}px, ${playerSink + (anim?.side === 'player' && impact ? -4 : 0)}px) scale(${playerScale})`,
             opacity: playerFade,
           }}
         />

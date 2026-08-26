@@ -7,6 +7,7 @@ export type LigaAnim = {
   t: number
   kind: LigaFxKind
   line: string
+  factor?: number
 }
 
 export const TYPE_COLOR: Record<LigaType, string> = {

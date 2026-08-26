@@ -9,6 +9,7 @@ import { LigaField } from './LigaField'
 import { LigaHp } from './LigaHp'
 import { LigaItemIcon } from './LigaItemIcon'
 import { LigaSpeech } from './LigaSpeech'
+import { LigaTypes } from './LigaTypes'
 
 type LigaBattleViewProps = {
   battle: LigaBattle
@@ -51,6 +52,7 @@ function PartyRows({
                 <span>{speciesLabel(slot)}</span>
                 {slot.status ? <em>{STATUS_LABELS[slot.status]}</em> : null}
               </strong>
+              <LigaTypes types={speciesOf(slot.speciesId).types} />
               <LigaHp hp={slot.hp} max={slot.maxHp} labeled stacked />
             </span>
           </li>
@@ -106,6 +108,7 @@ export function LigaBattleView({
           <strong>{foeSpecies.label.toUpperCase()}</strong>
           <span>Nv{foe.level}</span>
         </p>
+        <LigaTypes types={foeSpecies.types} />
         <LigaHp hp={foe.hp} max={foe.maxHp} showNum={false} labeled stacked />
       </div>
       <div className="liga-hud is-player">
@@ -113,6 +116,7 @@ export function LigaBattleView({
           <strong>{playerSpecies.label.toUpperCase()}</strong>
           <span>Nv{player.level}</span>
         </p>
+        <LigaTypes types={playerSpecies.types} />
         <LigaHp hp={player.hp} max={player.maxHp} labeled stacked />
         {player.status ? <em>{STATUS_LABELS[player.status]}</em> : null}
       </div>

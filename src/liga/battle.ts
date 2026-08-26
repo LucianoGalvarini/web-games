@@ -6,7 +6,7 @@ import { pickIndex } from './rng'
 import { emptyStages, isPhysical, modifiedStat, withStage } from './stats'
 import { cloneParty, cloneSlot, firstAlive, partyFainted, speciesLabel } from './team'
 import { typeMatchup } from './typeChart'
-import type { LigaBattle, LigaItemId, LigaSlot, LigaStages, LigaStatus } from './types'
+import type { LigaBattle, LigaEffect, LigaItemId, LigaMove, LigaSlot, LigaStages, LigaStatus, LigaType } from './types'
 
 export type LigaChoice =
   | { kind: 'move'; index: number }
@@ -70,17 +70,42 @@ function liveSpe(slot: LigaSlot, stages: LigaStages): number {
   return slot.status === 'paralyze' ? Math.max(1, Math.floor(speed * 0.25)) : speed
 }
 
+function isSelfEffect(effect: LigaEffect): boolean {
+  return effect === 'heal' || effect === 'atk2' || effect === 'spe2' || effect === 'calm'
+}
+
+function blocksPoison(types: LigaType[]): boolean {
+  return types.includes('steel') || types.includes('poison')
+}
+
+function statusFactor(move: LigaMove, defending: LigaType[]): number {
+  if (isSelfEffect(move.effect)) {
+    return 1
+  }
+  const factor = typeMatchup(move.type, defending)
+  if (factor === 0) {
+    return 0
+  }
+  if (move.effect === 'poison' && blocksPoison(defending)) {
+    return 0
+  }
+  return factor
+}
+
 export function estimatedDamage(attacker: LigaSlot, defender: LigaSlot, moveIndex: number): number {
   const used = attacker.moves[moveIndex]
   if (!used || used.pp <= 0) {
     return 0
   }
   const move = moveOf(used.moveId)
-  if (move.power <= 0) {
-    return move.effect === 'heal' ? -1 : 1
-  }
   const attacking = speciesOf(attacker.speciesId)
   const defending = speciesOf(defender.speciesId)
+  if (move.power <= 0) {
+    if (isSelfEffect(move.effect)) {
+      return move.effect === 'heal' ? -1 : 1
+    }
+    return statusFactor(move, defending.types) === 0 ? 0 : 1
+  }
   const factor = typeMatchup(move.type, defending.types)
   if (factor === 0) {
     return 0
@@ -151,14 +176,22 @@ function rollDamage(
     log.push(`¡El ataque de ${attackerName} falló!`)
     return { damage: 0, factor: 1, crit: false, miss: true, log }
   }
-  if (move.power <= 0) {
-    return { damage: 0, factor: 1, crit: false, miss: false, log }
-  }
   const attacking = speciesOf(attacker.speciesId)
   const defending = speciesOf(defender.speciesId)
+  if (move.power <= 0) {
+    const factor = statusFactor(move, defending.types)
+    if (factor === 0) {
+      const immune = effectivenessLine(0, speciesLabel(defender))
+      if (immune) {
+        log.push(immune)
+      }
+      return { damage: 0, factor: 0, crit: false, miss: false, log }
+    }
+    return { damage: 0, factor: 1, crit: false, miss: false, log }
+  }
   const factor = typeMatchup(move.type, defending.types)
+  const immune = effectivenessLine(factor, speciesLabel(defender))
   if (factor === 0) {
-    const immune = effectivenessLine(0)
     if (immune) {
       log.push(immune)
     }
@@ -240,6 +273,10 @@ function applyTargetEffect(
     log.push(`No afectó a ${name}.`)
     return { slot: defender, log }
   }
+  if (move.effect === 'poison' && blocksPoison(speciesOf(defender.speciesId).types)) {
+    log.push(`No afectó a ${name}.`)
+    return { slot: defender, log }
+  }
   if (move.effect === 'paralyze') {
     log.push(`¡${name} está paralizado!`)
     return { slot: applyStatus(defender, 'paralyze', 0), log }
@@ -258,7 +295,17 @@ function applyTargetEffect(
 
 type Side = 'player' | 'foe'
 
-function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: () => number): LigaBattle {
+type ExecutedMove = {
+  battle: LigaBattle
+  factor: number
+  note: string | null
+}
+
+function idleMove(battle: LigaBattle): ExecutedMove {
+  return { battle, factor: 1, note: null }
+}
+
+function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: () => number): ExecutedMove {
   const attackerParty = side === 'player' ? battle.playerParty : battle.foeParty
   const defenderParty = side === 'player' ? battle.foeParty : battle.playerParty
   const attackerIndex = side === 'player' ? battle.playerActive : battle.foeActive
@@ -266,7 +313,7 @@ function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: 
   let attacker = cloneSlot(slotOf(attackerParty, attackerIndex))
   let defender = cloneSlot(slotOf(defenderParty, defenderIndex))
   if (attacker.hp <= 0 || defender.hp <= 0) {
-    return battle
+    return idleMove(battle)
   }
   const log = battle.log.slice()
   if (attacker.status === 'sleep') {
@@ -277,13 +324,15 @@ function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: 
       attacker = { ...attacker, sleep: attacker.sleep - 1 }
       log.push(`${speciesLabel(attacker)} está dormido.`)
       const party = replaceSlot(attackerParty, attackerIndex, attacker)
-      return side === 'player' ? { ...battle, playerParty: party, log } : { ...battle, foeParty: party, log }
+      const next = side === 'player' ? { ...battle, playerParty: party, log } : { ...battle, foeParty: party, log }
+      return idleMove(next)
     }
   }
   if (attacker.status === 'paralyze' && random() < 0.25) {
     log.push(`¡${speciesLabel(attacker)} está paralizado y no se puede mover!`)
     const party = replaceSlot(attackerParty, attackerIndex, attacker)
-    return side === 'player' ? { ...battle, playerParty: party, log } : { ...battle, foeParty: party, log }
+    const next = side === 'player' ? { ...battle, playerParty: party, log } : { ...battle, foeParty: party, log }
+    return idleMove(next)
   }
   attacker = spendPp(attacker, moveIndex)
   const atkStages = side === 'player' ? battle.playerStages : battle.foeStages
@@ -297,7 +346,13 @@ function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: 
     }
   }
   let nextAtkStages = atkStages
-  if (!rolled.miss) {
+  const used = attacker.moves[moveIndex]
+  const damaging = Boolean(used && moveOf(used.moveId).power > 0)
+  const note =
+    !rolled.miss && (damaging || rolled.factor === 0)
+      ? effectivenessLine(rolled.factor, speciesLabel(defender))
+      : null
+  if (!rolled.miss && rolled.factor !== 0) {
     const self = applySelfEffect(attacker, atkStages, moveIndex)
     attacker = self.slot
     nextAtkStages = self.stages
@@ -306,29 +361,29 @@ function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: 
     defender = target.slot
     log.push(...target.log)
   }
-  const used = attacker.moves[moveIndex]
-  if (used && moveOf(used.moveId).name === 'explosion') {
+  if (used && moveOf(used.moveId).name === 'explosion' && rolled.factor !== 0) {
     attacker = { ...attacker, hp: 0 }
     log.push(`¡${speciesLabel(attacker)} se debilitó!`)
   }
   const nextAttackerParty = replaceSlot(attackerParty, attackerIndex, attacker)
   const nextDefenderParty = replaceSlot(defenderParty, defenderIndex, defender)
-  if (side === 'player') {
-    return {
-      ...battle,
-      playerParty: nextAttackerParty,
-      foeParty: nextDefenderParty,
-      playerStages: nextAtkStages,
-      log,
-    }
-  }
-  return {
-    ...battle,
-    foeParty: nextAttackerParty,
-    playerParty: nextDefenderParty,
-    foeStages: nextAtkStages,
-    log,
-  }
+  const nextBattle =
+    side === 'player'
+      ? {
+          ...battle,
+          playerParty: nextAttackerParty,
+          foeParty: nextDefenderParty,
+          playerStages: nextAtkStages,
+          log,
+        }
+      : {
+          ...battle,
+          foeParty: nextAttackerParty,
+          playerParty: nextDefenderParty,
+          foeStages: nextAtkStages,
+          log,
+        }
+  return { battle: nextBattle, factor: rolled.factor, note }
 }
 
 function chip(slot: LigaSlot): { slot: LigaSlot; log: string | null } {
@@ -451,13 +506,19 @@ function settle(battle: LigaBattle): { battle: LigaBattle; result: LigaTurnResul
   return { battle: { ...next, menu: 'root', mustSwitch: false, outcome: 'ongoing' }, result: 'ongoing' }
 }
 
-function foeActs(battle: LigaBattle, difficulty: Difficulty, random: () => number): { battle: LigaBattle; moveId: number | null } {
+function foeActs(battle: LigaBattle, difficulty: Difficulty, random: () => number): {
+  battle: LigaBattle
+  moveId: number | null
+  factor: number
+  note: string | null
+} {
   if (slotOf(battle.foeParty, battle.foeActive).hp <= 0 || slotOf(battle.playerParty, battle.playerActive).hp <= 0) {
-    return { battle, moveId: null }
+    return { battle, moveId: null, factor: 1, note: null }
   }
   const index = chooseFoeMove(battle, difficulty, random)
   const move = slotOf(battle.foeParty, battle.foeActive).moves[index]
-  return { battle: executeMove(battle, 'foe', index, random), moveId: move?.moveId ?? null }
+  const executed = executeMove(battle, 'foe', index, random)
+  return { battle: executed.battle, moveId: move?.moveId ?? null, factor: executed.factor, note: executed.note }
 }
 
 function hpOf(battle: LigaBattle, side: 'player' | 'foe'): number {
@@ -478,10 +539,21 @@ function recordFx(
   next: LigaBattle,
   side: 'player' | 'foe',
   moveId: number,
+  factor: number,
+  note: string | null,
 ): void {
   const playerHp = hpOf(next, 'player')
   const foeHp = hpOf(next, 'foe')
-  steps.push({ kind: 'move', side, moveId, speciesId: slotSpecies(prev, side), playerHp, foeHp })
+  steps.push({
+    kind: 'move',
+    side,
+    moveId,
+    speciesId: slotSpecies(prev, side),
+    playerHp,
+    foeHp,
+    factor,
+    note: note ?? undefined,
+  })
   const target = side === 'player' ? 'foe' : 'player'
   if (hpOf(prev, target) > 0 && hpOf(next, target) <= 0) {
     steps.push({ kind: 'faint', side: target, moveId: 0, speciesId: slotSpecies(prev, target), playerHp, foeHp })
@@ -499,12 +571,12 @@ function withSend(steps: LigaBattle['lastFx'], before: LigaBattle, after: LigaBa
   return [...steps, { kind: 'send', side: 'foe', moveId: 0, speciesId: incoming.speciesId }]
 }
 
-function fxFromFoe(prev: LigaBattle, after: { battle: LigaBattle; moveId: number | null }): LigaBattle['lastFx'] {
+function fxFromFoe(prev: LigaBattle, after: { battle: LigaBattle; moveId: number | null; factor: number; note: string | null }): LigaBattle['lastFx'] {
   if (after.moveId === null) {
     return []
   }
   const steps: LigaBattle['lastFx'] = []
-  recordFx(steps, prev, after.battle, 'foe', after.moveId)
+  recordFx(steps, prev, after.battle, 'foe', after.moveId, after.factor, after.note)
   return steps
 }
 
@@ -565,23 +637,23 @@ export function playTurn(
   const steps: LigaBattle['lastFx'] = []
   if (playerFirst) {
     const afterPlayer = executeMove(next, 'player', choice.index, random)
-    recordFx(steps, next, afterPlayer, 'player', playerMove.moveId)
-    next = afterPlayer
+    recordFx(steps, next, afterPlayer.battle, 'player', playerMove.moveId, afterPlayer.factor, afterPlayer.note)
+    next = afterPlayer.battle
     if (foeMove && slotOf(next.foeParty, next.foeActive).hp > 0 && slotOf(next.playerParty, next.playerActive).hp > 0) {
       const afterFoe = executeMove(next, 'foe', foeIndex, random)
-      recordFx(steps, next, afterFoe, 'foe', foeMove.moveId)
-      next = afterFoe
+      recordFx(steps, next, afterFoe.battle, 'foe', foeMove.moveId, afterFoe.factor, afterFoe.note)
+      next = afterFoe.battle
     }
   } else {
     const afterFoe = executeMove(next, 'foe', foeIndex, random)
     if (foeMove) {
-      recordFx(steps, next, afterFoe, 'foe', foeMove.moveId)
+      recordFx(steps, next, afterFoe.battle, 'foe', foeMove.moveId, afterFoe.factor, afterFoe.note)
     }
-    next = afterFoe
+    next = afterFoe.battle
     if (slotOf(next.playerParty, next.playerActive).hp > 0 && slotOf(next.foeParty, next.foeActive).hp > 0) {
       const afterPlayer = executeMove(next, 'player', choice.index, random)
-      recordFx(steps, next, afterPlayer, 'player', playerMove.moveId)
-      next = afterPlayer
+      recordFx(steps, next, afterPlayer.battle, 'player', playerMove.moveId, afterPlayer.factor, afterPlayer.note)
+      next = afterPlayer.battle
     }
   }
   const settled = settle(endChip({ ...next, lastFx: steps }))

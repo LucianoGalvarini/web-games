@@ -106,6 +106,8 @@ export type LigaFxStep = {
   speciesId: number
   playerHp?: number
   foeHp?: number
+  factor?: number
+  note?: string
 }
 
 export type LigaBattle = {

@@ -21,6 +21,8 @@ type WalkAnim = {
 const FX_MS = 1520
 const FX_SEND_MS = 980
 const FX_FAINT_MS = 1120
+const FX_IMMUNE_MS = 1080
+const FX_NOTE_MS = 900
 const FX_GAP = 260
 const FX_FAINT_GAP = 520
 const FX_HIT_AT = 0.52
@@ -190,20 +192,22 @@ export function useLiga() {
       rafs.add(id)
     }
     setAnimating(true)
-    const durationOf = (kind: (typeof steps)[number]['kind']) => {
-      if (kind === 'move') {
+    const durationOf = (step: (typeof steps)[number]) => {
+      if (step.kind === 'move' && step.factor === 0) {
+        return FX_IMMUNE_MS
+      }
+      if (step.kind === 'move') {
         return FX_MS
       }
-      if (kind === 'faint') {
+      if (step.kind === 'faint') {
         return FX_FAINT_MS
       }
       return FX_SEND_MS
     }
     const gapOf = (kind: (typeof steps)[number]['kind']) => (kind === 'faint' ? FX_FAINT_GAP : FX_GAP)
-    const waitThen = (kind: (typeof steps)[number]['kind'], then: () => void) => {
+    const waitMs = (hold: number, then: () => void) => {
       let elapsed = 0
       let last = performance.now()
-      const hold = gapOf(kind)
       const loop = (now: number) => {
         if (cancelled) {
           return
@@ -218,6 +222,7 @@ export function useLiga() {
       }
       arm(loop)
     }
+    const waitThen = (kind: (typeof steps)[number]['kind'], then: () => void) => waitMs(gapOf(kind), then)
     const drainTo = (playerHp: number, foeHp: number, then: () => void) => {
       const current = fieldRef.current
       if (!current || (current.player.hp === playerHp && current.foe.hp === foeHp)) {
@@ -299,12 +304,17 @@ export function useLiga() {
       const name = speciesOf(step.speciesId).label
       let line = `¡${name} entra en combate!`
       let type = speciesOf(step.speciesId).types[0] ?? 'normal'
+      const immune = step.kind === 'move' && step.factor === 0
       if (step.kind === 'move') {
         const move = moveOf(step.moveId)
         type = move.type
         line = `¡${name} usó ${move.label}!`
-        playSfx('ligaWhoosh')
-        playSfx(move.effect === 'heal' ? 'ligaHeal' : sfxForType(move.type))
+        if (immune) {
+          playSfx('ligaBeep')
+        } else {
+          playSfx('ligaWhoosh')
+          playSfx(move.effect === 'heal' ? 'ligaHeal' : sfxForType(move.type))
+        }
       } else if (step.kind === 'faint') {
         line = `¡${name} se debilitó!`
         playSfx('ligaFaint')
@@ -327,15 +337,24 @@ export function useLiga() {
       let last = performance.now()
       let hitStarted = false
       let animDone = false
-      let drainDone = step.kind !== 'move'
+      let drainDone = step.kind !== 'move' || immune
       let advanced = false
-      const limit = durationOf(step.kind)
+      const limit = durationOf(step)
+      const paint = (t: number, text: string) => {
+        setAnim({ side: step.side, type, t, kind: step.kind, line: text, factor: step.factor })
+      }
       const maybeNext = () => {
         if (!animDone || !drainDone || cancelled || advanced) {
           return
         }
         advanced = true
-        waitThen(step.kind, () => run(index + 1))
+        const go = () => waitThen(step.kind, () => run(index + 1))
+        if (step.kind === 'move' && step.note && !immune) {
+          paint(1, step.note)
+          waitMs(FX_NOTE_MS, go)
+          return
+        }
+        go()
       }
       const loop = (now: number) => {
         if (cancelled) {
@@ -344,8 +363,9 @@ export function useLiga() {
         elapsed += (now - last) * (turboRef.current ? TURBO : 1)
         last = now
         const t = Math.min(1, elapsed / limit)
-        setAnim({ side: step.side, type, t, kind: step.kind, line })
-        if (step.kind === 'move' && !hitStarted) {
+        const shown = immune && step.note && t >= 0.42 ? step.note : line
+        paint(t, shown)
+        if (step.kind === 'move' && !immune && !hitStarted) {
           const move = moveOf(step.moveId)
           const hitAt = move.power > 0 ? FX_HIT_AT : 0.36
           if (t >= hitAt) {

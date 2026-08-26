@@ -1,5 +1,6 @@
 import type { LigaType } from './types'
 
+// Tabla de Esmeralda (gen 2–5): sin Hada; Acero resiste Fantasma y Siniestro.
 const CHART: Record<LigaType, Partial<Record<LigaType, number>>> = {
   normal: { rock: 0.5, ghost: 0, steel: 0.5 },
   fire: { fire: 0.5, water: 0.5, grass: 2, ice: 2, bug: 2, rock: 0.5, dragon: 0.5, steel: 2 },

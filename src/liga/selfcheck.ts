@@ -1,8 +1,11 @@
 import { applyAction, createGame } from './apply'
+import { estimatedDamage, playTurn, startBattle } from './battle'
 import { DIFFICULTIES, PRESETS, ROOM_COLS, ROOM_ROWS } from './constants'
 import { isAKey, isBKey, isTurboKey, moveCursor } from './cursor'
 import { SPECIES, moveOf, speciesOf } from './dex'
+import { effectivenessLine } from './labels'
 import { facingTrainer, tileAt, trainerPos, walkable } from './map'
+import { makeSlot } from './team'
 import { typeMatchup } from './typeChart'
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -14,10 +17,58 @@ function assert(condition: unknown, message: string): asserts condition {
 assert(SPECIES.every((entry) => entry.id >= 1 && entry.id <= 386), 'Solo generaciones 1 a 3.')
 assert(SPECIES.length >= 150, 'Hay un dex jugable.')
 assert(speciesOf(36).types[0] === 'normal', 'Clefable es Normal en gen 3.')
-assert(typeMatchup('fire', ['grass']) === 2, 'Fuego es fuerte contra Planta.')
+assert(typeMatchup('fire', ['grass']) === 2, 'Fuego es 2× contra Planta.')
+assert(typeMatchup('water', ['grass']) === 0.5, 'Agua es ½× contra Planta.')
 assert(typeMatchup('ghost', ['normal']) === 0, 'Fantasma no afecta a Normal.')
-assert(typeMatchup('dragon', ['steel']) === 0.5, 'Dragón es débil contra Acero.')
+assert(typeMatchup('dragon', ['steel']) === 0.5, 'Dragón es ½× contra Acero.')
+assert(typeMatchup('ground', ['steel', 'rock']) === 4, 'Tierra es 4× contra Acero/Roca.')
+assert(typeMatchup('fighting', ['psychic', 'flying']) === 0.25, 'Lucha es ¼× contra Psíquico/Volador.')
+assert(typeMatchup('electric', ['water', 'ground']) === 0, 'Eléctrico no afecta si hay Tierra.')
+assert(typeMatchup('ghost', ['steel']) === 0.5, 'Acero resiste Fantasma en gen 3.')
+assert(typeMatchup('dark', ['steel']) === 0.5, 'Acero resiste Siniestro en gen 3.')
+assert(typeMatchup('poison', ['steel']) === 0, 'Veneno no afecta a Acero.')
+assert(typeMatchup('psychic', ['dark']) === 0, 'Psíquico no afecta a Siniestro.')
+assert(typeMatchup('fighting', ['ghost']) === 0, 'Lucha no afecta a Fantasma.')
+assert(moveOf(89).name === 'earthquake' && moveOf(89).type === 'ground', 'Terremoto es Tierra.')
+assert(speciesOf(18).types.includes('flying'), 'Pidgeot es Volador.')
+assert(speciesOf(6).types.includes('flying'), 'Charizard es Volador.')
+assert(speciesOf(130).types.includes('flying'), 'Gyarados es Agua/Volador.')
+assert(typeMatchup(moveOf(89).type, speciesOf(18).types) === 0, 'Terremoto no afecta a Pidgeot.')
+assert(typeMatchup(moveOf(89).type, speciesOf(6).types) === 0, 'Terremoto no afecta a Charizard.')
+assert(typeMatchup(moveOf(89).type, speciesOf(130).types) === 0, 'Terremoto no afecta a Gyarados.')
+assert(speciesOf(184).types.join() === 'water', 'Azumarill es solo Agua en gen 3.')
+assert(speciesOf(176).types.join() === 'normal', 'Togetic es Normal en gen 3.')
+assert(speciesOf(282).types.join() === 'psychic', 'Gardevoir es solo Psíquico en gen 3.')
+assert(speciesOf(303).types.join() === 'steel', 'Mawile es solo Acero en gen 3.')
+assert(moveOf(85).power === 95, 'Rayo tiene 95 de poder en gen 3.')
+assert(moveOf(86).accuracy === 100, 'Onda Trueno no falla en gen 3.')
+assert(effectivenessLine(1) === 'Es eficaz.', 'El daño neutro anuncia eficacia.')
+assert(effectivenessLine(4) === '¡Es muy eficaz!', 'El 4× también es muy eficaz.')
+assert(effectivenessLine(0.25) === 'No es muy eficaz...', 'El ¼× no es muy eficaz.')
+assert(effectivenessLine(0.5) === 'No es muy eficaz...', 'El ½× no es muy eficaz.')
+assert(effectivenessLine(0, 'Groudon') === 'No afecta a Groudon...', 'El 0× no afecta.')
 assert(!SPECIES.some((entry) => entry.types.includes('fairy' as never)), 'No hay tipo Hada.')
+
+const quakeUser = { ...makeSlot(speciesOf(383), 50, 31, 0), spe: 200, moves: [{ moveId: 89, pp: 10 }] }
+const flyer = { ...makeSlot(speciesOf(18), 50, 0, 0), spe: 1, moves: [{ moveId: 16, pp: 10 }] }
+assert(estimatedDamage(quakeUser, flyer, 0) === 0, 'La IA no puntúa Terremoto contra Volador.')
+const quakeBattle = playTurn(startBattle([quakeUser], [flyer], 'steven'), { kind: 'move', index: 0 }, 'easy', () => 0)
+assert(quakeBattle.battle.foeParty[0]?.hp === flyer.hp, 'Terremoto no baja PS a Pidgeot.')
+assert(quakeBattle.battle.lastFx[0]?.factor === 0, 'Terremoto contra Volador queda en 0×.')
+assert(quakeBattle.battle.lastFx[0]?.note === 'No afecta a Pidgeot...', 'Terremoto anuncia que no afecta.')
+
+const waveUser = { ...makeSlot(speciesOf(26), 50, 31, 0), spe: 200, moves: [{ moveId: 86, pp: 20 }] }
+const grounded = { ...makeSlot(speciesOf(28), 50, 0, 0), spe: 1, moves: [{ moveId: 89, pp: 10 }] }
+assert(estimatedDamage(waveUser, grounded, 0) === 0, 'Onda Trueno no puntúa contra Tierra.')
+const waveBattle = playTurn(startBattle([waveUser], [grounded], 'steven'), { kind: 'move', index: 0 }, 'easy', () => 0)
+assert(waveBattle.battle.foeParty[0]?.status === null, 'Onda Trueno no paraliza a Tierra.')
+assert(waveBattle.battle.lastFx[0]?.factor === 0, 'Onda Trueno contra Tierra queda en 0×.')
+
+const toxicUser = { ...makeSlot(speciesOf(82), 50, 31, 0), spe: 200, moves: [{ moveId: 92, pp: 10 }] }
+const steel = { ...makeSlot(speciesOf(303), 50, 0, 0), spe: 1, moves: [{ moveId: 63, pp: 5 }] }
+assert(estimatedDamage(toxicUser, steel, 0) === 0, 'Tóxico no puntúa contra Acero.')
+const toxicBattle = playTurn(startBattle([toxicUser], [steel], 'steven'), { kind: 'move', index: 0 }, 'easy', () => 0)
+assert(toxicBattle.battle.foeParty[0]?.status === null, 'Tóxico no envenena a Acero.')
 
 const game = createGame('medium', 7)
 assert(game.party.length === 6, 'El equipo tiene 6 Pokémon.')
