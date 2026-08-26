@@ -15,6 +15,7 @@ src/
   tetris/                      # Motor Tetris
   ajedrez/                     # Motor Ajedrez
   paisho/                      # Motor Pai Sho (jardín / armonías)
+  liga/                        # Motor Liga (Alto Mando Esmeralda)
   hooks/
     useFanorona.ts
     useMorris.ts
@@ -25,6 +26,7 @@ src/
     useTetris.ts
     useAjedrez.ts
     usePaiSho.ts
+    useLiga.ts
     useMuted.ts
     useVolume.ts
   components/
@@ -44,6 +46,8 @@ src/
     AjedrezGame.tsx
     PaiShoGame.tsx
     DoomGame.tsx               # Iframe del puerto WASM (shareware)
+    LigaGame.tsx
+    liga/                      # Mapa canvas y combate
     Board/                     # SVG Fanorona + piedras + motion
     morris/MorrisBoardView.tsx
     damas/DamasBoard.tsx       # Grilla 8×8, piezas en capa aparte
@@ -55,7 +59,7 @@ src/
     paisho/                    # Tablero circular, reserva de flores
 ```
 
-`App` solo elige el juego. Cada motor de mesa se puede importar sin montar React. Doom no tiene motor TypeScript: el puerto WASM está en `public/doom/` y la UI lo embebe en un iframe.
+`App` solo elige el juego. Cada motor de mesa se puede importar sin montar React. Doom no tiene motor TypeScript: el puerto WASM está en `public/doom/` y la UI lo embebe en un iframe. Liga sí: mapa y combate en `src/liga`, sprites en `public/liga/sprites/`.
 
 ## Layout
 

@@ -26,6 +26,26 @@ export type SfxName =
   | 'win'
   | 'lose'
   | 'draw'
+  | 'ligaBeep'
+  | 'ligaHit'
+  | 'ligaFire'
+  | 'ligaWater'
+  | 'ligaSpark'
+  | 'ligaBeam'
+  | 'ligaGrass'
+  | 'ligaHeal'
+  | 'ligaFaint'
+  | 'ligaWhoosh'
+  | 'ligaIce'
+  | 'ligaPoison'
+  | 'ligaDragon'
+  | 'ligaRock'
+  | 'ligaPunch'
+  | 'ligaSlash'
+  | 'ligaGhost'
+  | 'ligaText'
+  | 'ligaLowHp'
+  | 'ligaBall'
 
 const MUTE_KEY = 'web-games-muted'
 const VOLUME_KEY = 'web-games-volume'
@@ -369,6 +389,91 @@ export function playSfx(name: SfxName): void {
     case 'draw':
       lastFanfare = ctx.currentTime
       chord(ctx, dest, [330, 392, 330], 0.1, 0.2)
+      break
+    case 'ligaBeep':
+      tone(ctx, dest, 'square', 880, 0.04, 0.16)
+      break
+    case 'ligaWhoosh':
+      burst(ctx, dest, 0.12, 0.4, 700, 0.8)
+      tone(ctx, dest, 'triangle', 280, 0.12, 0.18, 140)
+      break
+    case 'ligaHit':
+      burst(ctx, dest, 0.1, 0.7, 380, 0.9)
+      thud(ctx, dest, 150, 0.12)
+      break
+    case 'ligaFire':
+      burst(ctx, dest, 0.22, 0.65, 240, 0.5)
+      tone(ctx, dest, 'sawtooth', 220, 0.2, 0.22, 90)
+      break
+    case 'ligaWater':
+      burst(ctx, dest, 0.16, 0.45, 900, 1.4)
+      tone(ctx, dest, 'sine', 420, 0.18, 0.22, 180)
+      break
+    case 'ligaSpark':
+      tone(ctx, dest, 'square', 980, 0.05, 0.2)
+      tone(ctx, dest, 'square', 1320, 0.06, 0.16)
+      burst(ctx, dest, 0.08, 0.4, 2800, 3)
+      break
+    case 'ligaBeam':
+      tone(ctx, dest, 'sawtooth', 360, 0.22, 0.2, 720)
+      burst(ctx, dest, 0.18, 0.35, 1600, 1.2)
+      break
+    case 'ligaGrass':
+      burst(ctx, dest, 0.12, 0.4, 1400, 2)
+      tone(ctx, dest, 'triangle', 520, 0.14, 0.2, 260)
+      break
+    case 'ligaHeal':
+      chord(ctx, dest, [392, 523, 659], 0.05, 0.12)
+      break
+    case 'ligaFaint':
+      tone(ctx, dest, 'triangle', 240, 0.28, 0.22, 80)
+      burst(ctx, dest, 0.2, 0.3, 180, 0.5)
+      break
+    case 'ligaIce':
+      burst(ctx, dest, 0.14, 0.4, 2400, 3.2)
+      tone(ctx, dest, 'triangle', 880, 0.12, 0.2, 1400)
+      tone(ctx, dest, 'sine', 1320, 0.1, 0.14)
+      break
+    case 'ligaPoison':
+      burst(ctx, dest, 0.16, 0.4, 480, 0.8)
+      tone(ctx, dest, 'sine', 180, 0.2, 0.22, 90)
+      tone(ctx, dest, 'triangle', 260, 0.18, 0.16)
+      break
+    case 'ligaDragon':
+      tone(ctx, dest, 'sawtooth', 140, 0.28, 0.28, 420)
+      burst(ctx, dest, 0.22, 0.5, 220, 0.6)
+      tone(ctx, dest, 'square', 90, 0.2, 0.18, 60)
+      break
+    case 'ligaRock':
+      thud(ctx, dest, 90, 0.18)
+      burst(ctx, dest, 0.16, 0.7, 160, 0.5)
+      thud(ctx, dest, 70, 0.14)
+      break
+    case 'ligaPunch':
+      burst(ctx, dest, 0.08, 0.85, 220, 0.7)
+      thud(ctx, dest, 110, 0.12)
+      tone(ctx, dest, 'square', 160, 0.08, 0.2, 80)
+      break
+    case 'ligaSlash':
+      burst(ctx, dest, 0.1, 0.55, 1800, 2.4)
+      tone(ctx, dest, 'sawtooth', 720, 0.08, 0.16, 180)
+      burst(ctx, dest, 0.08, 0.35, 900, 1.2)
+      break
+    case 'ligaGhost':
+      tone(ctx, dest, 'sine', 220, 0.28, 0.18, 90)
+      tone(ctx, dest, 'triangle', 420, 0.22, 0.14, 180)
+      burst(ctx, dest, 0.2, 0.28, 700, 0.7)
+      break
+    case 'ligaText':
+      tone(ctx, dest, 'square', 620, 0.02, 0.08)
+      break
+    case 'ligaLowHp':
+      tone(ctx, dest, 'square', 520, 0.06, 0.12)
+      break
+    case 'ligaBall':
+      burst(ctx, dest, 0.08, 0.45, 1400, 2)
+      tone(ctx, dest, 'square', 540, 0.07, 0.18, 880)
+      tone(ctx, dest, 'triangle', 720, 0.1, 0.16)
       break
   }
 }

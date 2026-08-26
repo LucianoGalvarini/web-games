@@ -241,3 +241,27 @@ export const DOOM_MANUAL: ManualStep[] = [
     spot: 'board',
   },
 ]
+
+export const LIGA_MANUAL: ManualStep[] = [
+  {
+    title: 'Liga',
+    body: 'Es el Alto Mando de Esmeralda: Sixto, Fátima, Nívea, Dracón y el Campeón Máximo. Cada liga arranca con seis Pokémon al azar de las generaciones 1 a 3, a un nivel según la dificultad.',
+    spot: 'board',
+  },
+  {
+    title: 'Caminar',
+    body: 'WASD o flechas mueven. Z habla y confirma, X cancela. El texto sale de a poco: Espacio lo acelera, como el turbo de un emulador. F pone el recuadro en pantalla completa.',
+    tryIt: 'Subí por la alfombra y hablá con Sixto.',
+    spot: 'board',
+  },
+  {
+    title: 'Combate',
+    body: 'Cajas de diálogo y menú al estilo Esmeralda. Flechas mueven el cursor, Z elige, X vuelve. HUIR no sirve en la Liga. Espacio acelera ataques, caminar y texto. Sonido y pantalla completa están en el recuadro.',
+    spot: 'board',
+  },
+  {
+    title: 'Dificultad',
+    body: 'Fácil trae más nivel, mejores stats y más curas. Perfecta recorta el equipo y la mochila. Reiniciar siempre reparte otros seis.',
+    spot: 'controls',
+  },
+]

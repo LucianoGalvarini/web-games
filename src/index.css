@@ -2281,3 +2281,843 @@ button.truco-card:disabled {
 .doom-help li + li {
   margin-top: 6px;
 }
+
+.liga-shell {
+  --controls-col: 360px;
+}
+
+.liga-table {
+  max-width: 1200px;
+  justify-self: center;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.liga-screen {
+  width: 100%;
+  aspect-ratio: 13 / 11;
+  max-height: min(90vh, 980px);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #160c22;
+  position: relative;
+  image-rendering: pixelated;
+  font-family: VT323, "Courier New", monospace;
+  font-size: 24px;
+  letter-spacing: 0.02em;
+}
+
+.liga-screen:fullscreen {
+  aspect-ratio: auto;
+  max-height: none;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.liga-screen:fullscreen .liga-canvas,
+.liga-screen:fullscreen .liga-battle {
+  width: min(100vw, calc(100vh * 13 / 11));
+  height: min(100vh, calc(100vw * 11 / 13));
+}
+
+.liga-screen:fullscreen .liga-chrome {
+  position: absolute;
+}
+
+.liga-chrome {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 8;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.liga-screen .hud-btn.is-chrome {
+  color: #f0e8d0;
+}
+
+.liga-screen .hud-btn.is-chrome .hud-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(12, 10, 18, 0.72);
+  border-color: rgba(240, 232, 208, 0.35);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+.liga-screen .hud-volume.is-compact .hud-volume-pop {
+  top: calc(100% + 6px);
+  right: 0;
+  width: 148px;
+}
+
+.liga-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.liga-dialog {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  margin: 0;
+  padding: 12px 16px 14px;
+  color: #f4f6fa;
+  background: linear-gradient(#5c6478, #3e4658);
+  border: 4px solid #1c2434;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 3px #c8d0e0, 0 4px 0 #12161e;
+}
+
+.liga-dialog::before,
+.liga-textbox::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 14px;
+  width: 20px;
+  height: 11px;
+  background: #e04830;
+  border-radius: 4px 4px 0 0;
+  box-shadow: 0 0 0 2px #1c2434;
+}
+
+.liga-textbox {
+  position: relative;
+}
+
+.liga-caret {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 14px;
+  color: #f0d060;
+  animation: liga-caret 0.55s steps(2) infinite;
+}
+
+.liga-caret.is-type {
+  color: #d8deea;
+  animation: none;
+}
+
+@keyframes liga-caret {
+  to {
+    opacity: 0;
+  }
+}
+
+.liga-battle {
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  color: #201828;
+  position: relative;
+  container-type: size;
+  container-name: liga;
+}
+
+.liga-hud {
+  position: absolute;
+  z-index: 1;
+  width: 34%;
+  max-width: 13.5em;
+  min-width: 10.5em;
+  padding: 10px 12px 12px;
+  background: linear-gradient(#fffef8 0%, #f3e6c8 62%, #e4d2a8 100%);
+  border: 3px solid #24382c;
+  border-radius: 10px 5px 12px 6px;
+  box-shadow:
+    5px 6px 0 #15241c,
+    inset 0 2px 0 #fff,
+    inset 0 -3px 0 rgba(72, 56, 28, 0.22);
+  font-size: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.liga-hud.is-foe {
+  top: 6%;
+  left: 3%;
+}
+
+.liga-hud.is-player {
+  right: 3%;
+  bottom: 38%;
+}
+
+.liga-hud p {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.liga-hud strong {
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.liga-hud span,
+.liga-hud em {
+  font-style: normal;
+  font-size: 0.82em;
+  color: #5a5040;
+}
+
+.liga-gba-bar {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 1.15fr 1.2fr;
+  gap: 10px;
+  padding: 10px 12px 12px;
+  background: linear-gradient(#2a3040, #1a202c);
+  min-height: 34%;
+}
+
+.liga-battle.is-pick .liga-hud.is-player,
+.liga-battle.is-bag .liga-hud.is-player {
+  display: none;
+}
+
+.liga-gba-bar.is-bag {
+  grid-template-columns: 0.85fr 1.35fr;
+}
+
+@container liga (max-width: 720px) {
+  .liga-gba-bar.is-fight {
+    grid-template-columns: 0.62fr 1.55fr;
+  }
+
+  .liga-gba-bar.is-bag {
+    grid-template-columns: 0.55fr 1.65fr;
+  }
+
+  .liga-gba-bar.is-party {
+    min-height: 0;
+  }
+
+  .liga-gba-bar.is-party .liga-textbox {
+    padding: 8px 12px 10px;
+  }
+
+  .liga-hud {
+    width: 38%;
+    max-width: 12.5em;
+    font-size: 16px;
+    padding: 10px 10px 12px;
+  }
+
+  .liga-party {
+    grid-template-rows: repeat(3, auto);
+    align-content: start;
+    gap: 2px 6px;
+    padding: 4px 6px;
+    height: auto;
+  }
+
+  .liga-party li {
+    padding: 3px 5px 3px 14px;
+    gap: 4px;
+  }
+
+  .liga-party img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .liga-party-info {
+    gap: 1px;
+  }
+
+  .liga-party .liga-hp {
+    gap: 1px 4px;
+  }
+
+  .liga-party .liga-hp-lab {
+    font-size: 10px;
+    padding: 0 5px;
+  }
+
+  .liga-party .liga-hp-track {
+    height: 8px;
+  }
+
+  .liga-party .liga-hp-num {
+    font-size: 12px;
+  }
+
+  .liga-gba-list {
+    max-height: none;
+    gap: 2px;
+    padding: 6px 8px;
+  }
+
+  .liga-cmd {
+    font-size: 18px;
+  }
+}
+
+@container liga (min-width: 760px) {
+  .liga-hud {
+    width: 30%;
+    max-width: 16em;
+    font-size: 24px;
+    padding: 14px 16px 16px;
+    gap: 10px;
+  }
+
+  .liga-gba-bar {
+    min-height: 38%;
+    gap: 12px;
+    padding: 12px 14px 14px;
+  }
+
+  .liga-gba-bar.is-fight {
+    grid-template-columns: 0.95fr 1.25fr;
+  }
+
+  .liga-cmd,
+  .liga-textbox {
+    font-size: 1.08em;
+  }
+}
+
+@container liga (min-width: 980px) {
+  .liga-hud {
+    width: 28%;
+    max-width: 18em;
+    font-size: 28px;
+    padding: 16px 18px 18px;
+  }
+
+  .liga-gba-bar {
+    min-height: 40%;
+  }
+
+  .liga-gba-bar.is-fight {
+    grid-template-columns: 1fr 1.2fr;
+  }
+}
+
+.liga-field {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.liga-field.is-hit {
+  animation: liga-shake 0.42s linear;
+}
+
+@keyframes liga-shake {
+  25% {
+    transform: translate(-3px, 1px);
+  }
+  50% {
+    transform: translate(3px, -2px);
+  }
+  75% {
+    transform: translate(-2px, 2px);
+  }
+}
+
+.liga-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.liga-flash.is-spark {
+  background: #fff4a0;
+  opacity: 0.62;
+}
+
+.liga-field-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.liga-field-fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  image-rendering: pixelated;
+  z-index: 3;
+}
+
+.liga-poke-bob {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  animation: liga-bob 1.4s ease-in-out infinite;
+}
+
+.liga-poke-bob.is-foe {
+  width: 28%;
+  right: 14%;
+  top: 8%;
+}
+
+.liga-poke-bob.is-player {
+  width: 34%;
+  left: 8%;
+  bottom: 4%;
+}
+
+.liga-poke-bob.is-faint {
+  animation: none;
+}
+
+@keyframes liga-bob {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.liga-poke {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.liga-gba-bar.is-wide {
+  grid-template-columns: 1fr;
+}
+
+.liga-gba-bar.is-party {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.liga-gba-bar.is-party .liga-cmd {
+  min-height: 0;
+  height: 100%;
+}
+
+.liga-textbox {
+  padding: 12px 16px 14px;
+  color: #f4f6fa;
+  background: linear-gradient(#5c6478, #3e4658);
+  border: 5px solid #1c2434;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 3px #c8d0e0, 0 5px 0 #12161e;
+}
+
+.liga-textbox p,
+.liga-dialog p {
+  margin: 0;
+  text-shadow: 0 2px 0 #1c2434;
+  line-height: 1.25;
+}
+
+.liga-cmd {
+  background: linear-gradient(#f7edd4, #e8d8b4);
+  border: 6px solid #3c2870;
+  border-radius: 20px;
+  box-shadow: inset 0 0 0 3px #c8b890, 0 5px 0 #1c1438;
+  color: #201828;
+  min-width: 0;
+  font-size: 22px;
+  animation: liga-pop 0.16s ease-out;
+}
+
+@keyframes liga-pop {
+  from {
+    transform: translateY(6px);
+    opacity: 0.4;
+  }
+}
+
+.liga-gba-grid,
+.liga-gba-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 10px;
+}
+
+.liga-gba-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 8px;
+  align-content: start;
+}
+
+.liga-gba-grid.is-cmd {
+  letter-spacing: 0.06em;
+  height: 100%;
+  align-content: center;
+}
+
+.liga-gba-grid li,
+.liga-gba-list li {
+  position: relative;
+  padding-left: 16px;
+  border-radius: 4px;
+  transition: transform 0.08s ease;
+}
+
+.liga-gba-grid li.is-cursor,
+.liga-gba-list li.is-cursor {
+  transform: translateX(3px);
+}
+
+.liga-gba-grid li.is-cursor::before,
+.liga-gba-list li.is-cursor::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.45em;
+  border-style: solid;
+  border-width: 6px 0 6px 8px;
+  border-color: transparent transparent transparent #201828;
+  animation: liga-caret 0.45s steps(2) infinite;
+}
+
+.liga-gba-grid li.is-off,
+.liga-gba-list li.is-off {
+  opacity: 0.4;
+}
+
+.liga-fight {
+  display: grid;
+  grid-template-columns: 1.4fr auto;
+  height: 100%;
+}
+
+.liga-pp {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px 8px 8px;
+  border-left: 3px solid #3c2870;
+  min-width: 6.5em;
+}
+
+.liga-pp p {
+  margin: 0;
+}
+
+.liga-gba-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: auto;
+  max-height: 22vh;
+}
+
+.liga-gba-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  padding-right: 8px;
+}
+
+.liga-gba-list li.is-cursor {
+  background: rgba(60, 40, 112, 0.12);
+}
+
+.liga-item-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex: 0 0 auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 1px 0 rgba(32, 24, 40, 0.35));
+}
+
+.liga-item-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liga-item-qty {
+  letter-spacing: 0.04em;
+}
+
+.liga-gba-list img {
+  width: 28px;
+  height: 28px;
+  image-rendering: pixelated;
+}
+
+.liga-party {
+  list-style: none;
+  margin: 0;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(3, auto);
+  gap: 6px 14px;
+  height: 100%;
+  min-height: 0;
+  align-content: start;
+  overflow: auto;
+}
+
+.liga-party li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  position: relative;
+  padding: 4px 8px 5px 16px;
+  border-radius: 8px;
+  background: linear-gradient(#fff8e8, #ead8b0);
+  border: 3px solid #4a3860;
+  box-shadow: inset 0 1px 0 #fff, 2px 3px 0 rgba(28, 20, 56, 0.45);
+}
+
+.liga-party li.is-cursor {
+  background: linear-gradient(#fffef4, #f4e6b8);
+  box-shadow: inset 0 0 0 2px #f0d050, 2px 3px 0 rgba(28, 20, 56, 0.45);
+}
+
+.liga-party li.is-cursor::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  margin-top: -6px;
+  border-style: solid;
+  border-width: 6px 0 6px 8px;
+  border-color: transparent transparent transparent #201828;
+  animation: liga-caret 0.45s steps(2) infinite;
+}
+
+.liga-party li.is-off {
+  opacity: 0.4;
+}
+
+.liga-party img {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+  flex: 0 0 auto;
+  background: #d4c090;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 2px #c0a870;
+}
+
+.liga-party-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.liga-party-info strong {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.liga-party-info strong span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liga-party-info em {
+  font-style: normal;
+  font-size: 0.72em;
+  color: #c45038;
+  letter-spacing: 0.04em;
+}
+
+.liga-party .liga-hp {
+  width: 100%;
+  gap: 2px 6px;
+}
+
+.liga-party .liga-hp-lab {
+  color: #f0c848;
+  background: #2c241c;
+  border-radius: 99px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+
+.liga-party .liga-hp-track {
+  height: 10px;
+  min-width: 0;
+}
+
+.liga-party .liga-hp-num {
+  min-width: 0;
+  font-size: 13px;
+}
+
+.liga-hp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.liga-hp-lab {
+  font-size: 12px;
+  color: #c45038;
+  letter-spacing: 0.08em;
+  flex: 0 0 auto;
+}
+
+.liga-hp-track {
+  flex: 1;
+  height: 10px;
+  border-radius: 2px;
+  background: #2a2a2a;
+  overflow: hidden;
+  border: 2px solid #101010;
+  box-shadow: inset 0 1px 0 #6a6a6a, inset 0 -1px 0 #000;
+}
+
+.liga-hp-fill {
+  display: block;
+  position: relative;
+  height: 100%;
+  background: linear-gradient(#b8f878 0%, #70e050 42%, #38b030 52%, #58c848 100%);
+}
+
+.liga-hp-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, transparent 48%, rgba(0, 0, 0, 0.18) 100%);
+  pointer-events: none;
+}
+
+.liga-hp-fill.is-mid {
+  background: linear-gradient(#ffe078 0%, #f0c040 42%, #d09020 52%, #e8b038 100%);
+}
+
+.liga-hp-fill.is-low {
+  background: linear-gradient(#f89880 0%, #e85840 42%, #c02820 52%, #e04838 100%);
+  animation: liga-hp-pulse 0.7s steps(2) infinite;
+}
+
+@keyframes liga-hp-pulse {
+  50% {
+    filter: brightness(1.25);
+  }
+}
+
+.liga-hp-num {
+  font-size: 15px;
+  color: #201828;
+  min-width: 4.5em;
+  white-space: nowrap;
+}
+
+.liga-hp.is-stack {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.liga-hp.is-stack .liga-hp-num {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+
+.liga-hud .liga-hp {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.liga-hud .liga-hp-lab {
+  color: #f0c848;
+  background: #2c241c;
+  border-radius: 99px;
+  padding: 1px 7px 2px;
+  box-shadow: inset 0 -1px 0 #120e0a, 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.liga-hud .liga-hp-track {
+  height: 11px;
+}
+
+.liga-hud .liga-hp-num {
+  color: #201828;
+}
+
+.liga-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.liga-roster-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.liga-roster-row img {
+  image-rendering: pixelated;
+}
+
+.liga-roster-row strong,
+.liga-roster-row span {
+  display: block;
+}
+
+.liga-roster-row span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.liga-bag-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.liga-bag-readout span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.liga-bag-readout .liga-item-icon {
+  width: 16px;
+  height: 16px;
+}

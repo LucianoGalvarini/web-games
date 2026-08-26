@@ -26,7 +26,7 @@ function SpeakerIcon({ muted }: { muted: boolean }) {
   )
 }
 
-export function SoundToggle() {
+export function SoundToggle({ compact = false }: { compact?: boolean }) {
   const { volume, setVolume, muted } = useVolume()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -54,10 +54,10 @@ export function SoundToggle() {
   }, [open])
 
   return (
-    <div className="hud-volume" ref={rootRef}>
+    <div className={`hud-volume${compact ? ' is-compact' : ''}`} ref={rootRef}>
       <button
         type="button"
-        className={`hud-btn ${muted ? 'is-off' : ''}`}
+        className={`hud-btn ${muted ? 'is-off' : ''}${compact ? ' is-chrome' : ''}`}
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls="hud-volume-slider"
@@ -67,7 +67,7 @@ export function SoundToggle() {
         <span className="hud-icon">
           <SpeakerIcon muted={muted} />
         </span>
-        <span className="hud-label">Sonido</span>
+        {compact ? null : <span className="hud-label">Sonido</span>}
       </button>
       {open ? (
         <div className="hud-volume-pop" id="hud-volume-slider">

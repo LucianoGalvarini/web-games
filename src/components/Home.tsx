@@ -11,7 +11,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Diez juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Once juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -245,6 +245,23 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">FPS</p>
             <h2>Doom</h2>
             <p>Shareware de 1993 en el navegador. Primer episodio, teclado y ratón.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('liga')}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="16" y="4" width="58" height="42" rx="4" fill="#8f5e32" />
+            <rect x="22" y="8" width="46" height="34" rx="2" fill="#3a2450" />
+            <rect x="42" y="12" width="6" height="22" fill="#6b3d8c" />
+            <rect x="28" y="14" width="8" height="10" rx="1" fill="#3d8a4a" />
+            <rect x="54" y="14" width="8" height="10" rx="1" fill="#c45c48" />
+            <circle cx="45" cy="36" r="4" fill="#3d6b9a" />
+            <rect x="42" y="30" width="6" height="4" fill="#c45c48" />
+          </svg>
+          <div>
+            <p className="eyebrow">Alto Mando</p>
+            <h2>Liga</h2>
+            <p>Seis Pokémon al azar. Ever Grande, combates y la liga de Esmeralda.</p>
           </div>
         </button>
       </div>

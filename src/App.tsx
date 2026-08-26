@@ -4,6 +4,7 @@ import { DamasGame } from './components/DamasGame'
 import { DoomGame } from './components/DoomGame'
 import { FanoronaGame } from './components/FanoronaGame'
 import { Home } from './components/Home'
+import { LigaGame } from './components/LigaGame'
 import { MinesweeperGame } from './components/MinesweeperGame'
 import { MorrisGame } from './components/MorrisGame'
 import { PaiShoGame } from './components/PaiShoGame'
@@ -57,6 +58,10 @@ export default function App() {
 
   if (game === 'doom') {
     return <DoomGame onBack={() => setGame(null)} />
+  }
+
+  if (game === 'liga') {
+    return <LigaGame onBack={() => setGame(null)} />
   }
 
   return null
