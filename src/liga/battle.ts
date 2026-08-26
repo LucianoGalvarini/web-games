@@ -444,6 +444,7 @@ function switchPlayer(battle: LigaBattle, index: number): LigaBattle | null {
     playerStages: emptyStages(),
     mustSwitch: false,
     menu: 'root',
+    lastMoveIndex: 0,
     log,
   }
 }
@@ -614,8 +615,19 @@ export function playTurn(
     if (!used) {
       return { battle, itemId: null, result: 'ongoing' }
     }
+    const target = slotOf(used.playerParty, choice.target)
+    const itemStep: LigaBattle['lastFx'][number] = {
+      kind: 'item',
+      side: 'player',
+      moveId: 0,
+      speciesId: target.speciesId,
+      itemId: choice.itemId,
+      playerHp: hpOf(used, 'player'),
+      foeHp: hpOf(used, 'foe'),
+      note: used.log[used.log.length - 1],
+    }
     const after = foeActs(used, difficulty, random)
-    const steps = fxFromFoe(used, after)
+    const steps = [itemStep, ...fxFromFoe(used, after)]
     const settled = settle({ ...endChip(after.battle), lastFx: steps })
     return { ...settled, battle: { ...settled.battle, lastFx: withSend(steps, after.battle, settled.battle) }, itemId: choice.itemId }
   }
@@ -657,7 +669,11 @@ export function playTurn(
     }
   }
   const settled = settle(endChip({ ...next, lastFx: steps }))
-  return { ...settled, battle: { ...settled.battle, lastFx: withSend(steps, next, settled.battle) }, itemId: null }
+  return {
+    ...settled,
+    battle: { ...settled.battle, lastFx: withSend(steps, next, settled.battle), lastMoveIndex: choice.index },
+    itemId: null,
+  }
 }
 
 export function startBattle(playerParty: LigaSlot[], foeParty: LigaSlot[], trainerId: LigaBattle['trainerId']): LigaBattle {
@@ -673,6 +689,7 @@ export function startBattle(playerParty: LigaSlot[], foeParty: LigaSlot[], train
     foeStages: emptyStages(),
     log: [`¡${TRAINER_TITLE[trainerId]} ${TRAINER_LABELS[trainerId]} te desafía!`],
     lastFx: [],
+    lastMoveIndex: 0,
     outcome: 'ongoing',
   }
 }

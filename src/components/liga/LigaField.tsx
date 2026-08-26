@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { FIELD_THEME, TYPE_COLOR, type LigaAnim } from '../../liga/fx'
+import { FIELD_THEME, TYPE_COLOR, itemFxColor, type LigaAnim } from '../../liga/fx'
 import { spriteUrl } from '../../liga/sprites'
 import type { LigaTrainerId, LigaType } from '../../liga/types'
 
@@ -235,6 +235,38 @@ function drawFx(
   ctx.restore()
 }
 
+function drawItemFx(ctx: CanvasRenderingContext2D, x: number, y: number, t: number, color: string): void {
+  ctx.save()
+  ctx.globalAlpha = t < 0.12 ? t / 0.12 : t > 0.82 ? Math.max(0, (1 - t) / 0.18) : 1
+  ctx.strokeStyle = color
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.ellipse(x, y + 10, 18 + t * 14, 7 + t * 4, 0, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.fillStyle = color
+  ctx.globalAlpha *= 0.28
+  ctx.beginPath()
+  ctx.ellipse(x, y + 10, 16 + t * 10, 6 + t * 3, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.globalAlpha = t < 0.12 ? t / 0.12 : t > 0.82 ? Math.max(0, (1 - t) / 0.18) : 1
+  for (let i = 0; i < 10; i += 1) {
+    const a = (i / 10) * Math.PI * 2 + t * 4
+    const rise = 8 + t * 26 + (i % 3) * 5
+    const px = x + Math.cos(a) * (8 + (i % 4) * 5)
+    const py = y + 6 - rise
+    ctx.fillStyle = i % 2 === 0 ? color : '#fffef4'
+    ctx.beginPath()
+    ctx.arc(px, py, 1.6 + (i % 3) * 0.8, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.fillStyle = '#fff'
+  ctx.globalAlpha *= 0.55
+  ctx.beginPath()
+  ctx.arc(x, y - t * 8, 4 + (1 - t) * 6, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
+}
+
 function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number, t: number): void {
   const r = 5 + (1 - Math.abs(t - 0.35) * 2) * 3
   ctx.fillStyle = '#d82828'
@@ -264,6 +296,7 @@ export function LigaField({ trainerId, playerId, foeId, anim }: LigaFieldProps) 
   const faint = kind === 'faint'
   const send = kind === 'send'
   const recall = kind === 'recall'
+  const itemUse = kind === 'item'
   const swap = send || recall
   const impact = kind === 'move' && (anim?.factor ?? 1) !== 0
   const playerLunge = impact && anim?.side === 'player' ? Math.sin(Math.min(1, anim.t / 0.38) * Math.PI) * 18 : 0
@@ -275,10 +308,18 @@ export function LigaField({ trainerId, playerId, foeId, anim }: LigaFieldProps) 
   const playerFade = faint && anim?.side === 'player' ? 1 - anim.t : 1
   const foeFade = faint && anim?.side === 'foe' ? 1 - anim.t : 1
   const playerScale =
-    swap && anim?.side === 'player' ? (send ? 0.12 + anim.t * 0.88 : 1 - anim.t * 0.9) : 1
+    swap && anim?.side === 'player'
+      ? send
+        ? 0.12 + anim.t * 0.88
+        : 1 - anim.t * 0.9
+      : itemUse && anim
+        ? 1 + Math.sin(Math.min(1, anim.t) * Math.PI) * 0.08
+        : 1
   const foeScale = swap && anim?.side === 'foe' ? (send ? 0.12 + anim.t * 0.88 : 1 - anim.t * 0.9) : 1
   const shaking = Boolean(anim && impact && anim.t > 0.5 && anim.t < 0.88)
-  const flash = Boolean(anim && ((impact && anim.t > 0.5 && anim.t < 0.7) || (send && anim.t > 0.28 && anim.t < 0.48)))
+  const flash = Boolean(
+    anim && ((impact && anim.t > 0.5 && anim.t < 0.7) || (send && anim.t > 0.28 && anim.t < 0.48) || (itemUse && anim.t > 0.18 && anim.t < 0.42)),
+  )
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -303,11 +344,15 @@ export function LigaField({ trainerId, playerId, foeId, anim }: LigaFieldProps) 
       const to = anim.side === 'player' ? { x: 168, y: 42 } : { x: 70, y: 78 }
       drawFx(ctx, anim.type, from.x, from.y, to.x, to.y, anim.t)
     }
+    if (anim?.kind === 'item') {
+      const pos = { x: 58, y: 78 }
+      drawItemFx(ctx, pos.x, pos.y, anim.t, anim.itemId ? itemFxColor(anim.itemId) : '#e878a0')
+    }
     if (anim && swap && anim.t < 0.55) {
       const pos = anim.side === 'player' ? { x: 58, y: 88 } : { x: 168, y: 50 }
       drawBall(ctx, pos.x, pos.y, anim.t)
     }
-  }, [anim, impact, swap])
+  }, [anim, impact, swap, itemUse])
 
   return (
     <div className={`liga-field${shaking ? ' is-hit' : ''}`}>
@@ -331,11 +376,12 @@ export function LigaField({ trainerId, playerId, foeId, anim }: LigaFieldProps) 
           style={{
             transform: `translate(${playerLunge + playerHit}px, ${playerSink + (anim?.side === 'player' && impact ? -4 : 0)}px) scale(${playerScale})`,
             opacity: playerFade,
+            filter: itemUse && anim ? `brightness(${1.05 + Math.sin(anim.t * Math.PI) * 0.55})` : undefined,
           }}
         />
       </div>
       <canvas ref={fxRef} className="liga-field-fx" width={W} height={H} aria-hidden="true" />
-      {flash ? <div className={`liga-flash${anim?.type === 'electric' ? ' is-spark' : ''}`} /> : null}
+      {flash ? <div className={`liga-flash${anim?.type === 'electric' ? ' is-spark' : ''}${itemUse ? ' is-heal' : ''}`} /> : null}
     </div>
   )
 }

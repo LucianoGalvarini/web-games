@@ -56,6 +56,29 @@ const quakeBattle = playTurn(startBattle([quakeUser], [flyer], 'steven'), { kind
 assert(quakeBattle.battle.foeParty[0]?.hp === flyer.hp, 'Terremoto no baja PS a Pidgeot.')
 assert(quakeBattle.battle.lastFx[0]?.factor === 0, 'Terremoto contra Volador queda en 0×.')
 assert(quakeBattle.battle.lastFx[0]?.note === 'No afecta a Pidgeot...', 'Terremoto anuncia que no afecta.')
+assert(quakeBattle.battle.lastMoveIndex === 0, 'El combate guarda el último movimiento.')
+
+const kickUser = { ...makeSlot(speciesOf(6), 50, 31, 0), spe: 200 }
+assert((kickUser.moves.length ?? 0) >= 3, 'Charizard tiene varios ataques.')
+const kickBattle = playTurn(startBattle([kickUser], [{ ...flyer, spe: 1 }], 'steven'), { kind: 'move', index: 2 }, 'easy', () => 0)
+assert(kickBattle.battle.lastMoveIndex === 2, 'LUCHAR recuerda el último ataque usado.')
+
+const wounded = { ...makeSlot(speciesOf(9), 50, 31, 0), hp: 25, maxHp: 200, spe: 200 }
+const itemFoe = { ...makeSlot(speciesOf(20), 50, 0, 0), spe: 1 }
+const potionTurn = playTurn(
+  startBattle([wounded], [itemFoe], 'sidney'),
+  { kind: 'item', itemId: 'hyper-potion', target: 0 },
+  'easy',
+  () => 0,
+)
+assert(potionTurn.battle.lastFx[0]?.kind === 'item', 'Usar un objeto anima el consumible primero.')
+assert(potionTurn.battle.lastFx[0]?.itemId === 'hyper-potion', 'El FX guarda el objeto usado.')
+assert(potionTurn.battle.lastFx[0]?.playerHp === 200, 'La poción llena los PS antes del golpe enemigo.')
+assert(potionTurn.battle.lastFx[1]?.kind === 'move', 'El rival ataca después del objeto.')
+assert(
+  (potionTurn.battle.lastFx[1]?.playerHp ?? 200) < 200,
+  'El golpe enemigo baja los PS después de curar.',
+)
 
 const waveUser = { ...makeSlot(speciesOf(26), 50, 31, 0), spe: 200, moves: [{ moveId: 86, pp: 20 }] }
 const grounded = { ...makeSlot(speciesOf(28), 50, 0, 0), spe: 1, moves: [{ moveId: 89, pp: 10 }] }

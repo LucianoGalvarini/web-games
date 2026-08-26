@@ -5,6 +5,7 @@ import { DIFFICULTIES, KEY_DIR, PRESETS, WALK_MS } from '../liga/constants'
 import { isAKey, isBKey, isTurboKey, moveCursor } from '../liga/cursor'
 import { moveOf, speciesOf } from '../liga/dex'
 import { sfxForType, type LigaAnim } from '../liga/fx'
+import { ITEM_LABELS } from '../liga/labels'
 import { canStep } from '../liga/map'
 import { cloneSlot } from '../liga/team'
 import type { LigaAction, LigaDir, LigaItemId, LigaSlot, LigaState } from '../liga/types'
@@ -22,8 +23,10 @@ const FX_MS = 1520
 const FX_SEND_MS = 980
 const FX_FAINT_MS = 1120
 const FX_IMMUNE_MS = 1080
+const FX_ITEM_MS = 1400
 const FX_NOTE_MS = 900
 const FX_GAP = 260
+const FX_ITEM_GAP = 420
 const FX_FAINT_GAP = 520
 const FX_HIT_AT = 0.52
 const TURBO = 4
@@ -106,7 +109,15 @@ export function useLiga() {
     if (!next.battle) {
       setField(null)
     }
-    if (action.kind === 'open' || action.kind === 'move' || action.kind === 'switch' || action.kind === 'item') {
+    if (action.kind === 'open') {
+      if (action.menu === 'fight' && next.battle) {
+        const moves = next.battle.playerParty[next.battle.playerActive]?.moves.length ?? 1
+        setCursor(Math.max(0, Math.min(next.battle.lastMoveIndex, moves - 1)))
+      } else {
+        setCursor(0)
+      }
+      setHint(null)
+    } else if (action.kind === 'move' || action.kind === 'switch' || action.kind === 'item') {
       setCursor(0)
       setHint(null)
     }
@@ -199,12 +210,23 @@ export function useLiga() {
       if (step.kind === 'move') {
         return FX_MS
       }
+      if (step.kind === 'item') {
+        return FX_ITEM_MS
+      }
       if (step.kind === 'faint') {
         return FX_FAINT_MS
       }
       return FX_SEND_MS
     }
-    const gapOf = (kind: (typeof steps)[number]['kind']) => (kind === 'faint' ? FX_FAINT_GAP : FX_GAP)
+    const gapOf = (kind: (typeof steps)[number]['kind']) => {
+      if (kind === 'faint') {
+        return FX_FAINT_GAP
+      }
+      if (kind === 'item') {
+        return FX_ITEM_GAP
+      }
+      return FX_GAP
+    }
     const waitMs = (hold: number, then: () => void) => {
       let elapsed = 0
       let last = performance.now()
@@ -305,6 +327,7 @@ export function useLiga() {
       let line = `¡${name} entra en combate!`
       let type = speciesOf(step.speciesId).types[0] ?? 'normal'
       const immune = step.kind === 'move' && step.factor === 0
+      const needsDrain = (step.kind === 'move' && !immune) || step.kind === 'item'
       if (step.kind === 'move') {
         const move = moveOf(step.moveId)
         type = move.type
@@ -315,6 +338,10 @@ export function useLiga() {
           playSfx('ligaWhoosh')
           playSfx(move.effect === 'heal' ? 'ligaHeal' : sfxForType(move.type))
         }
+      } else if (step.kind === 'item') {
+        line = step.itemId ? `¡Usaste ${ITEM_LABELS[step.itemId]}!` : `${name} usó un objeto.`
+        playSfx('ligaWhoosh')
+        playSfx('ligaHeal')
       } else if (step.kind === 'faint') {
         line = `¡${name} se debilitó!`
         playSfx('ligaFaint')
@@ -337,11 +364,19 @@ export function useLiga() {
       let last = performance.now()
       let hitStarted = false
       let animDone = false
-      let drainDone = step.kind !== 'move' || immune
+      let drainDone = !needsDrain
       let advanced = false
       const limit = durationOf(step)
       const paint = (t: number, text: string) => {
-        setAnim({ side: step.side, type, t, kind: step.kind, line: text, factor: step.factor })
+        setAnim({
+          side: step.side,
+          type,
+          t,
+          kind: step.kind,
+          line: text,
+          factor: step.factor,
+          itemId: step.itemId,
+        })
       }
       const maybeNext = () => {
         if (!animDone || !drainDone || cancelled || advanced) {
@@ -349,7 +384,7 @@ export function useLiga() {
         }
         advanced = true
         const go = () => waitThen(step.kind, () => run(index + 1))
-        if (step.kind === 'move' && step.note && !immune) {
+        if ((step.kind === 'move' || step.kind === 'item') && step.note && !immune) {
           paint(1, step.note)
           waitMs(FX_NOTE_MS, go)
           return
@@ -365,12 +400,12 @@ export function useLiga() {
         const t = Math.min(1, elapsed / limit)
         const shown = immune && step.note && t >= 0.42 ? step.note : line
         paint(t, shown)
-        if (step.kind === 'move' && !immune && !hitStarted) {
-          const move = moveOf(step.moveId)
-          const hitAt = move.power > 0 ? FX_HIT_AT : 0.36
+        if (needsDrain && !hitStarted) {
+          const hitAt =
+            step.kind === 'item' || (step.kind === 'move' && moveOf(step.moveId).power <= 0) ? 0.32 : FX_HIT_AT
           if (t >= hitAt) {
             hitStarted = true
-            if (move.power > 0) {
+            if (step.kind === 'move' && moveOf(step.moveId).power > 0) {
               playSfx('ligaHit')
             }
             if (step.playerHp !== undefined && step.foeHp !== undefined) {

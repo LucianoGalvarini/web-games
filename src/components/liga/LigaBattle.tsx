@@ -111,7 +111,7 @@ export function LigaBattleView({
         <LigaTypes types={foeSpecies.types} />
         <LigaHp hp={foe.hp} max={foe.maxHp} showNum={false} labeled stacked />
       </div>
-      <div className="liga-hud is-player">
+      <div className={`liga-hud is-player${anim?.kind === 'item' ? ' is-item' : ''}`}>
         <p>
           <strong>{playerSpecies.label.toUpperCase()}</strong>
           <span>Nv{player.level}</span>

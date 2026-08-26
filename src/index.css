@@ -2695,6 +2695,11 @@ button.truco-card:disabled {
   opacity: 0.62;
 }
 
+.liga-flash.is-heal {
+  background: #c8f8d0;
+  opacity: 0.38;
+}
+
 .liga-field-canvas {
   display: block;
   width: 100%;
@@ -3071,6 +3076,14 @@ button.truco-card:disabled {
 .liga-hp-fill.is-low {
   background: linear-gradient(#f89880 0%, #e85840 42%, #c02820 52%, #e04838 100%);
   animation: liga-hp-pulse 0.7s steps(2) infinite;
+}
+
+.liga-hud.is-item .liga-hp-track {
+  box-shadow: inset 0 0 0 1px #70e050, 0 0 10px rgba(88, 220, 96, 0.55);
+}
+
+.liga-hud.is-item .liga-hp-fill {
+  filter: brightness(1.18);
 }
 
 @keyframes liga-hp-pulse {

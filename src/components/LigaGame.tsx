@@ -147,18 +147,24 @@ export function LigaGame({ onBack }: LigaGameProps) {
             </div>
           </div>
           <div className="liga-roster">
-            {(state.battle?.playerParty ?? state.party).map((slot, index) => (
+            {(state.battle?.playerParty ?? state.party).map((slot, index) => {
+              const shown =
+                game.field && state.battle && index === state.battle.playerActive
+                  ? { ...slot, hp: game.field.player.hp }
+                  : slot
+              return (
               <div key={`${slot.speciesId}-${index}`} className="liga-roster-row">
-                <img src={spriteUrl(slot.speciesId)} alt="" width={32} height={32} />
+                <img src={spriteUrl(shown.speciesId)} alt="" width={32} height={32} />
                 <div>
-                  <strong>{speciesLabel(slot)}</strong>
+                  <strong>{speciesLabel(shown)}</strong>
                   <span>
-                    Nv.{slot.level} · <LigaTypes types={speciesOf(slot.speciesId).types} />
+                    Nv.{shown.level} · <LigaTypes types={speciesOf(shown.speciesId).types} />
                   </span>
-                  <LigaHp hp={slot.hp} max={slot.maxHp} />
+                  <LigaHp hp={shown.hp} max={shown.maxHp} />
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
           <div className="liga-bag-readout">
             {game.bag.length === 0 ? <p>Sin objetos.</p> : null}

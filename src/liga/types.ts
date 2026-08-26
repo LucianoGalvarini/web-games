@@ -97,7 +97,7 @@ export type LigaTrainer = {
   beaten: boolean
 }
 
-export type LigaFxKind = 'move' | 'faint' | 'send' | 'recall'
+export type LigaFxKind = 'move' | 'faint' | 'send' | 'recall' | 'item'
 
 export type LigaFxStep = {
   kind: LigaFxKind
@@ -108,6 +108,7 @@ export type LigaFxStep = {
   foeHp?: number
   factor?: number
   note?: string
+  itemId?: LigaItemId
 }
 
 export type LigaBattle = {
@@ -122,6 +123,7 @@ export type LigaBattle = {
   foeStages: LigaStages
   log: string[]
   lastFx: LigaFxStep[]
+  lastMoveIndex: number
   outcome: 'ongoing' | 'win' | 'lose'
 }
 

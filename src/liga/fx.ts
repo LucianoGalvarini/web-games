@@ -1,5 +1,5 @@
 import type { SfxName } from '../shared/sfx'
-import type { LigaFxKind, LigaTrainerId, LigaType } from './types'
+import type { LigaFxKind, LigaItemId, LigaTrainerId, LigaType } from './types'
 
 export type LigaAnim = {
   side: 'player' | 'foe'
@@ -8,6 +8,7 @@ export type LigaAnim = {
   kind: LigaFxKind
   line: string
   factor?: number
+  itemId?: LigaItemId
 }
 
 export const TYPE_COLOR: Record<LigaType, string> = {
@@ -114,4 +115,23 @@ export function sfxForType(type: LigaType): SfxName {
     return 'ligaSlash'
   }
   return 'ligaHit'
+}
+
+export function itemFxColor(id: LigaItemId): string {
+  if (id === 'x-attack' || id === 'x-sp-atk' || id === 'x-speed') {
+    return '#f0d050'
+  }
+  if (id === 'revive' || id === 'max-revive') {
+    return '#f0d060'
+  }
+  if (id === 'full-heal') {
+    return '#f4e878'
+  }
+  if (id === 'full-restore' || id === 'hyper-potion') {
+    return '#7aa8f0'
+  }
+  if (id === 'super-potion') {
+    return '#e8c040'
+  }
+  return '#e878a0'
 }
