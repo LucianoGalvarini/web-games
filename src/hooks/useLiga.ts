@@ -70,6 +70,7 @@ export function useLiga() {
   const bagRef = useRef(listedBag(state.bag))
   const fieldRef = useRef(field)
   const heldRef = useRef<Partial<Record<LigaDir, boolean>>>({})
+  const holdAckRef = useRef(false)
   stateRef.current = state
   walkRef.current = walk
   difficultyRef.current = difficulty
@@ -205,8 +206,9 @@ export function useLiga() {
       rafs.add(id)
     }
     setAnimating(true)
+    holdAckRef.current = false
     const durationOf = (step: (typeof steps)[number]) => {
-      if (step.kind === 'move' && step.factor === 0) {
+      if (step.kind === 'move' && (step.factor === 0 || step.miss || step.idle)) {
         return FX_IMMUNE_MS
       }
       if (step.kind === 'move') {
@@ -247,6 +249,20 @@ export function useLiga() {
       arm(loop)
     }
     const waitThen = (kind: (typeof steps)[number]['kind'], then: () => void) => waitMs(gapOf(kind), then)
+    const holdForA = (then: () => void) => {
+      holdAckRef.current = false
+      const tick = () => {
+        if (cancelled) {
+          return
+        }
+        if (speechReadyRef.current && holdAckRef.current) {
+          then()
+          return
+        }
+        arm(tick)
+      }
+      arm(tick)
+    }
     const drainTo = (playerHp: number, foeHp: number, then: () => void) => {
       const current = fieldRef.current
       if (!current || (current.player.hp === playerHp && current.foe.hp === foeHp)) {
@@ -329,12 +345,13 @@ export function useLiga() {
       let line = `¡${name} entra en combate!`
       let type = speciesOf(step.speciesId).types[0] ?? 'normal'
       const immune = step.kind === 'move' && step.factor === 0
-      const needsDrain = (step.kind === 'move' && !immune) || step.kind === 'item'
+      const skipped = Boolean(step.miss || step.idle)
+      const needsDrain = ((step.kind === 'move' && !immune && !skipped) || step.kind === 'item')
       if (step.kind === 'move') {
         const move = moveOf(step.moveId)
         type = move.type
-        line = `¡${name} usó ${move.label}!`
-        if (immune) {
+        line = step.idle && step.note ? step.note : `¡${name} usó ${move.label}!`
+        if (immune || skipped) {
           playSfx('ligaBeep')
         } else {
           playSfx('ligaWhoosh')
@@ -393,12 +410,31 @@ export function useLiga() {
         }
         advanced = true
         const go = () => waitThen(step.kind, () => run(index + 1))
-        if ((step.kind === 'move' || step.kind === 'item') && step.note && !immune) {
-          paint(1, step.note)
-          waitMs(FX_NOTE_MS, go)
+        const showHold = (text: string, then: () => void) => {
+          paint(1, text)
+          holdForA(then)
+        }
+        if (step.miss && step.note) {
+          showHold(step.note, go)
           return
         }
-        go()
+        if (step.idle && step.note) {
+          showHold(step.note, go)
+          return
+        }
+        const afterEffect = () => {
+          if (step.statusNote) {
+            showHold(step.statusNote, go)
+            return
+          }
+          go()
+        }
+        if ((step.kind === 'move' || step.kind === 'item') && step.note && !immune) {
+          paint(1, step.note)
+          waitMs(FX_NOTE_MS, afterEffect)
+          return
+        }
+        afterEffect()
       }
       const loop = (now: number) => {
         if (cancelled) {
@@ -456,6 +492,10 @@ export function useLiga() {
       if (isAKey(key)) {
         if ((current.phase === 'dialog' || current.phase === 'battle') && !speechReadyRef.current) {
           setSpeechSkip(true)
+          return
+        }
+        if (current.phase === 'battle' && animatingRef.current) {
+          holdAckRef.current = true
           return
         }
         if (current.phase === 'walk' || current.phase === 'dialog') {

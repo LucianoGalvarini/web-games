@@ -78,6 +78,66 @@ function blocksPoison(types: LigaType[]): boolean {
   return types.includes('steel') || types.includes('poison')
 }
 
+function blocksStatus(status: LigaStatus, types: LigaType[]): boolean {
+  if (status === 'burn') {
+    return types.includes('fire')
+  }
+  if (status === 'freeze') {
+    return types.includes('ice')
+  }
+  if (status === 'poison') {
+    return blocksPoison(types)
+  }
+  return false
+}
+
+function effectStatus(effect: LigaEffect): LigaStatus | null {
+  if (effect === 'paralyze' || effect === 'burn' || effect === 'poison' || effect === 'sleep' || effect === 'freeze') {
+    return effect
+  }
+  return null
+}
+
+function statusLine(name: string, status: LigaStatus): string {
+  if (status === 'paralyze') {
+    return `¡${name} está paralizado!`
+  }
+  if (status === 'burn') {
+    return `¡${name} se quemó!`
+  }
+  if (status === 'poison') {
+    return `¡${name} fue envenenado!`
+  }
+  if (status === 'freeze') {
+    return `¡${name} se congeló!`
+  }
+  return `¡${name} se durmió!`
+}
+
+function rollInflictedStatus(move: LigaMove, random: () => number): LigaStatus | null {
+  if (move.name === 'tri-attack') {
+    if (random() * 100 >= (move.statusChance || 20)) {
+      return null
+    }
+    const pick = random()
+    if (pick < 1 / 3) {
+      return 'paralyze'
+    }
+    if (pick < 2 / 3) {
+      return 'freeze'
+    }
+    return 'burn'
+  }
+  const status = effectStatus(move.effect)
+  if (!status) {
+    return null
+  }
+  if (move.power > 0 && random() * 100 >= move.statusChance) {
+    return null
+  }
+  return status
+}
+
 function statusFactor(move: LigaMove, defending: LigaType[]): number {
   if (isSelfEffect(move.effect)) {
     return 1
@@ -258,39 +318,33 @@ function applyTargetEffect(
   defender: LigaSlot,
   moveIndex: number,
   random: () => number,
-): { slot: LigaSlot; log: string[] } {
+): { slot: LigaSlot; log: string[]; statusNote: string | null } {
   const used = attacker.moves[moveIndex]
   const log: string[] = []
-  if (!used) {
-    return { slot: defender, log }
+  if (!used || defender.hp <= 0) {
+    return { slot: defender, log, statusNote: null }
   }
   const move = moveOf(used.moveId)
-  if (move.power > 0 || move.effect === 'none' || move.effect === 'heal' || move.effect === 'atk2' || move.effect === 'spe2' || move.effect === 'calm') {
-    return { slot: defender, log }
+  if (isSelfEffect(move.effect)) {
+    return { slot: defender, log, statusNote: null }
+  }
+  const primary = move.power <= 0
+  const inflicted = rollInflictedStatus(move, random)
+  if (!inflicted) {
+    return { slot: defender, log, statusNote: null }
   }
   const name = speciesLabel(defender)
-  if (defender.status) {
-    log.push(`No afectó a ${name}.`)
-    return { slot: defender, log }
+  const types = speciesOf(defender.speciesId).types
+  if (defender.status || blocksStatus(inflicted, types)) {
+    if (primary) {
+      log.push(`No afectó a ${name}.`)
+    }
+    return { slot: defender, log, statusNote: null }
   }
-  if (move.effect === 'poison' && blocksPoison(speciesOf(defender.speciesId).types)) {
-    log.push(`No afectó a ${name}.`)
-    return { slot: defender, log }
-  }
-  if (move.effect === 'paralyze') {
-    log.push(`¡${name} está paralizado!`)
-    return { slot: applyStatus(defender, 'paralyze', 0), log }
-  }
-  if (move.effect === 'burn') {
-    log.push(`¡${name} se quemó!`)
-    return { slot: applyStatus(defender, 'burn', 0), log }
-  }
-  if (move.effect === 'poison') {
-    log.push(`¡${name} fue envenenado!`)
-    return { slot: applyStatus(defender, 'poison', 0), log }
-  }
-  log.push(`¡${name} se durmió!`)
-  return { slot: applyStatus(defender, 'sleep', 1 + Math.floor(random() * 3)), log }
+  const line = statusLine(name, inflicted)
+  log.push(line)
+  const sleepTurns = inflicted === 'sleep' ? 1 + Math.floor(random() * 3) : 0
+  return { slot: applyStatus(defender, inflicted, sleepTurns), log, statusNote: line }
 }
 
 type Side = 'player' | 'foe'
@@ -299,10 +353,13 @@ type ExecutedMove = {
   battle: LigaBattle
   factor: number
   note: string | null
+  statusNote: string | null
+  miss: boolean
+  idle: boolean
 }
 
-function idleMove(battle: LigaBattle): ExecutedMove {
-  return { battle, factor: 1, note: null }
+function idleMove(battle: LigaBattle, note: string | null = null): ExecutedMove {
+  return { battle, factor: 1, note, statusNote: null, miss: false, idle: Boolean(note) }
 }
 
 function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: () => number): ExecutedMove {
@@ -322,37 +379,64 @@ function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: 
       log.push(`¡${speciesLabel(attacker)} se despertó!`)
     } else {
       attacker = { ...attacker, sleep: attacker.sleep - 1 }
-      log.push(`${speciesLabel(attacker)} está dormido.`)
+      const note = `${speciesLabel(attacker)} está dormido.`
+      log.push(note)
       const party = replaceSlot(attackerParty, attackerIndex, attacker)
       const next = side === 'player' ? { ...battle, playerParty: party, log } : { ...battle, foeParty: party, log }
-      return idleMove(next)
+      return idleMove(next, note)
+    }
+  }
+  if (attacker.status === 'freeze') {
+    if (random() < 0.2) {
+      attacker = { ...attacker, status: null }
+      log.push(`¡${speciesLabel(attacker)} se descongeló!`)
+    } else {
+      const note = `${speciesLabel(attacker)} está congelado.`
+      log.push(note)
+      const party = replaceSlot(attackerParty, attackerIndex, attacker)
+      const next = side === 'player' ? { ...battle, playerParty: party, log } : { ...battle, foeParty: party, log }
+      return idleMove(next, note)
     }
   }
   if (attacker.status === 'paralyze' && random() < 0.25) {
-    log.push(`¡${speciesLabel(attacker)} está paralizado y no se puede mover!`)
+    const note = `¡${speciesLabel(attacker)} está paralizado y no se puede mover!`
+    log.push(note)
     const party = replaceSlot(attackerParty, attackerIndex, attacker)
     const next = side === 'player' ? { ...battle, playerParty: party, log } : { ...battle, foeParty: party, log }
-    return idleMove(next)
+    return idleMove(next, note)
   }
   attacker = spendPp(attacker, moveIndex)
   const atkStages = side === 'player' ? battle.playerStages : battle.foeStages
   const defStages = side === 'player' ? battle.foeStages : battle.playerStages
   const rolled = rollDamage(attacker, defender, atkStages, defStages, moveIndex, random)
   log.push(...rolled.log)
+  const used = attacker.moves[moveIndex]
+  const move = used ? moveOf(used.moveId) : null
+  if (rolled.miss) {
+    const missNote = rolled.log.find((line) => line.includes('falló')) ?? `¡El ataque de ${speciesLabel(attacker)} falló!`
+    const nextAttackerParty = replaceSlot(attackerParty, attackerIndex, attacker)
+    const nextBattle =
+      side === 'player'
+        ? { ...battle, playerParty: nextAttackerParty, log }
+        : { ...battle, foeParty: nextAttackerParty, log }
+    return { battle: nextBattle, factor: rolled.factor, note: missNote, statusNote: null, miss: true, idle: false }
+  }
   if (!rolled.miss && rolled.damage > 0) {
     defender = hurt(defender, rolled.damage)
     if (defender.hp <= 0) {
       log.push(`¡${speciesLabel(defender)} se debilitó!`)
     }
   }
+  if (rolled.damage > 0 && move?.type === 'fire' && defender.status === 'freeze' && defender.hp > 0) {
+    defender = { ...defender, status: null }
+    log.push(`¡${speciesLabel(defender)} se descongeló!`)
+  }
   let nextAtkStages = atkStages
-  const used = attacker.moves[moveIndex]
-  const damaging = Boolean(used && moveOf(used.moveId).power > 0)
+  const damaging = Boolean(move && move.power > 0)
   const note =
-    !rolled.miss && (damaging || rolled.factor === 0)
-      ? effectivenessLine(rolled.factor, speciesLabel(defender))
-      : null
-  if (!rolled.miss && rolled.factor !== 0) {
+    damaging || rolled.factor === 0 ? effectivenessLine(rolled.factor, speciesLabel(defender)) : null
+  let statusNote: string | null = null
+  if (rolled.factor !== 0) {
     const self = applySelfEffect(attacker, atkStages, moveIndex)
     attacker = self.slot
     nextAtkStages = self.stages
@@ -360,6 +444,7 @@ function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: 
     const target = applyTargetEffect(attacker, defender, moveIndex, random)
     defender = target.slot
     log.push(...target.log)
+    statusNote = target.statusNote
   }
   if (used && moveOf(used.moveId).name === 'explosion' && rolled.factor !== 0) {
     attacker = { ...attacker, hp: 0 }
@@ -383,7 +468,7 @@ function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: 
           foeStages: nextAtkStages,
           log,
         }
-  return { battle: nextBattle, factor: rolled.factor, note }
+  return { battle: nextBattle, factor: rolled.factor, note, statusNote, miss: false, idle: false }
 }
 
 function chip(slot: LigaSlot): { slot: LigaSlot; log: string | null } {
@@ -510,16 +595,14 @@ function settle(battle: LigaBattle): { battle: LigaBattle; result: LigaTurnResul
 function foeActs(battle: LigaBattle, difficulty: Difficulty, random: () => number): {
   battle: LigaBattle
   moveId: number | null
-  factor: number
-  note: string | null
-} {
+} & Pick<ExecutedMove, 'factor' | 'note' | 'statusNote' | 'miss' | 'idle'> {
   if (slotOf(battle.foeParty, battle.foeActive).hp <= 0 || slotOf(battle.playerParty, battle.playerActive).hp <= 0) {
-    return { battle, moveId: null, factor: 1, note: null }
+    return { battle, moveId: null, factor: 1, note: null, statusNote: null, miss: false, idle: false }
   }
   const index = chooseFoeMove(battle, difficulty, random)
   const move = slotOf(battle.foeParty, battle.foeActive).moves[index]
   const executed = executeMove(battle, 'foe', index, random)
-  return { battle: executed.battle, moveId: move?.moveId ?? null, factor: executed.factor, note: executed.note }
+  return { ...executed, moveId: move?.moveId ?? null }
 }
 
 function hpOf(battle: LigaBattle, side: 'player' | 'foe'): number {
@@ -540,8 +623,7 @@ function recordFx(
   next: LigaBattle,
   side: 'player' | 'foe',
   moveId: number,
-  factor: number,
-  note: string | null,
+  executed: Pick<ExecutedMove, 'factor' | 'note' | 'statusNote' | 'miss' | 'idle'>,
 ): void {
   const playerHp = hpOf(next, 'player')
   const foeHp = hpOf(next, 'foe')
@@ -552,8 +634,11 @@ function recordFx(
     speciesId: slotSpecies(prev, side),
     playerHp,
     foeHp,
-    factor,
-    note: note ?? undefined,
+    factor: executed.factor,
+    note: executed.note ?? undefined,
+    statusNote: executed.statusNote ?? undefined,
+    miss: executed.miss || undefined,
+    idle: executed.idle || undefined,
   })
   const target = side === 'player' ? 'foe' : 'player'
   if (hpOf(prev, target) > 0 && hpOf(next, target) <= 0) {
@@ -582,12 +667,15 @@ function withSend(steps: LigaBattle['lastFx'], before: LigaBattle, after: LigaBa
   ]
 }
 
-function fxFromFoe(prev: LigaBattle, after: { battle: LigaBattle; moveId: number | null; factor: number; note: string | null }): LigaBattle['lastFx'] {
+function fxFromFoe(
+  prev: LigaBattle,
+  after: { battle: LigaBattle; moveId: number | null } & Pick<ExecutedMove, 'factor' | 'note' | 'statusNote' | 'miss' | 'idle'>,
+): LigaBattle['lastFx'] {
   if (after.moveId === null) {
     return []
   }
   const steps: LigaBattle['lastFx'] = []
-  recordFx(steps, prev, after.battle, 'foe', after.moveId, after.factor, after.note)
+  recordFx(steps, prev, after.battle, 'foe', after.moveId, after)
   return steps
 }
 
@@ -685,22 +773,22 @@ export function playTurn(
   const steps: LigaBattle['lastFx'] = []
   if (playerFirst) {
     const afterPlayer = executeMove(next, 'player', choice.index, random)
-    recordFx(steps, next, afterPlayer.battle, 'player', playerMove.moveId, afterPlayer.factor, afterPlayer.note)
+    recordFx(steps, next, afterPlayer.battle, 'player', playerMove.moveId, afterPlayer)
     next = afterPlayer.battle
     if (foeMove && slotOf(next.foeParty, next.foeActive).hp > 0 && slotOf(next.playerParty, next.playerActive).hp > 0) {
       const afterFoe = executeMove(next, 'foe', foeIndex, random)
-      recordFx(steps, next, afterFoe.battle, 'foe', foeMove.moveId, afterFoe.factor, afterFoe.note)
+      recordFx(steps, next, afterFoe.battle, 'foe', foeMove.moveId, afterFoe)
       next = afterFoe.battle
     }
   } else {
     const afterFoe = executeMove(next, 'foe', foeIndex, random)
     if (foeMove) {
-      recordFx(steps, next, afterFoe.battle, 'foe', foeMove.moveId, afterFoe.factor, afterFoe.note)
+      recordFx(steps, next, afterFoe.battle, 'foe', foeMove.moveId, afterFoe)
     }
     next = afterFoe.battle
     if (slotOf(next.playerParty, next.playerActive).hp > 0 && slotOf(next.foeParty, next.foeActive).hp > 0) {
       const afterPlayer = executeMove(next, 'player', choice.index, random)
-      recordFx(steps, next, afterPlayer.battle, 'player', playerMove.moveId, afterPlayer.factor, afterPlayer.note)
+      recordFx(steps, next, afterPlayer.battle, 'player', playerMove.moveId, afterPlayer)
       next = afterPlayer.battle
     }
   }

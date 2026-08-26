@@ -79,6 +79,7 @@ export const STATUS_LABELS: Record<LigaStatus, string> = {
   burn: 'QUE',
   poison: 'VEN',
   sleep: 'DOR',
+  freeze: 'CON',
 }
 
 export function effectivenessLine(factor: number, target?: string): string | null {

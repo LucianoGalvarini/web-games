@@ -1,6 +1,6 @@
 import movesJson from './data/moves.json'
 import speciesJson from './data/species.json'
-import type { LigaMove, LigaSpecies, LigaType } from './types'
+import type { LigaEffect, LigaMove, LigaSpecies, LigaType } from './types'
 
 const GEN3_MOVE_STATS: Record<string, Partial<Pick<LigaMove, 'power' | 'accuracy' | 'pp'>>> = {
   flamethrower: { power: 95 },
@@ -34,9 +34,40 @@ const GEN3_MOVE_STATS: Record<string, Partial<Pick<LigaMove, 'power' | 'accuracy
   'doom-desire': { power: 120, accuracy: 85 },
 }
 
+const GEN3_STATUS: Record<string, Partial<Pick<LigaMove, 'effect' | 'statusChance'>>> = {
+  'fire-punch': { effect: 'burn', statusChance: 10 },
+  flamethrower: { effect: 'burn', statusChance: 10 },
+  'fire-blast': { effect: 'burn', statusChance: 10 },
+  'heat-wave': { effect: 'burn', statusChance: 10 },
+  'blaze-kick': { effect: 'burn', statusChance: 10 },
+  thunderbolt: { effect: 'paralyze', statusChance: 10 },
+  thunder: { effect: 'paralyze', statusChance: 30 },
+  'body-slam': { effect: 'paralyze', statusChance: 30 },
+  sludge: { effect: 'poison', statusChance: 30 },
+  'sludge-bomb': { effect: 'poison', statusChance: 30 },
+  'ice-beam': { effect: 'freeze', statusChance: 10 },
+  blizzard: { effect: 'freeze', statusChance: 10 },
+  'tri-attack': { statusChance: 20 },
+}
+
+function isStatusEffect(effect: LigaEffect): boolean {
+  return (
+    effect === 'paralyze' ||
+    effect === 'burn' ||
+    effect === 'poison' ||
+    effect === 'sleep' ||
+    effect === 'freeze'
+  )
+}
+
 function withGen3Stats(move: LigaMove): LigaMove {
-  const patch = GEN3_MOVE_STATS[move.name]
-  return patch ? { ...move, ...patch } : move
+  const stats = GEN3_MOVE_STATS[move.name]
+  const status = GEN3_STATUS[move.name]
+  const next = { ...move, ...stats, ...status }
+  const statusChance =
+    status?.statusChance ??
+    (next.power <= 0 && isStatusEffect(next.effect) ? 100 : (next.statusChance ?? 0))
+  return { ...next, statusChance }
 }
 
 export const SPECIES: LigaSpecies[] = speciesJson as LigaSpecies[]

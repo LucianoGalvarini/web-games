@@ -110,6 +110,43 @@ assert(estimatedDamage(toxicUser, steel, 0) === 0, 'Tóxico no puntúa contra Ac
 const toxicBattle = playTurn(startBattle([toxicUser], [steel], 'steven'), { kind: 'move', index: 0 }, 'easy', () => 0)
 assert(toxicBattle.battle.foeParty[0]?.status === null, 'Tóxico no envenena a Acero.')
 
+assert(moveOf(53).statusChance === 10 && moveOf(53).effect === 'burn', 'Lanzallamas puede quemar.')
+assert(moveOf(85).statusChance === 10 && moveOf(85).effect === 'paralyze', 'Rayo puede paralizar.')
+assert(moveOf(58).statusChance === 10 && moveOf(58).effect === 'freeze', 'Rayo Hielo puede congelar.')
+assert(moveOf(188).statusChance === 30 && moveOf(188).effect === 'poison', 'Bomba Lodo puede envenenar.')
+
+const burner = { ...makeSlot(speciesOf(6), 50, 31, 0), spe: 200, moves: [{ moveId: 53, pp: 15 }] }
+const wet = { ...makeSlot(speciesOf(9), 50, 0, 0), spe: 1, moves: [{ moveId: 57, pp: 15 }] }
+const burnTurn = playTurn(startBattle([burner], [wet], 'sidney'), { kind: 'move', index: 0 }, 'easy', () => 0.08)
+assert(burnTurn.battle.foeParty[0]?.status === 'burn', 'Lanzallamas quema si entra el secundario.')
+assert(burnTurn.battle.lastFx[0]?.statusNote?.includes('quemó'), 'El combate anuncia la quemadura.')
+
+const fireFoe = { ...makeSlot(speciesOf(6), 50, 0, 0), spe: 1, moves: [{ moveId: 53, pp: 15 }] }
+const noBurn = playTurn(startBattle([burner], [fireFoe], 'sidney'), { kind: 'move', index: 0 }, 'easy', () => 0.08)
+assert(noBurn.battle.foeParty[0]?.status === null, 'Un tipo Fuego no se quema.')
+
+const zapper = { ...makeSlot(speciesOf(26), 50, 31, 0), spe: 200, moves: [{ moveId: 85, pp: 15 }] }
+const paraTurn = playTurn(startBattle([zapper], [wet], 'sidney'), { kind: 'move', index: 0 }, 'easy', () => 0.08)
+assert(paraTurn.battle.foeParty[0]?.status === 'paralyze', 'Rayo deja paralizado si entra el secundario.')
+
+const freezer = { ...makeSlot(speciesOf(87), 50, 31, 0), spe: 1, moves: [{ moveId: 58, pp: 10 }] }
+const freezeTurn = playTurn(startBattle([freezer], [{ ...wet, spe: 200 }], 'sidney'), { kind: 'move', index: 0 }, 'easy', () => 0.08)
+assert(freezeTurn.battle.foeParty[0]?.status === 'freeze', 'Rayo Hielo congela si el rival ya atacó.')
+
+const iceFoe = { ...makeSlot(speciesOf(87), 50, 0, 0), spe: 1, moves: [{ moveId: 58, pp: 10 }] }
+const noFreeze = playTurn(startBattle([freezer], [iceFoe], 'sidney'), { kind: 'move', index: 0 }, 'easy', () => 0.08)
+assert(noFreeze.battle.foeParty[0]?.status === null, 'Un tipo Hielo no se congela.')
+
+const poisoner = { ...makeSlot(speciesOf(89), 50, 31, 0), spe: 200, moves: [{ moveId: 188, pp: 10 }] }
+const poisonTurn = playTurn(startBattle([poisoner], [wet], 'sidney'), { kind: 'move', index: 0 }, 'easy', () => 0.08)
+assert(poisonTurn.battle.foeParty[0]?.status === 'poison', 'Bomba Lodo puede envenenar.')
+
+const misser = { ...makeSlot(speciesOf(6), 50, 31, 0), spe: 200, moves: [{ moveId: 126, pp: 5 }] }
+const missTurn = playTurn(startBattle([misser], [wet], 'sidney'), { kind: 'move', index: 0 }, 'easy', () => 0.9)
+assert(missTurn.battle.lastFx[0]?.miss, 'Llamarada puede fallar.')
+assert(Boolean(missTurn.battle.lastFx[0]?.note?.includes('falló')), 'El fallo queda en pantalla hasta confirmar.')
+assert(missTurn.battle.foeParty[0]?.hp === wet.hp, 'Si el ataque falla, no baja PS.')
+
 const game = createGame('medium', 7)
 assert(game.party.length === 6, 'El equipo tiene 6 Pokémon.')
 assert(new Set(game.party.map((slot) => slot.speciesId)).size === 6, 'El equipo no repite especies.')

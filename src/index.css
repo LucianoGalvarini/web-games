@@ -2573,15 +2573,15 @@ body.is-liga-wide {
   }
 
   .liga-shell .panel {
-    padding: 14px 12px;
+    padding: 12px 10px;
   }
 
   .liga-shell .panel h1 {
-    font-size: 32px;
+    font-size: 28px;
   }
 
   .liga-screen {
-    font-size: 18px;
+    font-size: 15px;
   }
 }
 
@@ -2649,6 +2649,25 @@ body.is-liga-wide {
   background: #e04830;
   border-radius: 4px 4px 0 0;
   box-shadow: 0 0 0 2px #1c2434;
+}
+
+@media (max-width: 900px), (hover: none) {
+  .liga-dialog {
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    padding: 6px 10px 8px;
+    border-width: 3px;
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 2px #c8d0e0, 0 3px 0 #12161e;
+  }
+
+  .liga-dialog::before {
+    top: -5px;
+    left: 10px;
+    width: 14px;
+    height: 8px;
+  }
 }
 
 .liga-textbox {
@@ -2796,70 +2815,6 @@ body.is-liga-wide {
 
   .liga-gba-bar.is-bag {
     grid-template-columns: 0.55fr 1.65fr;
-  }
-
-  .liga-gba-bar.is-party {
-    min-height: 0;
-  }
-
-  .liga-gba-bar.is-party .liga-textbox {
-    padding: 8px 12px 10px;
-  }
-
-  .liga-hud {
-    width: 38%;
-    max-width: 12.5em;
-    font-size: 16px;
-    padding: 10px 10px 12px;
-  }
-
-  .liga-party {
-    grid-template-rows: repeat(3, auto);
-    align-content: start;
-    gap: 2px 6px;
-    padding: 4px 6px;
-    height: auto;
-  }
-
-  .liga-party li {
-    padding: 3px 5px 3px 14px;
-    gap: 4px;
-  }
-
-  .liga-party img {
-    width: 28px;
-    height: 28px;
-  }
-
-  .liga-party-info {
-    gap: 1px;
-  }
-
-  .liga-party .liga-hp {
-    gap: 1px 4px;
-  }
-
-  .liga-party .liga-hp-lab {
-    font-size: 10px;
-    padding: 0 5px;
-  }
-
-  .liga-party .liga-hp-track {
-    height: 8px;
-  }
-
-  .liga-party .liga-hp-num {
-    font-size: 12px;
-  }
-
-  .liga-gba-list {
-    max-height: none;
-    gap: 2px;
-    padding: 6px 8px;
-  }
-
-  .liga-cmd {
-    font-size: 18px;
   }
 }
 
@@ -3377,6 +3332,241 @@ body.is-liga-wide {
 
 .liga-hud .liga-hp-num {
   color: #201828;
+}
+
+@container liga (max-width: 720px) or (max-height: 520px) {
+  .liga-hud {
+    width: 44%;
+    max-width: 10em;
+    min-width: 0;
+    font-size: 12px;
+    padding: 4px 6px 5px;
+    gap: 2px;
+    border-width: 2px;
+    border-radius: 6px 3px 8px 4px;
+    box-shadow:
+      3px 3px 0 #15241c,
+      inset 0 1px 0 #fff,
+      inset 0 -2px 0 rgba(72, 56, 28, 0.22);
+  }
+
+  .liga-hud.is-foe {
+    top: 3%;
+    left: 2%;
+  }
+
+  .liga-hud.is-player {
+    right: 2%;
+    bottom: 34%;
+  }
+
+  .liga-hud p {
+    gap: 4px;
+  }
+
+  .liga-hud .liga-types {
+    margin: 0;
+  }
+
+  .liga-hud .liga-type {
+    font-size: 8px;
+    padding: 0 3px;
+  }
+
+  .liga-hud .liga-hp-lab {
+    font-size: 9px;
+    padding: 0 5px;
+  }
+
+  .liga-hud .liga-hp-track {
+    height: 6px;
+  }
+
+  .liga-hud .liga-hp-num {
+    font-size: 11px;
+    min-width: 0;
+  }
+
+  .liga-gba-bar {
+    min-height: 0;
+    gap: 5px;
+    padding: 4px 5px 5px;
+  }
+
+  .liga-gba-bar.is-fight {
+    grid-template-columns: 0.7fr 1.4fr;
+  }
+
+  .liga-gba-bar.is-bag {
+    grid-template-columns: 0.7fr 1.4fr;
+  }
+
+  .liga-gba-bar.is-party {
+    min-height: 0;
+    max-height: 46%;
+  }
+
+  .liga-textbox {
+    padding: 5px 8px 6px;
+    border-width: 3px;
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 2px #c8d0e0, 0 3px 0 #12161e;
+    font-size: 12px;
+  }
+
+  .liga-textbox::before {
+    top: -5px;
+    width: 14px;
+    height: 8px;
+  }
+
+  .liga-textbox p,
+  .liga-dialog p {
+    line-height: 1.15;
+  }
+
+  .liga-cmd {
+    font-size: 13px;
+    border-width: 3px;
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 2px #c8b890, 0 3px 0 #1c1438;
+  }
+
+  .liga-gba-grid,
+  .liga-gba-list {
+    padding: 3px 6px;
+    gap: 0 6px;
+  }
+
+  .liga-gba-grid.is-cmd {
+    height: auto;
+    letter-spacing: 0.04em;
+    padding: 4px 8px;
+  }
+
+  .liga-gba-grid li,
+  .liga-gba-list li {
+    padding-left: 12px;
+  }
+
+  .liga-gba-grid li.is-cursor::before,
+  .liga-gba-list li.is-cursor::before {
+    top: 0.38em;
+    border-width: 4px 0 4px 6px;
+  }
+
+  .liga-fight {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .liga-pp {
+    min-width: 4.6em;
+    padding: 4px 8px 4px 6px;
+    gap: 2px;
+    border-left-width: 2px;
+    font-size: 12px;
+  }
+
+  .liga-gba-list {
+    max-height: 18vh;
+    gap: 1px;
+  }
+
+  .liga-gba-list li {
+    gap: 5px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    padding-right: 6px;
+  }
+
+  .liga-item-icon,
+  .liga-gba-list img {
+    width: 16px;
+    height: 16px;
+  }
+
+  .liga-party {
+    gap: 3px 6px;
+    padding: 3px 5px;
+    height: auto;
+    align-content: start;
+  }
+
+  .liga-party li {
+    padding: 2px 4px 2px 12px;
+    gap: 4px;
+    border-width: 2px;
+    border-radius: 5px;
+    box-shadow: inset 0 1px 0 #fff, 1px 2px 0 rgba(28, 20, 56, 0.45);
+  }
+
+  .liga-party li.is-cursor::before {
+    left: 3px;
+    margin-top: -4px;
+    border-width: 4px 0 4px 6px;
+  }
+
+  .liga-party img {
+    width: 20px;
+    height: 20px;
+  }
+
+  .liga-party-info {
+    gap: 0;
+  }
+
+  .liga-party-info strong {
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  .liga-party .liga-type {
+    font-size: 7px;
+    padding: 0 3px;
+  }
+
+  .liga-party .liga-hp {
+    gap: 1px 4px;
+  }
+
+  .liga-party .liga-hp-lab {
+    font-size: 8px;
+    padding: 0 4px;
+  }
+
+  .liga-party .liga-hp-track {
+    height: 5px;
+  }
+
+  .liga-party .liga-hp-num {
+    font-size: 10px;
+  }
+}
+
+@container liga (max-width: 420px) {
+  .liga-hud {
+    font-size: 11px;
+    max-width: 9.2em;
+    padding: 3px 5px 4px;
+  }
+
+  .liga-cmd {
+    font-size: 12px;
+  }
+
+  .liga-textbox {
+    font-size: 11px;
+    padding: 4px 7px 5px;
+  }
+
+  .liga-party img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .liga-party-info strong {
+    font-size: 11px;
+  }
 }
 
 .liga-roster {

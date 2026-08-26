@@ -20,9 +20,9 @@ export type LigaType =
   | 'dark'
   | 'steel'
 
-export type LigaEffect = 'none' | 'heal' | 'atk2' | 'spe2' | 'calm' | 'paralyze' | 'burn' | 'poison' | 'sleep'
+export type LigaEffect = 'none' | 'heal' | 'atk2' | 'spe2' | 'calm' | 'paralyze' | 'burn' | 'poison' | 'sleep' | 'freeze'
 
-export type LigaStatus = 'paralyze' | 'burn' | 'poison' | 'sleep'
+export type LigaStatus = 'paralyze' | 'burn' | 'poison' | 'sleep' | 'freeze'
 
 export type LigaItemId =
   | 'potion'
@@ -54,6 +54,7 @@ export type LigaMove = {
   pp: number
   priority: number
   effect: LigaEffect
+  statusChance: number
 }
 
 export type LigaSpecies = {
@@ -108,6 +109,9 @@ export type LigaFxStep = {
   foeHp?: number
   factor?: number
   note?: string
+  statusNote?: string
+  miss?: boolean
+  idle?: boolean
   itemId?: LigaItemId
 }
 
