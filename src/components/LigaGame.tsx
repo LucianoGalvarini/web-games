@@ -26,6 +26,8 @@ type FsEl = HTMLElement & {
   webkitRequestFullscreen?: () => Promise<void> | void
 }
 
+const FS_HIDE: FullscreenOptions = { navigationUI: 'hide' }
+
 function fullscreenNode(): Element | null {
   const doc = document as FsDoc
   return document.fullscreenElement ?? doc.webkitFullscreenElement ?? null
@@ -78,7 +80,8 @@ export function LigaGame({ onBack }: LigaGameProps) {
       return
     }
     const box = node as FsEl
-    const go = box.requestFullscreen?.() ?? box.webkitRequestFullscreen?.()
+    const root = document.documentElement
+    const go = root.requestFullscreen?.(FS_HIDE) ?? box.requestFullscreen?.(FS_HIDE) ?? box.webkitRequestFullscreen?.()
     setWide(true)
     document.body.classList.add('is-liga-wide')
     void Promise.resolve(go)
@@ -195,7 +198,7 @@ export function LigaGame({ onBack }: LigaGameProps) {
                 />
               ) : null}
             </div>
-            <LigaPad onDown={game.pressDown} onUp={game.pressUp} />
+            <LigaPad turbo={game.turbo} onDown={game.pressDown} onUp={game.pressUp} />
           </div>
         </main>
       </div>

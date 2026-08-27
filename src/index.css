@@ -2344,10 +2344,15 @@ button.truco-card:disabled {
 
 .liga-screen.is-wide:not(:fullscreen) {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: auto;
   z-index: 40;
-  height: 100dvh;
+  height: 100svh;
+  max-height: 100svh;
   width: 100vw;
+  overflow: hidden;
 }
 
 .liga-screen:fullscreen .liga-stage,
@@ -2408,7 +2413,7 @@ button.truco-card:disabled {
   grid-template-rows: 52px 52px 52px;
   grid-template-areas:
     ". n ."
-    "w . e"
+    "w turbo e"
     ". s .";
   gap: 4px;
 }
@@ -2456,36 +2461,47 @@ button.truco-card:disabled {
 
 .liga-pad-ab {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .liga-pad-btn.is-turbo {
-  width: 42px;
-  height: 42px;
+  grid-area: turbo;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 11px;
   background: #5a5040;
 }
 
+.liga-pad-btn.is-turbo.is-on {
+  background: #c8a048;
+  color: #1a140c;
+  box-shadow: 0 1px 0 #12100c, inset 0 2px 0 rgba(0, 0, 0, 0.28);
+}
+
 .liga-pad-btn.is-start {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 11px;
   background: #3d6848;
 }
 
 .liga-pad-btn.is-b {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: #3d5aa8;
 }
 
 .liga-pad-btn.is-a {
-  width: 62px;
-  height: 62px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background: #c44848;
 }
@@ -2577,15 +2593,20 @@ button.truco-card:disabled {
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    width: min(72px, calc(var(--liga-rail) - 10px));
+    width: auto;
+  }
+
+  .liga-screen:fullscreen .liga-dpad .liga-pad-btn.is-turbo,
+  .liga-screen.is-wide .liga-dpad .liga-pad-btn.is-turbo {
+    width: 100%;
+    height: 100%;
+    font-size: 10px;
   }
 
   .liga-screen:fullscreen .liga-pad-btn.is-start,
-  .liga-screen.is-wide .liga-pad-btn.is-start,
-  .liga-screen:fullscreen .liga-pad-btn.is-turbo,
-  .liga-screen.is-wide .liga-pad-btn.is-turbo {
-    width: 40px;
-    height: 40px;
+  .liga-screen.is-wide .liga-pad-btn.is-start {
+    width: 34px;
+    height: 34px;
     font-size: 11px;
   }
 
@@ -2598,24 +2619,24 @@ button.truco-card:disabled {
 
   .liga-screen:fullscreen .liga-pad-btn.is-a,
   .liga-screen.is-wide .liga-pad-btn.is-a {
-    width: 54px;
-    height: 54px;
+    width: 60px;
+    height: 60px;
     font-size: 20px;
   }
 
-  @media (orientation: landscape) {
-    .liga-screen:fullscreen .liga-stage,
-    .liga-screen.is-wide .liga-stage {
-      width: min(calc(100vw - 2 * var(--liga-rail)), calc(100dvh * 13 / 11));
-      height: min(100dvh, calc((100vw - 2 * var(--liga-rail)) * 11 / 13));
-    }
+@media (hover: none), (pointer: coarse), (max-width: 1099px) {
+  .liga-screen:fullscreen .liga-stage,
+  .liga-screen.is-wide .liga-stage {
+    width: min(calc(100vw - 2 * var(--liga-rail)), calc(100svh * 13 / 11));
+    height: min(100svh, calc((100vw - 2 * var(--liga-rail)) * 11 / 13));
   }
+}
 
   @media (orientation: portrait) {
     .liga-screen:fullscreen .liga-stage,
     .liga-screen.is-wide .liga-stage {
-      width: min(100vw, calc((100dvh - var(--liga-pad-h)) * 13 / 11));
-      height: min(calc(100dvh - var(--liga-pad-h)), calc(100vw * 11 / 13));
+      width: min(100vw, calc((100svh - var(--liga-pad-h)) * 13 / 11));
+      height: min(calc(100svh - var(--liga-pad-h)), calc(100vw * 11 / 13));
     }
 
     .liga-screen:fullscreen .liga-pad,
@@ -2645,12 +2666,47 @@ button.truco-card:disabled {
       right: auto;
       top: auto;
       transform: none;
-      flex-direction: row;
-      align-items: flex-end;
+      flex-direction: column;
+      align-items: center;
       width: auto;
       gap: 8px;
     }
   }
+}
+
+html:fullscreen,
+html:-webkit-full-screen {
+  background: #000;
+  height: 100%;
+}
+
+html:fullscreen body,
+html:-webkit-full-screen body,
+html:fullscreen #root,
+html:-webkit-full-screen #root,
+html:fullscreen .app.is-liga-play,
+html:-webkit-full-screen .app.is-liga-play {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+html:fullscreen .liga-screen.is-wide,
+html:-webkit-full-screen .liga-screen.is-wide {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  max-height: none;
+  width: 100%;
+}
+
+html:fullscreen .liga-screen.is-wide .liga-stage,
+html:-webkit-full-screen .liga-screen.is-wide .liga-stage {
+  width: min(calc(100% - 2 * var(--liga-rail, 118px)), calc(100% * 13 / 11));
+  height: min(100%, calc((100% - 2 * var(--liga-rail, 118px)) * 11 / 13));
 }
 
 body.is-liga-wide {
@@ -3099,17 +3155,49 @@ body.is-liga-wide {
 }
 
 @media (max-width: 900px), (hover: none) {
+  html:has(.app.is-liga-play),
+  body:has(.app.is-liga-play),
+  #root:has(.app.is-liga-play) {
+    height: 100svh;
+    max-height: 100svh;
+    overflow: hidden;
+  }
+
+  .app.is-liga-play {
+    padding: 0;
+    min-height: 100svh;
+    height: 100svh;
+    max-height: 100svh;
+    overflow: hidden;
+  }
+
+  .app.is-liga-play .liga-shell,
+  .app.is-liga-play .liga-table {
+    height: 100%;
+    max-width: none;
+    width: 100%;
+    gap: 0;
+  }
+
   .liga-screen:not(.is-wide):not(:fullscreen) {
     aspect-ratio: auto;
-    max-height: none;
-    display: flex;
-    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    overflow: hidden;
   }
 
   .liga-screen:not(.is-wide):not(:fullscreen) .liga-stage {
+    width: auto;
     height: auto;
+    max-width: 100%;
+    max-height: 100%;
     aspect-ratio: 13 / 11;
-    flex: 0 0 auto;
+    margin: auto;
+    flex: none;
   }
 
   .liga-screen:not(.is-wide):not(:fullscreen) .liga-pad {
@@ -3119,7 +3207,7 @@ body.is-liga-wide {
     align-items: flex-end;
     padding: 8px 12px max(10px, env(safe-area-inset-bottom));
     background: #1a1418;
-    min-height: 132px;
+    min-height: 0;
   }
 
   .liga-screen:not(.is-wide):not(:fullscreen) .liga-dpad {
@@ -3130,50 +3218,53 @@ body.is-liga-wide {
     gap: 3px;
   }
 
-  .liga-screen:not(.is-wide):not(:fullscreen) .liga-pad-btn.is-dir {
+  .liga-screen:not(.is-wide):not(:fullscreen) .liga-pad-btn.is-dir,
+  .liga-screen:not(.is-wide):not(:fullscreen) .liga-dpad .liga-pad-btn.is-turbo {
     width: 100%;
     height: 100%;
     min-width: 0;
-    font-size: 16px;
+    font-size: 14px;
+  }
+
+  .liga-screen:not(.is-wide):not(:fullscreen) .liga-dpad .liga-pad-btn.is-turbo {
+    font-size: 10px;
   }
 
   .liga-dock {
-    left: 6px;
-    top: 6px;
-    width: 3em;
-    gap: 3px;
-    max-height: calc(100% - 4.8em);
-    overflow: hidden;
-  }
-
-  .liga-dock li {
-    flex: 1 1 0;
-    min-height: 0;
-    padding: 3px 2px 2px;
-    justify-content: center;
-  }
-
-  .liga-dock img {
-    width: auto;
-    height: auto;
-    max-width: 34px;
-    max-height: 34px;
-    flex: 1 1 auto;
-    min-height: 0;
-    object-fit: contain;
-    margin: 0;
-  }
-
-  .liga-dock strong {
     display: none;
   }
+}
 
-  .liga-dock em {
-    top: -0.3em;
-    left: -0.35em;
-    width: 16px;
-    height: 16px;
-    font-size: 11px;
+@media (hover: none) and (orientation: landscape), (pointer: coarse) and (orientation: landscape) {
+  .liga-screen:not(.is-wide):not(:fullscreen) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .liga-screen:not(.is-wide):not(:fullscreen) .liga-stage {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .liga-screen:not(.is-wide):not(:fullscreen) .liga-pad {
+    display: contents;
+    background: none;
+    padding: 0;
+    min-height: 0;
+  }
+
+  .liga-screen:not(.is-wide):not(:fullscreen) .liga-dpad {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    margin-left: max(6px, env(safe-area-inset-left));
+  }
+
+  .liga-screen:not(.is-wide):not(:fullscreen) .liga-pad-ab {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+    margin-right: max(6px, env(safe-area-inset-right));
   }
 }
 
@@ -3206,7 +3297,7 @@ body.is-liga-wide {
 
 @media (max-width: 900px), (hover: none) {
   .liga-dialog {
-    left: 3.2em;
+    left: 6px;
     right: 6px;
     bottom: 6px;
     padding: 6px 10px 8px;

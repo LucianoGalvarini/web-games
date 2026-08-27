@@ -495,8 +495,9 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
   const pressDown = useCallback(
     (key: string) => {
       if (isTurboKey(key)) {
-        turboRef.current = true
-        setTurbo(true)
+        const next = !turboRef.current
+        turboRef.current = next
+        setTurbo(next)
         return
       }
       const current = stateRef.current
@@ -791,10 +792,6 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
   )
 
   const pressUp = useCallback((key: string) => {
-    if (isTurboKey(key)) {
-      turboRef.current = false
-      setTurbo(false)
-    }
     const dir = KEY_DIR[key]
     if (dir) {
       heldRef.current[dir] = false
