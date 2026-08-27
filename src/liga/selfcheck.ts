@@ -152,7 +152,52 @@ assert(estimatedDamage(toxicUser, steel, 0) === 0, 'Tóxico no puntúa contra Ac
 const toxicBattle = playTurn(startBattle([toxicUser], [steel], 'steven'), { kind: 'move', index: 0 }, 'easy', () => 0)
 assert(toxicBattle.battle.foeParty[0]?.status === null, 'Tóxico no envenena a Acero.')
 
-assert(moveOf(53).statusChance === 10 && moveOf(53).effect === 'burn', 'Lanzallamas puede quemar.')
+assert(moveOf(202).effect === 'drain', 'Gigadrenado drena PS.')
+assert(moveOf(141).effect === 'drain', 'Chupavidas drena PS.')
+assert(moveOf(138).effect === 'drain', 'Comesueños drena PS.')
+
+const drainer = {
+  ...makeSlot(speciesOf(3), 50, 31, 0),
+  hp: 40,
+  maxHp: 200,
+  spe: 200,
+  moves: [{ moveId: 202, pp: 5 }],
+}
+const prey = { ...makeSlot(speciesOf(20), 50, 0, 0), spe: 1, hp: 20, maxHp: 90, moves: [{ moveId: 16, pp: 10 }] }
+const drainTurn = playTurn(startBattle([drainer], [prey], 'steven'), { kind: 'move', index: 0 }, 'easy', () => 0.5)
+assert((drainTurn.battle.playerParty[0]?.hp ?? 0) > 40, 'Gigadrenado roba PS.')
+assert((drainTurn.battle.foeParty[0]?.hp ?? 20) < 20, 'Gigadrenado baja PS.')
+assert(Boolean(drainTurn.battle.lastFx[0]?.statusNote?.includes('recuperó')), 'El drenado anuncia la cura.')
+
+const leechUser = {
+  ...makeSlot(speciesOf(47), 50, 31, 0),
+  hp: 40,
+  maxHp: 200,
+  spe: 200,
+  moves: [{ moveId: 141, pp: 15 }],
+}
+const leechTurn = playTurn(startBattle([leechUser], [{ ...prey, hp: 20 }], 'steven'), { kind: 'move', index: 0 }, 'easy', () => 0.5)
+assert((leechTurn.battle.playerParty[0]?.hp ?? 0) > 40, 'Chupavidas roba PS.')
+
+const eater = {
+  ...makeSlot(speciesOf(97), 50, 31, 0),
+  hp: 40,
+  maxHp: 200,
+  spe: 200,
+  moves: [{ moveId: 138, pp: 15 }],
+}
+const failedEat = playTurn(
+  startBattle([eater], [{ ...prey, hp: 20, moves: [{ moveId: 86, pp: 10 }] }], 'steven'),
+  { kind: 'move', index: 0 },
+  'easy',
+  () => 0.5,
+)
+assert(failedEat.battle.foeParty[0]?.hp === 20, 'Comesueños no pega si el rival está despierto.')
+assert((failedEat.battle.playerParty[0]?.hp ?? 0) <= 40, 'Comesueños no drena si el rival está despierto.')
+const sleeper = { ...prey, hp: 20, status: 'sleep' as const, sleep: 3 }
+const ate = playTurn(startBattle([eater], [sleeper], 'steven'), { kind: 'move', index: 0 }, 'easy', () => 0.5)
+assert((ate.battle.playerParty[0]?.hp ?? 0) > 40, 'Comesueños drena a un Pokémon dormido.')
+assert((ate.battle.foeParty[0]?.hp ?? 20) < 20, 'Comesueños baja PS al dormido.')
 assert(moveOf(85).statusChance === 10 && moveOf(85).effect === 'paralyze', 'Rayo puede paralizar.')
 assert(moveOf(58).statusChance === 10 && moveOf(58).effect === 'freeze', 'Rayo Hielo puede congelar.')
 assert(moveOf(188).statusChance === 30 && moveOf(188).effect === 'poison', 'Bomba Lodo puede envenenar.')

@@ -283,6 +283,10 @@ function rollDamage(
     }
     return { damage: 0, factor: 1, crit: false, miss: false, log }
   }
+  if (move.name === 'dream-eater' && defender.status !== 'sleep') {
+    log.push('¡Pero falló!')
+    return { damage: 0, factor: 1, crit: false, miss: false, log }
+  }
   const factor = typeMatchup(move.type, defending.types)
   const immune = effectivenessLine(factor, speciesLabel(defender))
   if (factor === 0) {
@@ -455,10 +459,24 @@ function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: 
         : { ...battle, foeParty: nextAttackerParty, log }
     return { battle: nextBattle, factor: rolled.factor, note: missNote, statusNote: null, miss: true, idle: false }
   }
+  const hpBefore = defender.hp
   if (!rolled.miss && rolled.damage > 0) {
     defender = hurt(defender, rolled.damage)
     if (defender.hp <= 0) {
       log.push(`¡${speciesLabel(defender)} se debilitó!`)
+    }
+  }
+  let drainNote: string | null = null
+  if (rolled.damage > 0 && move?.effect === 'drain') {
+    const lost = hpBefore - defender.hp
+    const amount = Math.max(1, Math.floor(lost / 2))
+    if (lost > 0 && amount > 0 && attacker.hp > 0) {
+      const before = attacker.hp
+      attacker = heal(attacker, amount)
+      if (attacker.hp > before) {
+        drainNote = `${speciesLabel(attacker)} recuperó PS.`
+        log.push(drainNote)
+      }
     }
   }
   if (rolled.damage > 0 && move?.type === 'fire' && defender.status === 'freeze' && defender.hp > 0) {
@@ -478,7 +496,7 @@ function executeMove(battle: LigaBattle, side: Side, moveIndex: number, random: 
     const target = applyTargetEffect(attacker, defender, moveIndex, random)
     defender = target.slot
     log.push(...target.log)
-    statusNote = target.statusNote
+    statusNote = target.statusNote ?? drainNote
   }
   if (used && moveOf(used.moveId).name === 'explosion' && rolled.factor !== 0) {
     attacker = { ...attacker, hp: 0 }

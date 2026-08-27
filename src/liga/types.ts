@@ -20,7 +20,7 @@ export type LigaType =
   | 'dark'
   | 'steel'
 
-export type LigaEffect = 'none' | 'heal' | 'atk2' | 'spe2' | 'calm' | 'paralyze' | 'burn' | 'poison' | 'sleep' | 'freeze'
+export type LigaEffect = 'none' | 'heal' | 'drain' | 'atk2' | 'spe2' | 'calm' | 'paralyze' | 'burn' | 'poison' | 'sleep' | 'freeze'
 
 export type LigaStatus = 'paralyze' | 'burn' | 'poison' | 'sleep' | 'freeze'
 

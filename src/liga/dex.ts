@@ -62,10 +62,23 @@ function isStatusEffect(effect: LigaEffect): boolean {
   )
 }
 
+const GEN3_DRAIN: ReadonlySet<string> = new Set([
+  'absorb',
+  'mega-drain',
+  'giga-drain',
+  'leech-life',
+  'dream-eater',
+])
+
 function withGen3Stats(move: LigaMove): LigaMove {
   const stats = GEN3_MOVE_STATS[move.name]
   const status = GEN3_STATUS[move.name]
-  const next = { ...move, ...stats, ...status }
+  const next = {
+    ...move,
+    ...stats,
+    ...status,
+    effect: GEN3_DRAIN.has(move.name) ? 'drain' : (status?.effect ?? move.effect),
+  }
   const statusChance =
     status?.statusChance ??
     (next.power <= 0 && isStatusEffect(next.effect) ? 100 : (next.statusChance ?? 0))
