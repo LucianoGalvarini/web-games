@@ -149,7 +149,12 @@ export function LigaGame({ onBack }: LigaGameProps) {
     <div className={`app is-liga-play${wide ? ' is-liga-wide' : ''}`}>
       <div className="shell liga-shell">
         <main className="table liga-table" data-manual="board">
-          <div ref={screenRef} className={`liga-screen${wide ? ' is-wide' : ''}`}>
+          <div
+            ref={screenRef}
+            className={`liga-screen${wide ? ' is-wide' : ''}${
+              game.fieldMenu === 'party' || game.fieldMenu === 'bag' ? ' is-menu' : ''
+            }`}
+          >
             <LigaChrome wide={wide} onToggleWide={toggleWide} />
             {wide && portrait ? <p className="liga-rotate">Girar el celular</p> : null}
             <div className="liga-stage">

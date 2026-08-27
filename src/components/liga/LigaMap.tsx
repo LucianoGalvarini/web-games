@@ -163,6 +163,22 @@ function drawDecor(ctx: CanvasRenderingContext2D, room: LigaRoomId, palette: (ty
   }
 }
 
+const MAP_W = ROOM_COLS * TILE
+const MAP_H = ROOM_ROWS * TILE
+
+function fitCanvas(canvas: HTMLCanvasElement) {
+  const stage = canvas.parentElement
+  if (!stage) {
+    return
+  }
+  const scale = Math.min(stage.clientWidth / MAP_W, stage.clientHeight / MAP_H)
+  if (scale <= 0) {
+    return
+  }
+  canvas.style.width = `${Math.floor(MAP_W * scale)}px`
+  canvas.style.height = `${Math.floor(MAP_H * scale)}px`
+}
+
 export function LigaMap({ state, walk, walkT }: LigaMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const room = roomOf(state.room)
@@ -170,6 +186,19 @@ export function LigaMap({ state, walk, walkT }: LigaMapProps) {
   const trainer = trainerPos(state, state.room)
   const trainerId = state.room === 'hall' ? null : state.room
   const open = doorOpen(state, state.room)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const stage = canvas?.parentElement
+    if (!canvas || !stage) {
+      return
+    }
+    const onResize = () => fitCanvas(canvas)
+    onResize()
+    const observer = new ResizeObserver(onResize)
+    observer.observe(stage)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -228,8 +257,8 @@ export function LigaMap({ state, walk, walkT }: LigaMapProps) {
     <canvas
       ref={canvasRef}
       className="liga-canvas"
-      width={ROOM_COLS * TILE}
-      height={ROOM_ROWS * TILE}
+      width={MAP_W}
+      height={MAP_H}
       aria-hidden="true"
     />
   )
