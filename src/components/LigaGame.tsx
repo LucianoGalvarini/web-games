@@ -138,12 +138,15 @@ export function LigaGame({ onBack }: LigaGameProps) {
       if (event.ctrlKey || event.metaKey || event.altKey) {
         return
       }
+      if (game.fieldMenu === 'moves' && game.moveSlot !== null) {
+        return
+      }
       event.preventDefault()
       toggleWide()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [toggleWide])
+  }, [game.fieldMenu, game.moveSlot, toggleWide])
 
   return (
     <div className={`app is-liga-play${wide ? ' is-liga-wide' : ''}`}>
@@ -152,7 +155,12 @@ export function LigaGame({ onBack }: LigaGameProps) {
           <div
             ref={screenRef}
             className={`liga-screen${wide ? ' is-wide' : ''}${
-              game.fieldMenu === 'party' || game.fieldMenu === 'bag' ? ' is-menu' : ''
+              game.fieldMenu === 'party' ||
+              game.fieldMenu === 'bag' ||
+              game.fieldMenu === 'actions' ||
+              game.fieldMenu === 'moves'
+                ? ' is-menu'
+                : ''
             }`}
           >
             <LigaChrome wide={wide} onToggleWide={toggleWide} />
@@ -193,6 +201,10 @@ export function LigaGame({ onBack }: LigaGameProps) {
                   screen={game.fieldMenu}
                   cursor={game.cursor}
                   swapFrom={game.swapFrom}
+                  partyIndex={game.partyIndex}
+                  moveSlot={game.moveSlot}
+                  moveQuery={game.moveQuery}
+                  catalog={game.catalog}
                   party={state.party}
                   bag={game.bag}
                   itemPick={game.itemPick}

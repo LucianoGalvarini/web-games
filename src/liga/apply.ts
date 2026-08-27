@@ -1,7 +1,9 @@
 import type { Difficulty } from '../shared/types'
 import { applyPartyItem, playTurn, startBattle } from './battle'
-import { DIRS, PRESETS } from './constants'
+import { DIRS, MOVE_SLOTS, PRESETS } from './constants'
+import { moveOf } from './dex'
 import { TRAINER_INTRO, TRAINER_OUTRO } from './labels'
+import { canLearn } from './learnsets'
 import { canStep, facingTrainer, nextRoom, prevRoom, roomOf, tileAt, trainerIdOf } from './map'
 import { createRng } from './rng'
 import { cloneParty, createTrainers, pickPlayerParty } from './team'
@@ -173,6 +175,42 @@ export function applyAction(state: LigaState, action: LigaAction, random: () => 
     const party = cloneParty(state.party)
     party[action.from] = to
     party[action.to] = from
+    return { ...state, party }
+  }
+  if (action.kind === 'set-move') {
+    if (state.phase === 'battle' || state.battle) {
+      return state
+    }
+    const slot = state.party[action.pokemon]
+    if (!slot || action.slot < 0 || action.slot >= MOVE_SLOTS) {
+      return state
+    }
+    if (!canLearn(slot.speciesId, action.moveId)) {
+      return state
+    }
+    const party = cloneParty(state.party)
+    const mon = party[action.pokemon]
+    if (!mon) {
+      return state
+    }
+    const current = mon.moves[action.slot]
+    if (!current) {
+      return state
+    }
+    const equipped = mon.moves.findIndex((entry) => entry.moveId === action.moveId)
+    if (equipped === action.slot) {
+      return state
+    }
+    if (equipped >= 0) {
+      const other = mon.moves[equipped]
+      if (!other) {
+        return state
+      }
+      mon.moves[action.slot] = other
+      mon.moves[equipped] = current
+      return { ...state, party }
+    }
+    mon.moves[action.slot] = { moveId: action.moveId, pp: moveOf(action.moveId).pp }
     return { ...state, party }
   }
   if (action.kind === 'item' && state.phase !== 'battle') {

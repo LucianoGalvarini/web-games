@@ -5,8 +5,9 @@ import { DIFFICULTIES, KEY_DIR, PRESETS, WALK_MS } from '../liga/constants'
 import { isAKey, isBKey, isStartKey, isTurboKey, moveCursor } from '../liga/cursor'
 import { moveOf, speciesOf } from '../liga/dex'
 import { sfxForType, type LigaAnim } from '../liga/fx'
-import { FIELD_PARTY_COLS, FIELD_ROOT_COUNT, fieldOptionCount, rootCursorOf, type LigaFieldScreen } from '../liga/fieldMenu'
+import { FIELD_ACTION_COUNT, FIELD_PARTY_COLS, FIELD_ROOT_COUNT, fieldOptionCount, rootCursorOf, type LigaFieldScreen } from '../liga/fieldMenu'
 import { ITEM_LABELS } from '../liga/labels'
+import { searchLearnset } from '../liga/learnsets'
 import { canStep } from '../liga/map'
 import { cloneSlot } from '../liga/team'
 import type { LigaAction, LigaDir, LigaItemId, LigaSlot, LigaState } from '../liga/types'
@@ -60,6 +61,9 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
   const [speechSkip, setSpeechSkip] = useState(false)
   const [fieldMenu, setFieldMenu] = useState<LigaFieldScreen | null>(null)
   const [swapFrom, setSwapFrom] = useState<number | null>(null)
+  const [partyIndex, setPartyIndex] = useState<number | null>(null)
+  const [moveSlot, setMoveSlot] = useState<number | null>(null)
+  const [moveQuery, setMoveQuery] = useState('')
   const [field, setField] = useState<{ player: LigaSlot; foe: LigaSlot } | null>(null)
 
   const stateRef = useRef(state)
@@ -76,6 +80,9 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
   const holdAckRef = useRef(false)
   const fieldMenuRef = useRef(fieldMenu)
   const swapFromRef = useRef(swapFrom)
+  const partyIndexRef = useRef(partyIndex)
+  const moveSlotRef = useRef(moveSlot)
+  const moveQueryRef = useRef(moveQuery)
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
   stateRef.current = state
@@ -88,6 +95,9 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
   fieldRef.current = field
   fieldMenuRef.current = fieldMenu
   swapFromRef.current = swapFrom
+  partyIndexRef.current = partyIndex
+  moveSlotRef.current = moveSlot
+  moveQueryRef.current = moveQuery
 
   const bag = useMemo(() => listedBag(state.bag), [state.bag])
   bagRef.current = bag
@@ -154,6 +164,9 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
     setField(null)
     setFieldMenu(null)
     setSwapFrom(null)
+    setPartyIndex(null)
+    setMoveSlot(null)
+    setMoveQuery('')
     heldRef.current = {}
   }, [])
 
@@ -505,6 +518,9 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
         setFieldMenu(null)
         setSwapFrom(null)
         setItemPick(null)
+        setPartyIndex(null)
+        setMoveSlot(null)
+        setMoveQuery('')
         setCursor(0)
       }
       if (isStartKey(key)) {
@@ -521,6 +537,9 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
         }
         setFieldMenu('root')
         setSwapFrom(null)
+        setPartyIndex(null)
+        setMoveSlot(null)
+        setMoveQuery('')
         setCursor(0)
         playSfx('ligaBeep')
         return
@@ -568,7 +587,9 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
               return
             }
             if (swapFromRef.current === null) {
-              setSwapFrom(index)
+              setPartyIndex(index)
+              setFieldMenu('actions')
+              setCursor(0)
               return
             }
             if (swapFromRef.current === index) {
@@ -577,6 +598,50 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
             }
             play({ kind: 'reorder', from: swapFromRef.current, to: index })
             setSwapFrom(null)
+            return
+          }
+          if (screen === 'actions') {
+            const index = partyIndexRef.current
+            if (index === null || !current.party[index]) {
+              return
+            }
+            if (cursorRef.current === 0) {
+              setSwapFrom(index)
+              setFieldMenu('party')
+              setCursor(index)
+              return
+            }
+            setFieldMenu('moves')
+            setMoveSlot(null)
+            setMoveQuery('')
+            setCursor(0)
+            return
+          }
+          if (screen === 'moves') {
+            const index = partyIndexRef.current
+            const mon = index !== null ? current.party[index] : undefined
+            if (index === null || !mon) {
+              return
+            }
+            if (moveSlotRef.current === null) {
+              if (!mon.moves[cursorRef.current]) {
+                return
+              }
+              setMoveSlot(cursorRef.current)
+              setMoveQuery('')
+              setCursor(0)
+              return
+            }
+            const catalog = searchLearnset(mon.speciesId, moveQueryRef.current, (id) => moveOf(id).label)
+            const moveId = catalog[cursorRef.current]
+            if (moveId === undefined) {
+              playSfx('error')
+              return
+            }
+            play({ kind: 'set-move', pokemon: index, slot: moveSlotRef.current, moveId })
+            setMoveSlot(null)
+            setMoveQuery('')
+            setCursor(moveSlotRef.current)
             return
           }
           if (screen === 'bag') {
@@ -623,6 +688,24 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
             setSwapFrom(null)
             return
           }
+          if (screen === 'moves' && moveQueryRef.current) {
+            setMoveQuery('')
+            setCursor(0)
+            return
+          }
+          if (screen === 'moves' && moveSlotRef.current !== null) {
+            setMoveSlot(null)
+            setCursor(moveSlotRef.current)
+            return
+          }
+          if (screen === 'moves' || screen === 'actions') {
+            setFieldMenu('party')
+            setMoveSlot(null)
+            setMoveQuery('')
+            setCursor(partyIndexRef.current ?? 0)
+            setPartyIndex(null)
+            return
+          }
           if (screen === 'root') {
             closeField()
             return
@@ -630,7 +713,15 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
           setFieldMenu('root')
           setSwapFrom(null)
           setItemPick(null)
+          setPartyIndex(null)
+          setMoveSlot(null)
+          setMoveQuery('')
           setCursor(rootCursorOf(screen))
+          return
+        }
+        if (screen === 'moves' && moveSlotRef.current !== null && /^[a-zA-ZñÑ]$/.test(key)) {
+          setMoveQuery((value) => value + key)
+          setCursor(0)
           return
         }
         const dir = KEY_DIR[key]
@@ -643,6 +734,17 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
         if (screen === 'party') {
           count = current.party.length
           cols = FIELD_PARTY_COLS
+        } else if (screen === 'actions') {
+          count = FIELD_ACTION_COUNT
+        } else if (screen === 'moves') {
+          const index = partyIndexRef.current
+          const mon = index !== null ? current.party[index] : undefined
+          if (moveSlotRef.current === null) {
+            count = mon?.moves.length ?? 0
+            cols = 2
+          } else if (mon) {
+            count = Math.max(1, searchLearnset(mon.speciesId, moveQueryRef.current, (id) => moveOf(id).label).length)
+          }
         } else if (screen === 'bag') {
           count = Math.max(1, bagRef.current.length)
         } else if (screen === 'option') {
@@ -800,7 +902,14 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isTurboKey(event.key) || isAKey(event.key) || isBKey(event.key) || isStartKey(event.key) || KEY_DIR[event.key]) {
+      if (
+        isTurboKey(event.key) ||
+        isAKey(event.key) ||
+        isBKey(event.key) ||
+        isStartKey(event.key) ||
+        KEY_DIR[event.key] ||
+        (fieldMenuRef.current === 'moves' && moveSlotRef.current !== null && /^[a-zA-ZñÑ]$/.test(event.key))
+      ) {
         event.preventDefault()
       }
       if (event.repeat) {
@@ -872,6 +981,13 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
     statusText,
     fieldMenu,
     swapFrom,
+    partyIndex,
+    moveSlot,
+    moveQuery,
+    catalog:
+      fieldMenu === 'moves' && partyIndex !== null && state.party[partyIndex]
+        ? searchLearnset(state.party[partyIndex].speciesId, moveQuery, (id) => moveOf(id).label)
+        : [],
     play,
     pressDown,
     pressUp,

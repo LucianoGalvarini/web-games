@@ -2,9 +2,10 @@ import { applyAction, createGame } from './apply'
 import { estimatedDamage, playTurn, startBattle } from './battle'
 import { DIFFICULTIES, PRESETS, ROOM_COLS, ROOM_ROWS } from './constants'
 import { isAKey, isBKey, isStartKey, isTurboKey, moveCursor, revealCursor } from './cursor'
-import { FIELD_PARTY_COLS, rootCursorOf } from './fieldMenu'
 import { SPECIES, moveOf, speciesOf } from './dex'
+import { FIELD_PARTY_COLS, rootCursorOf } from './fieldMenu'
 import { effectivenessLine } from './labels'
+import { canLearn, learnsetOf } from './learnsets'
 import { facingTrainer, tileAt, trainerPos, walkable } from './map'
 import { makeSlot } from './team'
 import { typeMatchup } from './typeChart'
@@ -244,9 +245,38 @@ assert(rootCursorOf('bag') === 1, 'Volver de la mochila deja el cursor en MOCHIL
 assert(rootCursorOf('option') === 2, 'Volver de opción deja el cursor en OPCIÓN.')
 assert(rootCursorOf('party') === 0, 'Volver del equipo deja el cursor en POKÉMON.')
 
+assert(
+  SPECIES.every((entry) => learnsetOf(entry.id).length >= 4),
+  'Cada especie jugable tiene al menos cuatro ataques de Esmeralda.',
+)
+assert(!canLearn(6, 57), 'Charizard no aprende Surf en Esmeralda.')
+assert(canLearn(6, 53), 'Charizard aprende Lanzallamas.')
+assert(
+  SPECIES.every((entry) => entry.moves.every((id) => canLearn(entry.id, id))),
+  'El set por defecto solo usa ataques que ese Pokémon aprende.',
+)
+
 const swapped = applyAction(game, { kind: 'reorder', from: 0, to: 1 }, () => 0)
 assert(swapped.party[0]?.speciesId === game.party[1]?.speciesId, 'El menú puede cambiar quién sale primero.')
 assert(swapped.party[1]?.speciesId === game.party[0]?.speciesId, 'El intercambio de equipo es simétrico.')
+
+assert(
+  game.party.every((slot) => slot.moves.length === 4 && new Set(slot.moves.map((entry) => entry.moveId)).size === 4),
+  'El equipo arranca con cuatro ataques distintos.',
+)
+assert(
+  game.party.every((slot) => slot.moves.every((entry) => canLearn(slot.speciesId, entry.moveId))),
+  'Los cuatro ataques iniciales salen del learnset de Esmeralda.',
+)
+const lead = game.party[0]
+assert(lead, 'Hay un Pokémon al frente.')
+const extra = learnsetOf(lead.speciesId).find((id) => !lead.moves.some((entry) => entry.moveId === id))
+assert(extra !== undefined, 'Hay más ataques para enseñar.')
+const taught = applyAction(game, { kind: 'set-move', pokemon: 0, slot: 0, moveId: extra }, () => 0)
+assert(taught.party[0]?.moves[0]?.moveId === extra, 'Se puede cambiar un ataque por otro legal.')
+const forbiddenId = canLearn(lead.speciesId, 177) ? 354 : 177
+const blocked = applyAction(game, { kind: 'set-move', pokemon: 0, slot: 0, moveId: forbiddenId }, () => 0)
+assert(blocked.party[0]?.moves[0]?.moveId === lead.moves[0]?.moveId, 'No enseña un ataque que ese Pokémon no aprende.')
 
 const hurtWalk = {
   ...game,

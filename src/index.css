@@ -2830,6 +2830,15 @@ body.is-liga-wide {
   min-width: 12em;
 }
 
+.liga-start-box.is-actions {
+  top: auto;
+  right: 10px;
+  bottom: 12px;
+  left: auto;
+  min-width: 9.5em;
+  z-index: 3;
+}
+
 .liga-start-meta {
   display: flex;
   justify-content: space-between;
@@ -2931,7 +2940,9 @@ body.is-liga-wide {
 }
 
 .liga-field-menu.is-party .liga-start-panel,
-.liga-field-menu.is-bag .liga-start-panel {
+.liga-field-menu.is-bag .liga-start-panel,
+.liga-field-menu.is-actions .liga-start-panel,
+.liga-field-menu.is-moves .liga-start-panel {
   display: flex;
   flex-direction: column;
   top: 8px;
@@ -3048,6 +3059,82 @@ body.is-liga-wide {
 
 .liga-start-panel .liga-hp-num {
   color: #c8c0b4;
+}
+
+.liga-start-panel.is-moves {
+  gap: 8px;
+}
+
+.liga-move-set {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 8px;
+  flex: 0 0 auto;
+}
+
+.liga-move-set li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  position: relative;
+  padding: 6px 8px 6px 16px;
+  color: #ece8dc;
+  background: #221e2e;
+  border: 1px solid #4a4460;
+  border-radius: 8px;
+}
+
+.liga-move-set li.is-cursor,
+.liga-move-set li.is-on {
+  background: #2e2840;
+  box-shadow: inset 0 0 0 1px #e0b060;
+}
+
+.liga-move-set li.is-cursor::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0.7em;
+  border-style: solid;
+  border-width: 5px 0 5px 7px;
+  border-color: transparent transparent transparent #f0d070;
+  animation: liga-caret 0.45s steps(2) infinite;
+}
+
+.liga-move-set strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.liga-move-set span,
+.liga-move-set em {
+  font-size: 11px;
+  font-style: normal;
+  color: #b8b0c8;
+}
+
+.liga-move-catalog {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.liga-move-catalog li.is-on .liga-item-name {
+  color: #f0d080;
+}
+
+.liga-move-tip {
+  margin: 0;
+  color: #8a8298;
+  font-size: 12px;
 }
 
 .liga-start-panel .liga-gba-list {

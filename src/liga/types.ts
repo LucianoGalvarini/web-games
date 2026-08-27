@@ -155,3 +155,4 @@ export type LigaAction =
   | { kind: 'switch'; index: number }
   | { kind: 'resolve' }
   | { kind: 'reorder'; from: number; to: number }
+  | { kind: 'set-move'; pokemon: number; slot: number; moveId: number }

@@ -227,8 +227,13 @@ function bestOfType(
     .sort((a, b) => score(species, b, taken) - score(species, a, taken))[0]
 }
 
-export function assignMoves(species: Pick<LigaSpecies, 'id' | 'types' | 'stats'>, catalog: LigaMove[]): number[] {
-  const byId = new Map(catalog.map((move) => [move.id, move]))
+export function assignMoves(
+  species: Pick<LigaSpecies, 'id' | 'types' | 'stats'>,
+  catalog: LigaMove[],
+  allowed?: readonly number[],
+): number[] {
+  const pool = allowed?.length ? catalog.filter((move) => allowed.includes(move.id)) : catalog
+  const byId = new Map(pool.map((move) => [move.id, move]))
   const picked: number[] = []
   const taken: LigaType[] = []
   const prefersPhysical = species.stats.atk >= species.stats.spa
@@ -250,7 +255,7 @@ export function assignMoves(species: Pick<LigaSpecies, 'id' | 'types' | 'stats'>
     push(id)
   }
   for (const type of species.types) {
-    const move = bestOfType(species, catalog, type, taken)
+    const move = bestOfType(species, pool, type, taken)
     if (move) {
       push(move.id)
     }
@@ -261,7 +266,7 @@ export function assignMoves(species: Pick<LigaSpecies, 'id' | 'types' | 'stats'>
   for (const id of coverage) {
     push(id, true)
   }
-  const rest = catalog
+  const rest = pool
     .filter((move) => legal(species, move) && move.power > 0 && coverageOk(species, move))
     .sort((a, b) => score(species, b, taken) - score(species, a, taken))
   for (const move of rest) {
@@ -271,7 +276,7 @@ export function assignMoves(species: Pick<LigaSpecies, 'id' | 'types' | 'stats'>
     }
   }
   if (picked.length < MOVE_SLOTS) {
-    for (const move of catalog) {
+    for (const move of pool) {
       push(move.id)
       if (picked.length >= MOVE_SLOTS) {
         break

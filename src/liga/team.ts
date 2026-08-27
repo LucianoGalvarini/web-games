@@ -1,6 +1,7 @@
 import type { Difficulty } from '../shared/types'
 import { EMERALD_LEVELS, PARTY_SIZE, PRESETS, TRAINER_ORDER, TRAINER_TYPES } from './constants'
 import { SPECIES, moveOf, speciesOf, speciesOfTypes } from './dex'
+import { pickRandomMoves } from './learnsets'
 import { shuffle } from './rng'
 import { hpStat, otherStat } from './stats'
 import type { LigaSlot, LigaSpecies, LigaTrainer, LigaTrainerId } from './types'
@@ -13,9 +14,10 @@ function evSpread(species: LigaSpecies, ev: number): { hp: number; atk: number; 
   return { hp, atk: attack, spa, spe }
 }
 
-export function makeSlot(species: LigaSpecies, level: number, iv: number, ev: number): LigaSlot {
+export function makeSlot(species: LigaSpecies, level: number, iv: number, ev: number, moveIds?: number[]): LigaSlot {
   const spread = evSpread(species, ev)
   const maxHp = hpStat(species.stats.hp, iv, spread.hp, level)
+  const moves = moveIds ?? species.moves
   return {
     speciesId: species.id,
     level,
@@ -26,7 +28,7 @@ export function makeSlot(species: LigaSpecies, level: number, iv: number, ev: nu
     spa: otherStat(species.stats.spa, iv, spread.spa, level),
     spd: otherStat(species.stats.spd, iv, 0, level),
     spe: otherStat(species.stats.spe, iv, spread.spe, level),
-    moves: species.moves.map((moveId) => ({ moveId, pp: moveOf(moveId).pp })),
+    moves: moves.map((moveId) => ({ moveId, pp: moveOf(moveId).pp })),
     status: null,
     sleep: 0,
   }
@@ -52,7 +54,9 @@ export function pickPlayerParty(difficulty: Difficulty, random: () => number): L
   const used = new Set<number>()
   const legends = takeUnique(shuffle(SPECIES.filter((entry) => entry.legendary), random), preset.maxLegend, used)
   const rest = takeUnique(shuffle(SPECIES.filter((entry) => !entry.legendary), random), PARTY_SIZE - legends.length, used)
-  return [...legends, ...rest].map((entry) => makeSlot(entry, preset.playerLevel, preset.playerIv, preset.playerEv))
+  return [...legends, ...rest].map((entry) =>
+    makeSlot(entry, preset.playerLevel, preset.playerIv, preset.playerEv, pickRandomMoves(entry.id, random, entry.moves)),
+  )
 }
 
 function pickTrainerParty(id: LigaTrainerId, difficulty: Difficulty, random: () => number, used: Set<number>): LigaSlot[] {

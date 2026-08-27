@@ -1,5 +1,6 @@
 import movesJson from './data/moves.json'
 import speciesJson from './data/species.json'
+import { learnsetOf } from './learnsets'
 import { assignMoves } from './movesets'
 import type { LigaEffect, LigaMove, LigaSpecies, LigaType } from './types'
 
@@ -74,7 +75,7 @@ function withGen3Stats(move: LigaMove): LigaMove {
 export const MOVES: LigaMove[] = (movesJson as LigaMove[]).map(withGen3Stats)
 export const SPECIES: LigaSpecies[] = (speciesJson as LigaSpecies[]).map((entry) => ({
   ...entry,
-  moves: assignMoves(entry, MOVES),
+  moves: assignMoves(entry, MOVES, learnsetOf(entry.id)),
 }))
 
 const speciesById = new Map(SPECIES.map((entry) => [entry.id, entry]))

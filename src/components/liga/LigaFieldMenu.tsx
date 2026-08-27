@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
+import { itemHasTarget, itemUsable } from '../../liga/battle'
 import { PRESETS } from '../../liga/constants'
 import { revealCursor } from '../../liga/cursor'
-import { itemHasTarget, itemUsable } from '../../liga/battle'
-import type { LigaFieldScreen } from '../../liga/fieldMenu'
-import { ITEM_LABELS, ROOM_LABELS } from '../../liga/labels'
 import { moveOf, speciesOf } from '../../liga/dex'
+import type { LigaFieldScreen } from '../../liga/fieldMenu'
+import { ITEM_LABELS, ROOM_LABELS, TYPE_LABELS } from '../../liga/labels'
 import { spriteUrl } from '../../liga/sprites'
 import { speciesLabel } from '../../liga/team'
 import type { LigaItemId, LigaRoomId, LigaSlot } from '../../liga/types'
@@ -17,6 +17,10 @@ type LigaFieldMenuProps = {
   screen: LigaFieldScreen
   cursor: number
   swapFrom: number | null
+  partyIndex: number | null
+  moveSlot: number | null
+  moveQuery: string
+  catalog: number[]
   party: LigaSlot[]
   bag: { id: LigaItemId; count: number }[]
   itemPick: LigaItemId | null
@@ -27,6 +31,7 @@ type LigaFieldMenuProps = {
 }
 
 const ROOT = ['POKÉMON', 'MOCHILA', 'OPCIÓN', 'REINICIAR JUEGO'] as const
+const ACTIONS = ['CAMBIAR', 'ATAQUES'] as const
 
 function cursorClass(on: boolean): string {
   return on ? 'is-cursor' : ''
@@ -36,6 +41,10 @@ export function LigaFieldMenu({
   screen,
   cursor,
   swapFrom,
+  partyIndex,
+  moveSlot,
+  moveQuery,
+  catalog,
   party,
   bag,
   itemPick,
@@ -45,10 +54,11 @@ export function LigaFieldMenu({
   beaten,
 }: LigaFieldMenuProps) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const slot = partyIndex !== null ? party[partyIndex] : undefined
 
   useEffect(() => {
     revealCursor(panelRef.current)
-  }, [cursor, screen])
+  }, [cursor, screen, moveSlot, moveQuery])
 
   return (
     <div ref={panelRef} className={`liga-field-menu is-${screen}`}>
@@ -67,43 +77,105 @@ export function LigaFieldMenu({
           </ul>
         </div>
       ) : null}
-      {screen === 'party' ? (
+      {screen === 'party' || screen === 'actions' ? (
         <div className="liga-start-panel">
           <p>
             {itemPick
               ? `¿A quién le das ${ITEM_LABELS[itemPick]}?`
               : swapFrom === null
-                ? 'El primero sale al combate.'
+                ? 'El primero sale al combate. Z abre CAMBIAR o ATAQUES.'
                 : 'Elegí con quién cambiar.'}
           </p>
           <ul className="liga-party">
-            {party.map((slot, index) => (
+            {party.map((entry, index) => (
               <li
-                key={`${slot.speciesId}-${index}`}
-                className={`${cursorClass(cursor === index)}${swapFrom === index ? ' is-swap' : ''}${index === 0 ? ' is-lead' : ''}${
+                key={`${entry.speciesId}-${index}`}
+                className={`${cursorClass((screen === 'party' && cursor === index) || partyIndex === index)}${
+                  swapFrom === index ? ' is-swap' : ''
+                }${index === 0 ? ' is-lead' : ''}${
                   itemPick && !itemUsable(itemPick, party, index, -1) ? ' is-off' : ''
                 }`}
               >
-                <img src={spriteUrl(slot.speciesId)} alt="" />
+                <img src={spriteUrl(entry.speciesId)} alt="" />
                 <span className="liga-party-info">
                   <strong>
                     <span>
                       {index === 0 ? '▲ ' : ''}
-                      {speciesLabel(slot)}
+                      {speciesLabel(entry)}
                     </span>
-                    <em>Nv.{slot.level}</em>
+                    <em>Nv.{entry.level}</em>
                   </strong>
-                  <LigaTypes types={speciesOf(slot.speciesId).types} />
-                  <LigaHp hp={slot.hp} max={slot.maxHp} labeled stacked />
+                  <LigaTypes types={speciesOf(entry.speciesId).types} />
+                  <LigaHp hp={entry.hp} max={entry.maxHp} labeled stacked />
                   <em className="liga-move-read">
-                    {slot.moves
-                      .map((entry) => moveOf(entry.moveId).label)
+                    {entry.moves
+                      .map((move) => moveOf(move.moveId).label)
                       .join(' / ')}
                   </em>
                 </span>
               </li>
             ))}
           </ul>
+          {screen === 'actions' && slot ? (
+            <div className="liga-start-box is-actions">
+              <p className="liga-start-meta">{speciesLabel(slot)}</p>
+              <ul>
+                {ACTIONS.map((label, index) => (
+                  <li key={label} className={cursorClass(cursor === index)}>
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {screen === 'moves' && slot ? (
+        <div className="liga-start-panel is-moves">
+          <p>
+            {moveSlot === null
+              ? `¿Cuál ataque de ${speciesLabel(slot)} reemplazás?`
+              : `¿Cuál ataque le enseñás?${moveQuery ? `  ${moveQuery}` : ''}`}
+          </p>
+          <ul className="liga-move-set">
+            {slot.moves.map((entry, index) => {
+              const move = moveOf(entry.moveId)
+              return (
+                <li
+                  key={`${entry.moveId}-${index}`}
+                  className={`${cursorClass(moveSlot === null && cursor === index)}${
+                    moveSlot === index ? ' is-on' : ''
+                  }`}
+                >
+                  <strong>{move.label}</strong>
+                  <span>{TYPE_LABELS[move.type]}</span>
+                  <em>
+                    {move.power > 0 ? `Pod. ${move.power}` : 'Estado'} · PP {move.pp}
+                  </em>
+                </li>
+              )
+            })}
+          </ul>
+          {moveSlot !== null ? (
+            <ul className="liga-gba-list liga-move-catalog">
+              {catalog.length === 0 ? <li>Sin coincidencias</li> : null}
+              {catalog.map((id, index) => {
+                const move = moveOf(id)
+                const equipped = slot.moves.some((entry) => entry.moveId === id)
+                return (
+                  <li
+                    key={id}
+                    className={`${cursorClass(cursor === index)}${equipped ? ' is-on' : ''}`}
+                  >
+                    <span className="liga-item-name">{move.label}</span>
+                    <span className="liga-item-qty">{TYPE_LABELS[move.type]}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <p className="liga-move-tip">Escribí para buscar. Z elige. X vuelve.</p>
+          )}
         </div>
       ) : null}
       {screen === 'bag' ? (
