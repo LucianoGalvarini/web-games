@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 
 type LigaPadProps = {
   turbo: boolean
-  onDown: (key: string) => void
+  onDown: (key: string, latch?: boolean) => void
   onUp: (key: string) => void
 }
 
@@ -25,7 +25,7 @@ function PadKey({
   label: string
   className: string
   latch?: boolean
-  onDown: (key: string) => void
+  onDown: (key: string, latch?: boolean) => void
   onUp: (key: string) => void
 }) {
   const held = useRef(false)
@@ -47,7 +47,7 @@ function PadKey({
       onPointerDown={(event) => {
         event.preventDefault()
         if (latch) {
-          onDown(code)
+          onDown(code, true)
           return
         }
         try {

@@ -506,11 +506,16 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
   }, [play, state.fxQueue])
 
   const pressDown = useCallback(
-    (key: string) => {
+    (key: string, latch = false) => {
       if (isTurboKey(key)) {
-        const next = !turboRef.current
-        turboRef.current = next
-        setTurbo(next)
+        if (latch) {
+          const next = !turboRef.current
+          turboRef.current = next
+          setTurbo(next)
+          return
+        }
+        turboRef.current = true
+        setTurbo(true)
         return
       }
       const current = stateRef.current
@@ -894,6 +899,11 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
   )
 
   const pressUp = useCallback((key: string) => {
+    if (isTurboKey(key)) {
+      turboRef.current = false
+      setTurbo(false)
+      return
+    }
     const dir = KEY_DIR[key]
     if (dir) {
       heldRef.current[dir] = false
