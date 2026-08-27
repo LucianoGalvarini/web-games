@@ -296,7 +296,7 @@ export const LIGA_MANUAL: ManualStep[] = [
   },
   {
     title: 'Menú',
-    body: 'POKÉMON cambia el orden: el primero sale al combate. Z elige uno y Z otra vez lo intercambia. MOCHILA muestra objetos. OPCIÓN cambia dificultad, abre la ayuda o vuelve a elegir juego. REINICIAR empieza otra liga.',
+    body: 'POKÉMON cambia el orden: el primero sale al combate. Z elige uno y Z otra vez lo intercambia. MOCHILA cura o revive fuera de combate; Ataque X queda para la pelea. OPCIÓN cambia dificultad, abre la ayuda o vuelve a elegir juego. REINICIAR empieza otra liga.',
     spot: 'board',
   },
   {

@@ -1,5 +1,28 @@
 import type { LigaDir } from './types'
 
+export function revealCursor(root: Element | null): void {
+  if (typeof HTMLElement === 'undefined' || !root) {
+    return
+  }
+  const node = root.querySelector('.is-cursor')
+  if (!(node instanceof HTMLElement)) {
+    return
+  }
+  const holder = node.parentElement
+  if (!holder) {
+    return
+  }
+  const nodeBox = node.getBoundingClientRect()
+  const holdBox = holder.getBoundingClientRect()
+  if (nodeBox.top < holdBox.top) {
+    holder.scrollTop -= holdBox.top - nodeBox.top
+    return
+  }
+  if (nodeBox.bottom > holdBox.bottom) {
+    holder.scrollTop += nodeBox.bottom - holdBox.bottom
+  }
+}
+
 export function moveCursor(index: number, count: number, dir: LigaDir, cols: number): number {
   if (count <= 0) {
     return 0

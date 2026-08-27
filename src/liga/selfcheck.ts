@@ -1,7 +1,7 @@
 import { applyAction, createGame } from './apply'
 import { estimatedDamage, playTurn, startBattle } from './battle'
 import { DIFFICULTIES, PRESETS, ROOM_COLS, ROOM_ROWS } from './constants'
-import { isAKey, isBKey, isStartKey, isTurboKey, moveCursor } from './cursor'
+import { isAKey, isBKey, isStartKey, isTurboKey, moveCursor, revealCursor } from './cursor'
 import { FIELD_PARTY_COLS, rootCursorOf } from './fieldMenu'
 import { SPECIES, moveOf, speciesOf } from './dex'
 import { effectivenessLine } from './labels'
@@ -247,12 +247,43 @@ assert(rootCursorOf('party') === 0, 'Volver del equipo deja el cursor en POKÉMO
 const swapped = applyAction(game, { kind: 'reorder', from: 0, to: 1 }, () => 0)
 assert(swapped.party[0]?.speciesId === game.party[1]?.speciesId, 'El menú puede cambiar quién sale primero.')
 assert(swapped.party[1]?.speciesId === game.party[0]?.speciesId, 'El intercambio de equipo es simétrico.')
+
+const hurtWalk = {
+  ...game,
+  party: game.party.map((slot, index) => (index === 0 ? { ...slot, hp: 10 } : slot)),
+}
+const cured = applyAction(hurtWalk, { kind: 'item', itemId: 'hyper-potion', target: 0 }, () => 0)
+assert((cured.party[0]?.hp ?? 0) > 10, 'Fuera de combate se puede curar.')
+assert((cured.bag['hyper-potion'] ?? 0) === (game.bag['hyper-potion'] ?? 0) - 1, 'Curar gasta el objeto.')
+const wasted = applyAction(game, { kind: 'item', itemId: 'hyper-potion', target: 0 }, () => 0)
+assert(wasted.party[0]?.hp === game.party[0]?.hp, 'No cura PS al máximo.')
+assert((wasted.bag['hyper-potion'] ?? 0) === (game.bag['hyper-potion'] ?? 0), 'No gasta si no se puede usar.')
+const xField = applyAction(hurtWalk, { kind: 'item', itemId: 'x-attack', target: 0 }, () => 0)
+assert(xField.party[0]?.hp === 10, 'Ataque X no se usa fuera de combate.')
+assert((xField.bag['x-attack'] ?? 0) === (game.bag['x-attack'] ?? 0), 'Ataque X no se gasta en el campo.')
+const fainted = {
+  ...game,
+  party: game.party.map((slot, index) => (index === 1 ? { ...slot, hp: 0 } : slot)),
+}
+const revived = applyAction(fainted, { kind: 'item', itemId: 'revive', target: 1 }, () => 0)
+assert((revived.party[1]?.hp ?? 0) > 0, 'Fuera de combate se puede revivir.')
+assert(
+  (revived.party[1]?.hp ?? 0) === Math.floor((game.party[1]?.maxHp ?? 0) * 0.5),
+  'Revivir restaura la mitad de los PS.',
+)
+const sick = {
+  ...game,
+  party: game.party.map((slot, index) => (index === 0 ? { ...slot, status: 'poison' as const } : slot)),
+}
+const cleared = applyAction(sick, { kind: 'item', itemId: 'full-heal', target: 0 }, () => 0)
+assert(cleared.party[0]?.status === null, 'Cura total limpia el estado fuera de combate.')
 assert(moveCursor(0, 4, 'right', 2) === 1, 'El cursor de combate se mueve en grilla.')
 assert(moveCursor(0, 4, 'down', 2) === 2, 'Abajo en LUCHAR baja a POKÉMON.')
 assert(moveCursor(0, 6, 'right', FIELD_PARTY_COLS) === 1, 'En el equipo, derecha cambia de columna.')
 assert(moveCursor(0, 6, 'down', FIELD_PARTY_COLS) === 2, 'En el equipo, abajo baja de fila.')
 assert(moveCursor(0, 6, 'left', FIELD_PARTY_COLS) === 1, 'En el equipo, izquierda va a la otra columna.')
 assert(moveCursor(1, 6, 'down', FIELD_PARTY_COLS) === 3, 'Abajo en la columna derecha baja un puesto.')
+revealCursor(null)
 
 let fight = atTrainer
 for (let n = 0; n < 500 && fight.phase === 'battle'; n += 1) {

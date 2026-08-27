@@ -1,4 +1,6 @@
+import { useEffect, useRef } from 'react'
 import { itemUsable } from '../../liga/battle'
+import { revealCursor } from '../../liga/cursor'
 import { moveOf, speciesOf } from '../../liga/dex'
 import type { LigaAnim } from '../../liga/fx'
 import { ITEM_LABELS, STATUS_LABELS, TYPE_LABELS } from '../../liga/labels'
@@ -75,9 +77,17 @@ export function LigaBattleView({
   speechSkip,
   onSpeechReady,
 }: LigaBattleViewProps) {
+  const cmdRef = useRef<HTMLDivElement>(null)
   const player = field?.player ?? battle.playerParty[battle.playerActive]
   const foe = field?.foe ?? battle.foeParty[battle.foeActive]
   const active = battle.playerParty[battle.playerActive]
+  const picking = !animating && (battle.mustSwitch || battle.menu === 'party' || Boolean(itemPick))
+  const bagOpen = !animating && battle.menu === 'bag' && !itemPick
+
+  useEffect(() => {
+    revealCursor(cmdRef.current)
+  }, [cursor, battle.menu, itemPick, picking, bagOpen])
+
   if (!player || !foe || !active) {
     return null
   }
@@ -96,8 +106,6 @@ export function LigaBattleView({
           : battle.menu === 'party'
             ? '¿Cuál Pokémon?'
             : `¿Qué debería hacer ${speciesOf(active.speciesId).label.toUpperCase()}?`
-  const picking = !animating && (battle.mustSwitch || battle.menu === 'party' || Boolean(itemPick))
-  const bagOpen = !animating && battle.menu === 'bag' && !itemPick
   const line = animating && anim ? anim.line : (hint ?? prompt)
 
   return (
@@ -131,7 +139,11 @@ export function LigaBattleView({
           <LigaSpeech text={line} turbo={turbo} reveal={speechSkip} onReady={onSpeechReady} />
         </div>
         {animating ? null : (
-          <div className="liga-cmd" key={`${battle.menu}-${itemPick ?? ''}-${battle.mustSwitch ? 'sw' : ''}`}>
+          <div
+            ref={cmdRef}
+            className="liga-cmd"
+            key={`${battle.menu}-${itemPick ?? ''}-${battle.mustSwitch ? 'sw' : ''}`}
+          >
             {battle.mustSwitch || battle.menu === 'party' || itemPick ? (
               <PartyRows party={battle.playerParty} cursor={cursor} active={battle.playerActive} itemId={itemPick} />
             ) : battle.menu === 'fight' ? (

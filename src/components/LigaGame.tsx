@@ -187,6 +187,7 @@ export function LigaGame({ onBack }: LigaGameProps) {
                   swapFrom={game.swapFrom}
                   party={state.party}
                   bag={game.bag}
+                  itemPick={game.itemPick}
                   difficulty={game.difficulty}
                   difficulties={game.difficulties}
                   room={state.room}

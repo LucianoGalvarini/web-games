@@ -1,5 +1,5 @@
 import type { Difficulty } from '../shared/types'
-import { playTurn, startBattle } from './battle'
+import { applyPartyItem, playTurn, startBattle } from './battle'
 import { DIRS, PRESETS } from './constants'
 import { TRAINER_INTRO, TRAINER_OUTRO } from './labels'
 import { canStep, facingTrainer, nextRoom, prevRoom, roomOf, tileAt, trainerIdOf } from './map'
@@ -174,6 +174,16 @@ export function applyAction(state: LigaState, action: LigaAction, random: () => 
     party[action.from] = to
     party[action.to] = from
     return { ...state, party }
+  }
+  if (action.kind === 'item' && state.phase !== 'battle') {
+    if ((state.bag[action.itemId] ?? 0) <= 0) {
+      return state
+    }
+    const party = applyPartyItem(state.party, action.itemId, action.target)
+    if (!party) {
+      return state
+    }
+    return spendItem({ ...state, party }, action.itemId)
   }
   if (action.kind === 'step') {
     return stepTo(state, action.dir)

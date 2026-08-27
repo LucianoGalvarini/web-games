@@ -1,4 +1,7 @@
+import { useEffect, useRef } from 'react'
 import { PRESETS } from '../../liga/constants'
+import { revealCursor } from '../../liga/cursor'
+import { itemHasTarget, itemUsable } from '../../liga/battle'
 import type { LigaFieldScreen } from '../../liga/fieldMenu'
 import { ITEM_LABELS, ROOM_LABELS } from '../../liga/labels'
 import { moveOf, speciesOf } from '../../liga/dex'
@@ -16,6 +19,7 @@ type LigaFieldMenuProps = {
   swapFrom: number | null
   party: LigaSlot[]
   bag: { id: LigaItemId; count: number }[]
+  itemPick: LigaItemId | null
   difficulty: Difficulty
   difficulties: Difficulty[]
   room: LigaRoomId
@@ -34,13 +38,20 @@ export function LigaFieldMenu({
   swapFrom,
   party,
   bag,
+  itemPick,
   difficulty,
   difficulties,
   room,
   beaten,
 }: LigaFieldMenuProps) {
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    revealCursor(panelRef.current)
+  }, [cursor, screen])
+
   return (
-    <div className={`liga-field-menu is-${screen}`}>
+    <div ref={panelRef} className={`liga-field-menu is-${screen}`}>
       {screen === 'root' ? (
         <div className="liga-start-box">
           <p className="liga-start-meta">
@@ -58,12 +69,20 @@ export function LigaFieldMenu({
       ) : null}
       {screen === 'party' ? (
         <div className="liga-start-panel">
-          <p>{swapFrom === null ? 'El primero sale al combate.' : 'Elegí con quién cambiar.'}</p>
+          <p>
+            {itemPick
+              ? `¿A quién le das ${ITEM_LABELS[itemPick]}?`
+              : swapFrom === null
+                ? 'El primero sale al combate.'
+                : 'Elegí con quién cambiar.'}
+          </p>
           <ul className="liga-party">
             {party.map((slot, index) => (
               <li
                 key={`${slot.speciesId}-${index}`}
-                className={`${cursorClass(cursor === index)}${swapFrom === index ? ' is-swap' : ''}${index === 0 ? ' is-lead' : ''}`}
+                className={`${cursorClass(cursor === index)}${swapFrom === index ? ' is-swap' : ''}${index === 0 ? ' is-lead' : ''}${
+                  itemPick && !itemUsable(itemPick, party, index, -1) ? ' is-off' : ''
+                }`}
               >
                 <img src={spriteUrl(slot.speciesId)} alt="" />
                 <span className="liga-party-info">
@@ -93,7 +112,10 @@ export function LigaFieldMenu({
           <ul className="liga-gba-list">
             {bag.length === 0 ? <li>Vacía</li> : null}
             {bag.map((item, index) => (
-              <li key={item.id} className={cursorClass(cursor === index)}>
+              <li
+                key={item.id}
+                className={`${cursorClass(cursor === index)}${itemHasTarget(item.id, party) ? '' : ' is-off'}`}
+              >
                 <LigaItemIcon id={item.id} />
                 <span className="liga-item-name">{ITEM_LABELS[item.id]}</span>
                 <span className="liga-item-qty">×{item.count}</span>

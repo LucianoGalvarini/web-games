@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { applyAction, createGame, listedBag } from '../liga/apply'
-import { itemUsable } from '../liga/battle'
+import { itemHasTarget, itemUsable } from '../liga/battle'
 import { DIFFICULTIES, KEY_DIR, PRESETS, WALK_MS } from '../liga/constants'
 import { isAKey, isBKey, isStartKey, isTurboKey, moveCursor } from '../liga/cursor'
 import { moveOf, speciesOf } from '../liga/dex'
@@ -503,6 +503,7 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
       const closeField = () => {
         setFieldMenu(null)
         setSwapFrom(null)
+        setItemPick(null)
         setCursor(0)
       }
       if (isStartKey(key)) {
@@ -552,6 +553,19 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
             if (!current.party[index]) {
               return
             }
+            const pick = itemPickRef.current
+            if (pick) {
+              if (!itemUsable(pick, current.party, index, -1)) {
+                playSfx('error')
+                return
+              }
+              play({ kind: 'item', itemId: pick, target: index })
+              playSfx('ligaHeal')
+              setItemPick(null)
+              setFieldMenu('bag')
+              setCursor(0)
+              return
+            }
             if (swapFromRef.current === null) {
               setSwapFrom(index)
               return
@@ -562,6 +576,18 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
             }
             play({ kind: 'reorder', from: swapFromRef.current, to: index })
             setSwapFrom(null)
+            return
+          }
+          if (screen === 'bag') {
+            const item = bagRef.current[cursorRef.current]
+            if (!item || !itemHasTarget(item.id, current.party)) {
+              playSfx('error')
+              return
+            }
+            setItemPick(item.id)
+            setFieldMenu('party')
+            setSwapFrom(null)
+            setCursor(0)
             return
           }
           if (screen === 'option') {
@@ -585,6 +611,13 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
         }
         if (isBKey(key)) {
           playSfx('click')
+          if (screen === 'party' && itemPickRef.current) {
+            setItemPick(null)
+            setFieldMenu('bag')
+            setSwapFrom(null)
+            setCursor(0)
+            return
+          }
           if (screen === 'party' && swapFromRef.current !== null) {
             setSwapFrom(null)
             return
@@ -595,6 +628,7 @@ export function useLiga(handlers: { onBack?: () => void; onHelp?: () => void } =
           }
           setFieldMenu('root')
           setSwapFrom(null)
+          setItemPick(null)
           setCursor(rootCursorOf(screen))
           return
         }

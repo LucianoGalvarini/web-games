@@ -58,6 +58,40 @@ export function itemUsable(itemId: LigaItemId, party: LigaSlot[], target: number
   return target === active && slot.hp > 0
 }
 
+export function itemHasTarget(itemId: LigaItemId, party: LigaSlot[], active = -1): boolean {
+  return party.some((_, index) => itemUsable(itemId, party, index, active))
+}
+
+function applyConsumableToSlot(slot: LigaSlot, itemId: LigaItemId): LigaSlot {
+  const healFor = ITEM_HEAL[itemId]
+  const reviveFor = ITEM_REVIVE[itemId]
+  if (healFor !== undefined) {
+    const next = heal(slot, healFor)
+    if (itemId === 'full-restore') {
+      return { ...next, status: null, sleep: 0 }
+    }
+    return next
+  }
+  if (reviveFor !== undefined) {
+    return { ...slot, hp: Math.max(1, Math.floor(slot.maxHp * reviveFor)), status: null, sleep: 0 }
+  }
+  if (itemId === 'full-heal') {
+    return { ...slot, status: null, sleep: 0 }
+  }
+  return slot
+}
+
+export function applyPartyItem(party: LigaSlot[], itemId: LigaItemId, target: number): LigaSlot[] | null {
+  if (!itemUsable(itemId, party, target, -1)) {
+    return null
+  }
+  const slot = party[target]
+  if (!slot) {
+    return null
+  }
+  return replaceSlot(party, target, applyConsumableToSlot(cloneSlot(slot), itemId))
+}
+
 function applyStatus(slot: LigaSlot, status: LigaStatus, sleepTurns: number): LigaSlot {
   if (slot.status) {
     return slot
@@ -545,16 +579,13 @@ function applyBagItem(battle: LigaBattle, itemId: LigaItemId, target: number): L
   const reviveFor = ITEM_REVIVE[itemId]
   let stages = battle.playerStages
   if (healFor !== undefined) {
-    slot = heal(slot, healFor)
-    if (itemId === 'full-restore') {
-      slot = { ...slot, status: null, sleep: 0 }
-    }
+    slot = applyConsumableToSlot(slot, itemId)
     log.push(`${name} recuperó PS.`)
   } else if (reviveFor !== undefined) {
-    slot = { ...slot, hp: Math.max(1, Math.floor(slot.maxHp * reviveFor)), status: null, sleep: 0 }
+    slot = applyConsumableToSlot(slot, itemId)
     log.push(`¡${name} recuperó la salud!`)
   } else if (itemId === 'full-heal') {
-    slot = { ...slot, status: null, sleep: 0 }
+    slot = applyConsumableToSlot(slot, itemId)
     log.push(`${name} ya no tiene problemas de estado.`)
   } else if (itemId === 'x-attack') {
     stages = withStage(stages, 'atk', 1)
