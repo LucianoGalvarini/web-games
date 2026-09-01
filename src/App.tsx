@@ -12,6 +12,7 @@ import { ShogiGame } from './components/ShogiGame'
 import { SudokuGame } from './components/SudokuGame'
 import { TetrisGame } from './components/TetrisGame'
 import { TrucoGame } from './components/TrucoGame'
+import { UnoGame } from './components/UnoGame'
 import type { GameId } from './shared/types'
 
 export default function App() {
@@ -67,6 +68,10 @@ export default function App() {
 
   if (game === 'liga') {
     return <LigaGame onBack={() => setGame(null)} />
+  }
+
+  if (game === 'uno') {
+    return <UnoGame onBack={() => setGame(null)} />
   }
 
   return null

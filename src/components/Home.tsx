@@ -11,7 +11,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Doce juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Trece juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -307,6 +307,39 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">Alto Mando</p>
             <h2>Liga</h2>
             <p>Seis Pokémon al azar. Ever Grande, combates y la liga de Esmeralda.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('uno')}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="4" y="4" width="82" height="42" rx="4" fill="#8f5e32" />
+            <rect x="8" y="8" width="74" height="34" rx="12" fill="#16351c" />
+            <g transform="translate(18 11) rotate(-14)">
+              <rect width="18" height="26" rx="3" fill="#e4312b" stroke="#0c0c0c" strokeWidth="1.4" />
+              <ellipse cx="9" cy="13" rx="10" ry="7" fill="#fff" transform="rotate(-22 9 13)" />
+              <text x="9" y="16.5" textAnchor="middle" fontSize="11" fontWeight="700" fill="#e4312b" fontFamily="Outfit, sans-serif">
+                7
+              </text>
+            </g>
+            <g transform="translate(36 9)">
+              <rect width="18" height="26" rx="3" fill="#0072bc" stroke="#0c0c0c" strokeWidth="1.4" />
+              <ellipse cx="9" cy="13" rx="10" ry="7" fill="#fff" transform="rotate(-22 9 13)" />
+              <text x="9" y="16.5" textAnchor="middle" fontSize="10" fontWeight="700" fill="#0072bc" fontFamily="Outfit, sans-serif">
+                +2
+              </text>
+            </g>
+            <g transform="translate(54 11) rotate(12)">
+              <rect width="18" height="26" rx="3" fill="#171018" stroke="#0c0c0c" strokeWidth="1.4" />
+              <circle cx="6" cy="10" r="3.2" fill="#e4312b" />
+              <circle cx="12" cy="10" r="3.2" fill="#ffd400" />
+              <circle cx="6" cy="16" r="3.2" fill="#46a045" />
+              <circle cx="12" cy="16" r="3.2" fill="#0072bc" />
+            </g>
+          </svg>
+          <div>
+            <p className="eyebrow">Naipes</p>
+            <h2>UNO</h2>
+            <p>Hasta seis jugadores. Color, número, Salta, +2 y comodín. Hay que cantar UNO.</p>
           </div>
         </button>
       </div>

@@ -102,3 +102,11 @@ export const PAISHO_RULES = [
   'Las flores rojas no terminan en jardín blanco; las blancas, no en rojo. Nunca se termina en una puerta.',
   'Se puede comer una flor rival que choca cayendo en su punto. Triple repetición es tablas.',
 ]
+
+export const UNO_RULES = [
+  'De 2 a 6 jugadores. Mazo de 108. Se reparte 7 a cada uno. El +4 nunca abre.',
+  'Hay que tirar una carta del mismo color, número o símbolo. El comodín y el +4 piden color.',
+  'Salta pierde el turno. Reversa cambia el sentido; con 2 jugadores actúa como Salta.',
+  '+2 y +4 hacen tomar 2 o 4 y saltan al siguiente. Si se acaba el mazo, se mezcla el descarte.',
+  'Con una carta hay que apretar UNO. Si no, un rival puede delatarte y tomás 2.',
+]

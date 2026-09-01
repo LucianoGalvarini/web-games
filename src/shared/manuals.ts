@@ -310,3 +310,28 @@ export const LIGA_MANUAL: ManualStep[] = [
     spot: 'board',
   },
 ]
+
+export const UNO_MANUAL: ManualStep[] = [
+  {
+    title: 'Sala',
+    body: 'Creá una sala y compartí el código de 5 letras, o entrá con el código de un amigo. De 2 a 6 jugadores. El anfitrión empieza cuando están todos.',
+    tryIt: 'Poné tu nombre y creá una sala.',
+    spot: 'controls',
+  },
+  {
+    title: 'Jugar',
+    body: 'En tu turno tirás una carta del mismo color, número o símbolo. Si no tenés, tomás del mazo: si entra, la podés jugar; si no, pasa el turno. El comodín y el +4 piden color.',
+    tryIt: 'Cuando sea tu turno, tocá una carta marcada.',
+    spot: 'board',
+  },
+  {
+    title: 'Especiales',
+    body: 'Salta pierde el turno. Reversa cambia el sentido (con 2 jugadores actúa como Salta). +2 y +4 hacen tomar cartas y saltan al siguiente. El mazo se remezcla del descarte cuando se acaba.',
+    spot: 'board',
+  },
+  {
+    title: 'UNO',
+    body: 'Cuando te queda una carta hay que apretar UNO. Si no lo hiciste, cualquier rival puede delatarte y tomás 2 de penalidad. Tocá tu avatar para mandar una frase rápida.',
+    spot: 'hand',
+  },
+]

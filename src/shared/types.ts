@@ -19,3 +19,4 @@ export type GameId =
   | 'doom'
   | 'shogi'
   | 'liga'
+  | 'uno'

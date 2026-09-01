@@ -17,6 +17,7 @@ src/
   paisho/                      # Motor Pai Sho (jardín / armonías)
   shogi/                       # Motor Shogi
   liga/                        # Motor Liga (Alto Mando Esmeralda)
+  uno/                         # Motor UNO (salas, mazo, UNO y delatar)
   hooks/
     useFanorona.ts
     useMorris.ts
@@ -29,6 +30,7 @@ src/
     usePaiSho.ts
     useShogi.ts
     useLiga.ts
+    useUno.ts
     useMuted.ts
     useVolume.ts
   components/
@@ -50,6 +52,7 @@ src/
     DoomGame.tsx               # Iframe del puerto WASM (shareware)
     ShogiGame.tsx
     LigaGame.tsx
+    UnoGame.tsx
     liga/                      # Mapa canvas y combate
     Board/                     # SVG Fanorona + piedras + motion
     morris/MorrisBoardView.tsx
@@ -61,9 +64,10 @@ src/
     ajedrez/                   # Grilla 8×8, glifos SVG
     paisho/                    # Tablero circular, reserva de flores
     shogi/                     # Grilla 9×9, piezas de madera con kanji
+    uno/                       # Cartas, avatares y mesa de fieltro
 ```
 
-`App` solo elige el juego. Cada motor de mesa se puede importar sin montar React. Doom no tiene motor TypeScript: el puerto WASM está en `public/doom/` y la UI lo embebe en un iframe. Liga sí: mapa y combate en `src/liga`, sprites en `public/liga/sprites/`.
+`App` solo elige el juego. Cada motor de mesa se puede importar sin montar React. Doom no tiene motor TypeScript: el puerto WASM está en `public/doom/` y la UI lo embebe en un iframe. Liga sí: mapa y combate en `src/liga`, sprites en `public/liga/sprites/`. UNO sí: reglas en `src/uno`; con `npm run dev` las salas van por WebSocket en Vite, y si no hay servidor se juega entre pestañas del mismo origen.
 
 ## Layout
 

@@ -1,10 +1,10 @@
 # Juegos de mesa
 
-Doce juegos en el navegador: Fanorona, Molino, Damas, Buscaminas, Sudoku, Truco, Tetris, Ajedrez, Pai Sho, Doom, Shogi y Liga. La interfaz está en español. Al abrir se elige el juego; cada uno conserva sus reglas.
+Trece juegos en el navegador: Fanorona, Molino, Damas, Buscaminas, Sudoku, Truco, Tetris, Ajedrez, Pai Sho, Doom, Shogi, Liga y UNO. La interfaz está en español. Al abrir se elige el juego; cada uno conserva sus reglas.
 
 Sitio: [lucianogalvarini.github.io/web-games](https://lucianogalvarini.github.io/web-games/)
 
-Fanorona, Molino, Damas, Truco, Ajedrez, Pai Sho y Shogi arrancan contra la CPU. Buscaminas, Sudoku y Tetris se juegan en solitario. Doom es el shareware de 1993 (primer episodio) en WebAssembly. Liga es el Alto Mando de Esmeralda con un equipo al azar.
+Fanorona, Molino, Damas, Truco, Ajedrez, Pai Sho y Shogi arrancan contra la CPU. Buscaminas, Sudoku y Tetris se juegan en solitario. Doom es el shareware de 1993 (primer episodio) en WebAssembly. Liga es el Alto Mando de Esmeralda con un equipo al azar. UNO es entre 2 y 6 jugadores, con código de sala.
 
 ## Documentación
 
@@ -22,6 +22,7 @@ Cada juego tiene su propia página:
 - [Doom](docs/doom.md)
 - [Shogi](docs/shogi.md)
 - [Liga](docs/liga.md)
+- [UNO](docs/uno.md)
 - [Arquitectura](docs/arquitectura.md)
 
 ## Cómo ejecutarlo
@@ -37,7 +38,7 @@ npm run dev
 | `npm run build` | Typecheck (`tsc -b`) + build de producción |
 | `npm run preview` | Sirve el build de `dist/` |
 | `npm run lint` | Oxlint |
-| `npm run test` | Selfcheck de los doce motores |
+| `npm run test` | Selfcheck de los trece motores |
 
 Stack: Vite 8, React 19, TypeScript. CSS propio, sin librería de componentes. Tipografías Cormorant Garamond y Outfit.
 
