@@ -1,10 +1,10 @@
 # Juegos de mesa
 
-Trece juegos en el navegador: Fanorona, Molino, Damas, Buscaminas, Sudoku, Truco, Tetris, Ajedrez, Pai Sho, Doom, Shogi, Liga y UNO. La interfaz está en español. Al abrir se elige el juego; cada uno conserva sus reglas.
+Catorce juegos en el navegador: Fanorona, Molino, Damas, Buscaminas, Sudoku, Truco, Tetris, Ajedrez, Pai Sho, Doom, Shogi, Liga, UNO y Backgammon. La interfaz está en español. Al abrir se elige el juego; cada uno conserva sus reglas.
 
 Sitio: [lucianogalvarini.github.io/web-games](https://lucianogalvarini.github.io/web-games/)
 
-Fanorona, Molino, Damas, Truco, Ajedrez, Pai Sho y Shogi arrancan contra la CPU. Buscaminas, Sudoku y Tetris se juegan en solitario. Doom es el shareware de 1993 (primer episodio) en WebAssembly. Liga es el Alto Mando de Esmeralda con un equipo al azar. UNO es entre 2 y 6 jugadores, con código de sala.
+Fanorona, Molino, Damas, Truco, Ajedrez, Pai Sho, Shogi y Backgammon arrancan contra la CPU. Buscaminas, Sudoku y Tetris se juegan en solitario. Doom es el shareware de 1993 (primer episodio) en WebAssembly. Liga es el Alto Mando de Esmeralda con un equipo al azar. UNO es entre 2 y 6 jugadores, con código de sala.
 
 ## Documentación
 
@@ -23,6 +23,7 @@ Cada juego tiene su propia página:
 - [Shogi](docs/shogi.md)
 - [Liga](docs/liga.md)
 - [UNO](docs/uno.md)
+- [Backgammon](docs/backgammon.md)
 - [Arquitectura](docs/arquitectura.md)
 
 ## Cómo ejecutarlo

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint src",
-    "test": "npx --yes tsx src/game/selfcheck.ts && npx --yes tsx src/morris/selfcheck.ts && npx --yes tsx src/damas/selfcheck.ts && npx --yes tsx src/minesweeper/selfcheck.ts && npx --yes tsx src/sudoku/selfcheck.ts && npx --yes tsx src/truco/selfcheck.ts && npx --yes tsx src/tetris/selfcheck.ts && npx --yes tsx src/ajedrez/selfcheck.ts && npx --yes tsx src/paisho/selfcheck.ts && npx --yes tsx src/shogi/selfcheck.ts && npx --yes tsx src/liga/selfcheck.ts && npx --yes tsx src/uno/selfcheck.ts",
+    "test": "npx --yes tsx src/game/selfcheck.ts && npx --yes tsx src/morris/selfcheck.ts && npx --yes tsx src/damas/selfcheck.ts && npx --yes tsx src/minesweeper/selfcheck.ts && npx --yes tsx src/sudoku/selfcheck.ts && npx --yes tsx src/truco/selfcheck.ts && npx --yes tsx src/tetris/selfcheck.ts && npx --yes tsx src/ajedrez/selfcheck.ts && npx --yes tsx src/paisho/selfcheck.ts && npx --yes tsx src/shogi/selfcheck.ts && npx --yes tsx src/liga/selfcheck.ts && npx --yes tsx src/uno/selfcheck.ts && npx --yes tsx src/backgammon/selfcheck.ts",
     "preview": "vite preview"
   },
   "dependencies": {

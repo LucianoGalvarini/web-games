@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AjedrezGame } from './components/AjedrezGame'
+import { BackgammonGame } from './components/BackgammonGame'
 import { DamasGame } from './components/DamasGame'
 import { DoomGame } from './components/DoomGame'
 import { FanoronaGame } from './components/FanoronaGame'
@@ -72,6 +73,10 @@ export default function App() {
 
   if (game === 'uno') {
     return <UnoGame onBack={() => setGame(null)} />
+  }
+
+  if (game === 'backgammon') {
+    return <BackgammonGame onBack={() => setGame(null)} />
   }
 
   return null

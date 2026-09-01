@@ -311,6 +311,30 @@ export const LIGA_MANUAL: ManualStep[] = [
   },
 ]
 
+export const BACKGAMMON_MANUAL: ManualStep[] = [
+  {
+    title: 'Objetivo',
+    body: 'Veinticuatro puntos, quince fichas por bando. Las blancas recorren del 24 al 1, las negras del 1 al 24. Gana quien saca sus quince fichas del tablero primero.',
+    spot: 'board',
+  },
+  {
+    title: 'Tirar y mover',
+    body: 'Tirá los dados y jugá cada valor por separado, moviendo tus fichas esa cantidad de puntos en tu dirección. Si sale un doble, jugás ese número cuatro veces. Hay que usar los dos dados si hay forma de hacerlo; si solo se puede usar uno, hay que jugar el mayor si es posible.',
+    tryIt: 'Tirá los dados y después tocá una ficha propia y un destino marcado.',
+    spot: 'pad',
+  },
+  {
+    title: 'Comer y la barra',
+    body: 'Un punto con una sola ficha rival es un blot: si caés ahí, se la come y va a la barra. Con fichas en la barra hay que reingresarlas primero, en el cuadro rival, antes de mover cualquier otra ficha. Un punto con dos o más fichas rivales está bloqueado.',
+    spot: 'board',
+  },
+  {
+    title: 'Retirar fichas',
+    body: 'Cuando tenés tus quince fichas en tu cuadro de casa (los últimos seis puntos) podés empezar a retirarlas. Un dado que coincide con el punto exacto la saca; si no hay ficha en ese punto y no queda ninguna más atrás, un dado mayor saca la más atrasada.',
+    spot: 'board',
+  },
+]
+
 export const UNO_MANUAL: ManualStep[] = [
   {
     title: 'Sala',

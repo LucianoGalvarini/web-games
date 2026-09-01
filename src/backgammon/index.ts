@@ -1,0 +1,6 @@
+export { chooseAiTurn, evaluate } from './ai'
+export { applyMove, applyTurn, winnerOf } from './apply'
+export { checkersOf, clonePosition, createInitialPosition, opponentOf, serializePosition } from './board'
+export { distanceToOff, entryIndex, homeRange, isHomePoint, POINT_COUNT, pointNumber, step } from './constants'
+export { generateTurns, hasLegalTurn, legalSingleMoves } from './moves'
+export type { BackgammonMove, BackgammonPosition, BackgammonTurn, PointSquare } from './types'
