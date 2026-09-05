@@ -11,7 +11,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Trece juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Catorce juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -340,6 +340,42 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">Naipes</p>
             <h2>UNO</h2>
             <p>Hasta seis jugadores. Color, número, Salta, +2 y comodín. Hay que cantar UNO.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('backgammon')}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="4" y="4" width="82" height="42" rx="4" fill="#8f5e32" />
+            <rect x="9" y="8" width="34" height="34" fill="#6d4320" />
+            <rect x="47" y="8" width="34" height="34" fill="#6d4320" />
+            <g fill="#c9a066">
+              <path d="M11 8l6 17-6 17z" />
+              <path d="M21 8l6 17-6 17z" />
+              <path d="M31 8l6 17-6 17z" />
+              <path d="M49 42l6-17-6-17z" />
+              <path d="M59 42l6-17-6-17z" />
+              <path d="M69 42l6-17-6-17z" />
+            </g>
+            <circle cx="14" cy="12" r="3.4" fill="#f3e6d2" stroke="#5b3918" strokeWidth="0.6" />
+            <circle cx="14" cy="18.4" r="3.4" fill="#f3e6d2" stroke="#5b3918" strokeWidth="0.6" />
+            <circle cx="76" cy="38" r="3.4" fill="#241910" stroke="#e4b45a" strokeWidth="0.6" />
+            <circle cx="76" cy="31.6" r="3.4" fill="#241910" stroke="#e4b45a" strokeWidth="0.6" />
+            <g transform="translate(56 12) rotate(-10)">
+              <rect width="9" height="9" rx="2" fill="#f3e6d2" stroke="#5b3918" strokeWidth="0.6" />
+              <circle cx="2.6" cy="2.6" r="0.9" fill="#5b3918" />
+              <circle cx="6.4" cy="6.4" r="0.9" fill="#5b3918" />
+            </g>
+            <g transform="translate(66 16) rotate(12)">
+              <rect width="9" height="9" rx="2" fill="#f3e6d2" stroke="#5b3918" strokeWidth="0.6" />
+              <circle cx="2.6" cy="2.6" r="0.9" fill="#5b3918" />
+              <circle cx="6.4" cy="4.5" r="0.9" fill="#5b3918" />
+              <circle cx="2.6" cy="6.8" r="0.9" fill="#5b3918" />
+            </g>
+          </svg>
+          <div>
+            <p className="eyebrow">Tablero</p>
+            <h2>Backgammon</h2>
+            <p>Dados, blots y la barra. Recorré el tablero y sacá tus quince fichas primero.</p>
           </div>
         </button>
       </div>

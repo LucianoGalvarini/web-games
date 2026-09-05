@@ -18,6 +18,7 @@ src/
   shogi/                       # Motor Shogi
   liga/                        # Motor Liga (Alto Mando Esmeralda)
   uno/                         # Motor UNO (salas, mazo, UNO y delatar)
+  backgammon/                  # Motor Backgammon (dados, barra, bear-off)
   hooks/
     useFanorona.ts
     useMorris.ts
@@ -31,6 +32,7 @@ src/
     useShogi.ts
     useLiga.ts
     useUno.ts
+    useBackgammon.ts
     useMuted.ts
     useVolume.ts
   components/
@@ -53,6 +55,7 @@ src/
     ShogiGame.tsx
     LigaGame.tsx
     UnoGame.tsx
+    BackgammonGame.tsx
     liga/                      # Mapa canvas y combate
     Board/                     # SVG Fanorona + piedras + motion
     morris/MorrisBoardView.tsx
@@ -65,6 +68,7 @@ src/
     paisho/                    # Tablero circular, reserva de flores
     shogi/                     # Grilla 9×9, piezas de madera con kanji
     uno/                       # Cartas, avatares y mesa de fieltro
+    backgammon/                # Tablero de 24 puntos, barra, dados y bear-off
 ```
 
 `App` solo elige el juego. Cada motor de mesa se puede importar sin montar React. Doom no tiene motor TypeScript: el puerto WASM está en `public/doom/` y la UI lo embebe en un iframe. Liga sí: mapa y combate en `src/liga`, sprites en `public/liga/sprites/`. UNO sí: reglas en `src/uno`; con `npm run dev` las salas van por WebSocket en Vite, y si no hay servidor se juega entre pestañas del mismo origen.
@@ -87,7 +91,7 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 ## Decisiones de diseño
 
 - **Motor sin React.** Las reglas se pueden importar desde un script Node/tsx. Facilita tests y la IA.
-- **Turno = lista de pasos.** La CPU piensa secuencias completas, no un paso aislado: `captura+cadena` en Fanorona, `place/slide+remove` en Molino, cadena de saltos en Damas. En Ajedrez, Pai Sho y Shogi el turno es una sola jugada legal (mover o, en Shogi, tirar una pieza de la mano).
+- **Turno = lista de pasos.** La CPU piensa secuencias completas, no un paso aislado: `captura+cadena` en Fanorona, `place/slide+remove` en Molino, cadena de saltos en Damas, hasta cuatro movimientos por tirada en Backgammon. En Ajedrez, Pai Sho y Shogi el turno es una sola jugada legal (mover o, en Shogi, tirar una pieza de la mano).
 - **Inmutabilidad.** `applyMove` clona; el deshacer guarda referencias a estados anteriores.
 - **Sin enums de TypeScript.** `erasableSyntaxOnly`; los tipos son uniones.
 - **Imports de tipos explícitos.** `verbatimModuleSyntax` exige `import type { ... }`.
@@ -100,3 +104,4 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 - Variante de Damas: agregar una entrada en `VARIANTS` (`flyingKing`); el tablero y la posición inicial son iguales en las dos.
 - Shogi es el único juego con texto en kanji (fuente Noto Serif JP, cargada en `index.html`). Las piezas son de madera para los dos bandos, en dos tonos (`is-white`/`is-black`, como el resto) y además rotadas (`is-rotated`) apuntando hacia el rival, como en un tablero real.
 - Variantes Fanoron-Telo (3×3) o Dimy (5×5): parametrizar `COLS`/`ROWS` y la posición inicial; la geometría de puntos fuertes se mantiene si el origen es fuerte.
+- Backgammon es el único juego con azar (dados): la IA no puede hacer minimax puro contra una tirada futura desconocida, así que usa una heurística (pips, blots, puntos hechos) más una expectiminimax de una capa promediando las 21 tiradas posibles del rival, en vez de buscar hasta un final determinista.
