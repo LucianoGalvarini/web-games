@@ -1,0 +1,298 @@
+import { useEffect, useRef, useState } from 'react'
+import { usePokeAlbum } from '../hooks/usePokeAlbum'
+import { PACK_COST, PACK_SIZE, POKEMON, RARITY_LABEL } from '../pokealbum'
+import type { Rarity } from '../pokealbum'
+import { POKEALBUM_MANUAL } from '../shared/manuals'
+import {
+  cycleMusicTrack,
+  getMusicTrackName,
+  isMusicMuted,
+  playSfx,
+  startMusic,
+  stopMusic,
+  toggleMusicMuted,
+} from '../shared/sfx'
+import { AlbumGrid } from './pokealbum/AlbumGrid'
+import { PackReveal } from './pokealbum/PackReveal'
+import { PokedexModal } from './pokealbum/PokedexModal'
+import { TriviaCard } from './pokealbum/TriviaCard'
+import { ManualTour } from './ManualTour'
+import { TableHud } from './TableHud'
+
+type PokeAlbumGameProps = {
+  onBack: () => void
+}
+
+const RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'legendary']
+
+let popupSeq = 0
+
+export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
+  const game = usePokeAlbum()
+  const [rulesOpen, setRulesOpen] = useState(false)
+  const [coinPopups, setCoinPopups] = useState<{ id: number; delta: number }[]>([])
+  const [pokedexId, setPokedexId] = useState<number | null>(null)
+  const [justCopied, setJustCopied] = useState(false)
+  const [justImported, setJustImported] = useState(false)
+  const [musicMuted, setMusicMuted] = useState(() => isMusicMuted())
+  const [trackName, setTrackName] = useState(() => getMusicTrackName())
+  const prevCoins = useRef(game.coins)
+
+  const toggleMusic = () => {
+    setMusicMuted(toggleMusicMuted())
+    playSfx('hover')
+  }
+
+  const nextTrack = () => {
+    setTrackName(cycleMusicTrack())
+    playSfx('hover')
+  }
+
+  const copyCode = () => {
+    navigator.clipboard
+      ?.writeText(game.exportCode())
+      .then(() => {
+        setJustCopied(true)
+        window.setTimeout(() => setJustCopied(false), 1600)
+      })
+      .catch(() => {})
+  }
+
+  const importCode = () => {
+    if (game.importCode()) {
+      setJustImported(true)
+      window.setTimeout(() => setJustImported(false), 1600)
+    }
+  }
+
+  useEffect(() => {
+    playSfx('enter')
+    startMusic()
+    return () => stopMusic()
+  }, [])
+
+  useEffect(() => {
+    const delta = game.coins - prevCoins.current
+    prevCoins.current = game.coins
+    if (delta === 0) {
+      return
+    }
+    const id = (popupSeq += 1)
+    setCoinPopups((prev) => [...prev, { id, delta }])
+    window.setTimeout(() => {
+      setCoinPopups((prev) => prev.filter((popup) => popup.id !== id))
+    }, 900)
+  }, [game.coins])
+
+  const rarityCounts = RARITIES.map((rarity) => {
+    const ofRarity = POKEMON.filter((p) => p.rarity === rarity)
+    const owned = ofRarity.filter((p) => game.entries[p.id]?.owned).length
+    return { rarity, owned, total: ofRarity.length }
+  })
+
+  return (
+    <div className="app pokealbum-app">
+      <TableHud onManual={() => setRulesOpen(true)} />
+      <div className="shell pokealbum-shell">
+        <aside className="panel panel-controls" data-manual="controls">
+          <header className="panel-header">
+            <p className="eyebrow">Kanto</p>
+            <h1>Álbum Pokémon</h1>
+            <p className="lede">Migrado del álbum de Excel: sobres, trivia y las 151 figuritas de Kanto.</p>
+            <div className="pokealbum-music-controls">
+              <button type="button" className="btn" onMouseEnter={() => playSfx('hover')} onClick={toggleMusic}>
+                {musicMuted ? 'Música: silenciada' : 'Música: sonando'}
+              </button>
+              <button type="button" className="btn" onMouseEnter={() => playSfx('hover')} onClick={nextTrack}>
+                Tono: {trackName}
+              </button>
+            </div>
+          </header>
+
+          <div className="pokealbum-balance">
+            <span>Saldo de monedas:</span>
+            <strong>{game.coins}</strong>
+            {coinPopups.map((popup) => (
+              <span
+                key={popup.id}
+                className={`pokealbum-coin-popup${popup.delta > 0 ? ' is-gain' : ' is-loss'}`}
+                aria-hidden="true"
+              >
+                {popup.delta > 0 ? `+${popup.delta}` : popup.delta}
+              </span>
+            ))}
+          </div>
+
+          <div className="field">
+            <span>Costo por sobre: {PACK_COST} · Figuritas por sobre: {PACK_SIZE}</span>
+            <button
+              type="button"
+              className="btn btn-gold"
+              onMouseEnter={() => game.canOpenPack && playSfx('hover')}
+              onClick={game.openBooster}
+              disabled={!game.canOpenPack}
+            >
+              Abrir sobre
+            </button>
+          </div>
+
+          <TriviaCard
+            trivia={game.trivia}
+            coins={game.coins}
+            onStart={game.startTrivia}
+            onNewQuestion={game.resetTrivia}
+            onAnswerStatPair={game.answerStatPair}
+            onAnswerTrueFalse={game.answerTrueFalse}
+            onAnswerMultipleChoice={game.answerMultipleChoice}
+          />
+
+          <div className="pokealbum-save">
+            <span>Código de respaldo</span>
+            <button
+              type="button"
+              className={`btn${justCopied ? ' btn-gold' : ''}`}
+              onMouseEnter={() => playSfx('hover')}
+              onClick={copyCode}
+            >
+              {justCopied ? '¡Copiado! ✓' : 'Copiar código'}
+            </button>
+            <input
+              type="text"
+              placeholder="Pegá un código para importar"
+              value={game.importCodeValue}
+              onChange={(event) => game.setImportCode(event.target.value)}
+            />
+            <button
+              type="button"
+              className={`btn${justImported ? ' btn-gold' : ''}`}
+              onMouseEnter={() => playSfx('hover')}
+              onClick={importCode}
+            >
+              {justImported ? '¡Importado! ✓' : 'Importar'}
+            </button>
+            {game.importError && <p className="pokealbum-error">{game.importError}</p>}
+          </div>
+
+          <div className="actions">
+            {game.confirmingReset ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onMouseEnter={() => playSfx('hover')}
+                  onClick={game.confirmReset}
+                >
+                  Sí, borrar todo
+                </button>
+                <button type="button" className="btn" onMouseEnter={() => playSfx('hover')} onClick={game.cancelReset}>
+                  Cancelar
+                </button>
+              </>
+            ) : (
+              <button type="button" className="btn" onMouseEnter={() => playSfx('hover')} onClick={game.requestReset}>
+                Reiniciar álbum
+              </button>
+            )}
+            <button type="button" className="btn btn-ghost" onMouseEnter={() => playSfx('hover')} onClick={onBack}>
+              Elegir juego
+            </button>
+          </div>
+        </aside>
+
+        <main className="table pokealbum-table" data-manual="board">
+          {game.pending.length > 0 && (
+            <div className="pokealbum-pending-banner">
+              <span>
+                Tenés {game.pending.length} figurita{game.pending.length === 1 ? '' : 's'} por pegar en el álbum.
+              </span>
+              <button
+                type="button"
+                className="btn btn-gold"
+                onMouseEnter={() => playSfx('hover')}
+                onClick={game.goToNextPending}
+              >
+                Ir a pegar
+              </button>
+            </div>
+          )}
+          <AlbumGrid
+            entries={game.entries}
+            page={game.page}
+            pageCount={game.pageCount}
+            pageSize={game.pageSize}
+            pendingCounts={game.pendingCounts}
+            onPageChange={game.goToPage}
+            onSell={game.sellDuplicate}
+            onStick={game.stickPending}
+            onOpenPokedex={setPokedexId}
+          />
+        </main>
+
+        <aside className="panel panel-stats" data-manual="stats">
+          <div className="scores">
+            <div className="score">
+              <div>
+                <strong>Figuritas obtenidas</strong>
+                <span>
+                  {game.stats.owned} / {game.stats.total}
+                </span>
+              </div>
+            </div>
+            <div className="score">
+              <div>
+                <strong>Total de repetidas</strong>
+                <span>{game.stats.duplicates}</span>
+              </div>
+              {game.stats.duplicates > 0 && (
+                <button
+                  type="button"
+                  className="btn"
+                  onMouseEnter={() => playSfx('hover')}
+                  onClick={game.goToNextDuplicate}
+                >
+                  Ir a repetidas
+                </button>
+              )}
+              {game.stats.duplicates >= game.recycleCost && (
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onMouseEnter={() => playSfx('hover')}
+                  onClick={game.recycleDuplicates}
+                >
+                  Reciclar {game.recycleCost} repetidas → sobre
+                </button>
+              )}
+            </div>
+            <div className="score">
+              <div>
+                <strong>Progreso</strong>
+                <span>{Math.round((game.stats.owned / game.stats.total) * 100)}%</span>
+              </div>
+            </div>
+          </div>
+          <div className="pokealbum-progress-bar">
+            <div
+              className="pokealbum-progress-fill"
+              style={{ width: `${(game.stats.owned / game.stats.total) * 100}%` }}
+            />
+          </div>
+          <ul className="pokealbum-rarity-list">
+            {rarityCounts.map(({ rarity, owned, total }) => (
+              <li key={rarity}>
+                <span>{RARITY_LABEL[rarity]}</span>
+                <span>
+                  {owned} / {total}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      </div>
+
+      <ManualTour open={rulesOpen} steps={POKEALBUM_MANUAL} onClose={() => setRulesOpen(false)} />
+      <PackReveal reveal={game.reveal} onClose={game.dismissReveal} />
+      <PokedexModal id={pokedexId} onClose={() => setPokedexId(null)} />
+    </div>
+  )
+}

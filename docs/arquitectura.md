@@ -19,6 +19,7 @@ src/
   liga/                        # Motor Liga (Alto Mando Esmeralda)
   uno/                         # Motor UNO (salas, mazo, UNO y delatar)
   backgammon/                  # Motor Backgammon (dados, barra, bear-off)
+  pokealbum/                   # Motor Álbum Pokémon (dex, sorteo ponderado, guardado)
   hooks/
     useFanorona.ts
     useMorris.ts
@@ -33,6 +34,7 @@ src/
     useLiga.ts
     useUno.ts
     useBackgammon.ts
+    usePokeAlbum.ts
     useMuted.ts
     useVolume.ts
   components/
@@ -56,6 +58,7 @@ src/
     LigaGame.tsx
     UnoGame.tsx
     BackgammonGame.tsx
+    PokeAlbumGame.tsx
     liga/                      # Mapa canvas y combate
     Board/                     # SVG Fanorona + piedras + motion
     morris/MorrisBoardView.tsx
@@ -69,6 +72,7 @@ src/
     shogi/                     # Grilla 9×9, piezas de madera con kanji
     uno/                       # Cartas, avatares y mesa de fieltro
     backgammon/                # Tablero de 24 puntos, barra, dados y bear-off
+    pokealbum/                 # Grilla del álbum, revelación de sobre, tarjeta de trivia
 ```
 
 `App` solo elige el juego. Cada motor de mesa se puede importar sin montar React. Doom no tiene motor TypeScript: el puerto WASM está en `public/doom/` y la UI lo embebe en un iframe. Liga sí: mapa y combate en `src/liga`, sprites en `public/liga/sprites/`. UNO sí: reglas en `src/uno`; con `npm run dev` las salas van por WebSocket en Vite, y si no hay servidor se juega entre pestañas del mismo origen.
@@ -105,3 +109,4 @@ En partida hay tres columnas: **controles** a la izquierda (título, modo, dific
 - Shogi es el único juego con texto en kanji (fuente Noto Serif JP, cargada en `index.html`). Las piezas son de madera para los dos bandos, en dos tonos (`is-white`/`is-black`, como el resto) y además rotadas (`is-rotated`) apuntando hacia el rival, como en un tablero real.
 - Variantes Fanoron-Telo (3×3) o Dimy (5×5): parametrizar `COLS`/`ROWS` y la posición inicial; la geometría de puntos fuertes se mantiene si el origen es fuerte.
 - Backgammon es el único juego con azar (dados): la IA no puede hacer minimax puro contra una tirada futura desconocida, así que usa una heurística (pips, blots, puntos hechos) más una expectiminimax de una capa promediando las 21 tiradas posibles del rival, en vez de buscar hasta un final determinista.
+- El Álbum Pokémon es el único juego sin `GamePanel`, sin modo/dificultad y sin oponente: sigue el patrón de Buscaminas/Sudoku (hook propio + `TableHud`, sin componentes compartidos de partida) en vez del de los juegos de mesa. También es el único con persistencia de progreso completo (no solo mejores tiempos) vía `localStorage` más un código de respaldo exportable/importable, y el único que depende de una API externa en tiempo real (PokeAPI) para la trivia.
