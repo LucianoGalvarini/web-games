@@ -1,10 +1,10 @@
 # Juegos de mesa
 
-Catorce juegos en el navegador: Fanorona, Molino, Damas, Buscaminas, Sudoku, Truco, Tetris, Ajedrez, Pai Sho, Doom, Shogi, Liga, UNO y Backgammon. La interfaz está en español. Al abrir se elige el juego; cada uno conserva sus reglas.
+Quince juegos en el navegador: Fanorona, Molino, Damas, Buscaminas, Sudoku, Truco, Tetris, Ajedrez, Pai Sho, Doom, Shogi, Liga, UNO, Backgammon y el Álbum Pokémon. La interfaz está en español. Al abrir se elige el juego; cada uno conserva sus reglas.
 
 Sitio: [lucianogalvarini.github.io/web-games](https://lucianogalvarini.github.io/web-games/)
 
-Fanorona, Molino, Damas, Truco, Ajedrez, Pai Sho, Shogi y Backgammon arrancan contra la CPU. Buscaminas, Sudoku y Tetris se juegan en solitario. Doom es el shareware de 1993 (primer episodio) en WebAssembly. Liga es el Alto Mando de Esmeralda con un equipo al azar. UNO es entre 2 y 6 jugadores, con código de sala.
+Fanorona, Molino, Damas, Truco, Ajedrez, Pai Sho, Shogi y Backgammon arrancan contra la CPU. Buscaminas, Sudoku y Tetris se juegan en solitario. Doom es el shareware de 1993 (primer episodio) en WebAssembly. Liga es el Alto Mando de Esmeralda con un equipo al azar. UNO es entre 2 y 6 jugadores, con código de sala. El Álbum Pokémon es un juego de figuritas de Kanto migrado de un Excel con macros: sobres, trivia y progreso guardado en el navegador.
 
 ## Documentación
 
@@ -24,6 +24,7 @@ Cada juego tiene su propia página:
 - [Liga](docs/liga.md)
 - [UNO](docs/uno.md)
 - [Backgammon](docs/backgammon.md)
+- [Álbum Pokémon](docs/pokealbum.md)
 - [Arquitectura](docs/arquitectura.md)
 
 ## Cómo ejecutarlo
@@ -39,7 +40,7 @@ npm run dev
 | `npm run build` | Typecheck (`tsc -b`) + build de producción |
 | `npm run preview` | Sirve el build de `dist/` |
 | `npm run lint` | Oxlint |
-| `npm run test` | Selfcheck de los trece motores |
+| `npm run test` | Selfcheck de los catorce motores |
 
 Stack: Vite 8, React 19, TypeScript. CSS propio, sin librería de componentes. Tipografías Cormorant Garamond y Outfit.
 

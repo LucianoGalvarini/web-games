@@ -21,3 +21,4 @@ export type GameId =
   | 'liga'
   | 'uno'
   | 'backgammon'
+  | 'pokealbum'

@@ -9,6 +9,7 @@ import { LigaGame } from './components/LigaGame'
 import { MinesweeperGame } from './components/MinesweeperGame'
 import { MorrisGame } from './components/MorrisGame'
 import { PaiShoGame } from './components/PaiShoGame'
+import { PokeAlbumGame } from './components/PokeAlbumGame'
 import { ShogiGame } from './components/ShogiGame'
 import { SudokuGame } from './components/SudokuGame'
 import { TetrisGame } from './components/TetrisGame'
@@ -77,6 +78,10 @@ export default function App() {
 
   if (game === 'backgammon') {
     return <BackgammonGame onBack={() => setGame(null)} />
+  }
+
+  if (game === 'pokealbum') {
+    return <PokeAlbumGame onBack={() => setGame(null)} />
   }
 
   return null

@@ -8,6 +8,24 @@ export type SfxName =
   | 'kane'
   | 'kiru'
   | 'dice'
+  | 'pack'
+  | 'coin'
+  | 'sticker'
+  | 'legendary'
+  | 'rarePull'
+  | 'dupPull'
+  | 'recycle'
+  | 'wagerWin'
+  | 'wagerLose'
+  | 'placeAll'
+  | 'hover'
+  | 'pageTurn'
+  | 'importOk'
+  | 'resetWarn'
+  | 'enter'
+  | 'dexOpen'
+  | 'packRare'
+  | 'packLegendary'
   | 'castle'
   | 'check'
   | 'promote'
@@ -324,6 +342,112 @@ export function playSfx(name: SfxName): void {
       window.setTimeout(() => burst(ctx, dest, 0.07, 0.4, 800, 1), 130)
       window.setTimeout(() => thud(ctx, dest, 220, 0.08), 170)
       break
+    case 'pack':
+      burst(ctx, dest, 0.16, 0.5, 2600, 1.6)
+      tone(ctx, dest, 'square', 220, 0.55, 0.16, 660)
+      window.setTimeout(() => burst(ctx, dest, 0.12, 0.4, 1800, 1.4), 90)
+      window.setTimeout(() => burst(ctx, dest, 0.2, 0.45, 3200, 1.8), 380)
+      window.setTimeout(() => chord(ctx, dest, [523, 659, 784, 988], 0.06, 0.18), 460)
+      break
+    case 'packRare':
+      tone(ctx, dest, 'square', 330, 0.7, 0.16, 660)
+      burst(ctx, dest, 0.15, 0.3, 2600, 1.4)
+      window.setTimeout(() => burst(ctx, dest, 0.15, 0.35, 3400, 1.6), 300)
+      window.setTimeout(() => tone(ctx, dest, 'square', 660, 0.3, 0.24, 1320), 500)
+      window.setTimeout(() => chord(ctx, dest, [660, 880, 1100], 0.06, 0.22), 750)
+      window.setTimeout(() => burst(ctx, dest, 0.2, 0.4, 3000, 1.4), 900)
+      window.setTimeout(() => chord(ctx, dest, [880, 1108, 1318], 0.05, 0.26), 1050)
+      break
+    case 'packLegendary':
+      tone(ctx, dest, 'square', 220, 1.4, 0.18, 880)
+      window.setTimeout(() => burst(ctx, dest, 0.2, 0.35, 2400, 1.4), 300)
+      window.setTimeout(() => burst(ctx, dest, 0.25, 0.4, 3200, 1.6), 700)
+      window.setTimeout(() => chord(ctx, dest, [523, 659, 784], 0.08, 0.3), 1100)
+      window.setTimeout(() => burst(ctx, dest, 0.35, 0.45, 2600, 1.3), 1550)
+      window.setTimeout(() => {
+        tone(ctx, dest, 'square', 1047, 0.55, 0.36, 1568)
+        tone(ctx, dest, 'triangle', 1568, 0.5, 0.24, 2093)
+      }, 1600)
+      window.setTimeout(() => chord(ctx, dest, [784, 988, 1175, 1568], 0.07, 0.42), 1650)
+      window.setTimeout(() => chord(ctx, dest, [1047, 1318, 1568, 2093], 0.06, 0.4), 2050)
+      break
+    case 'coin':
+      tone(ctx, dest, 'square', 1046, 0.05, 0.3, 1568)
+      window.setTimeout(() => tone(ctx, dest, 'square', 1568, 0.07, 0.22), 60)
+      break
+    case 'sticker':
+      burst(ctx, dest, 0.09, 0.4, 3400, 3)
+      window.setTimeout(() => tone(ctx, dest, 'sine', 880, 0.08, 0.32, 1100), 70)
+      break
+    case 'legendary':
+      lastFanfare = ctx.currentTime
+      burst(ctx, dest, 0.3, 0.4, 3000, 1.6)
+      chord(ctx, dest, [392, 523, 659], 0.07, 0.22)
+      window.setTimeout(() => chord(ctx, dest, [523, 659, 784, 1047], 0.08, 0.3), 210)
+      window.setTimeout(() => {
+        tone(ctx, dest, 'square', 1047, 0.5, 0.32, 1568)
+        tone(ctx, dest, 'triangle', 1568, 0.45, 0.2, 2093)
+      }, 480)
+      window.setTimeout(() => burst(ctx, dest, 0.25, 0.35, 2400, 1.2), 520)
+      window.setTimeout(() => chord(ctx, dest, [784, 988, 1175, 1568], 0.06, 0.4), 560)
+      break
+    case 'rarePull':
+      tone(ctx, dest, 'square', 440, 0.06, 0.28, 660)
+      window.setTimeout(() => tone(ctx, dest, 'square', 660, 0.06, 0.26, 880), 70)
+      window.setTimeout(() => tone(ctx, dest, 'square', 880, 0.06, 0.24, 1175), 140)
+      window.setTimeout(() => chord(ctx, dest, [880, 1175, 1480], 0.05, 0.16), 210)
+      break
+    case 'dupPull':
+      tone(ctx, dest, 'triangle', 660, 0.06, 0.22, 520)
+      window.setTimeout(() => tone(ctx, dest, 'triangle', 520, 0.06, 0.16, 440), 60)
+      break
+    case 'recycle':
+      tone(ctx, dest, 'triangle', 440, 0.07, 0.24, 660)
+      window.setTimeout(() => tone(ctx, dest, 'triangle', 660, 0.07, 0.22, 880), 70)
+      window.setTimeout(() => tone(ctx, dest, 'triangle', 880, 0.09, 0.2, 1100), 140)
+      window.setTimeout(() => burst(ctx, dest, 0.1, 0.3, 1800, 1.2), 200)
+      break
+    case 'wagerWin':
+      tone(ctx, dest, 'square', 784, 0.05, 0.3, 1046)
+      window.setTimeout(() => tone(ctx, dest, 'square', 1046, 0.05, 0.28, 1319), 60)
+      window.setTimeout(() => tone(ctx, dest, 'square', 1319, 0.09, 0.26, 1760), 120)
+      break
+    case 'wagerLose':
+      tone(ctx, dest, 'square', 300, 0.16, 0.3, 160)
+      window.setTimeout(() => tone(ctx, dest, 'square', 220, 0.2, 0.26, 90), 120)
+      burst(ctx, dest, 0.18, 0.25, 200, 0.5)
+      break
+    case 'placeAll':
+      chord(ctx, dest, [440, 554, 659, 880], 0.06, 0.16)
+      break
+    case 'hover':
+      tone(ctx, dest, 'square', 1046, 0.03, 0.14)
+      break
+    case 'pageTurn':
+      tone(ctx, dest, 'square', 523, 0.04, 0.2, 392)
+      burst(ctx, dest, 0.05, 0.16, 3600, 3.5)
+      break
+    case 'importOk':
+      tone(ctx, dest, 'square', 659, 0.05, 0.26)
+      window.setTimeout(() => tone(ctx, dest, 'square', 880, 0.06, 0.24), 55)
+      window.setTimeout(() => tone(ctx, dest, 'square', 1175, 0.08, 0.22), 110)
+      break
+    case 'resetWarn':
+      tone(ctx, dest, 'square', 494, 0.08, 0.24, 330)
+      window.setTimeout(() => tone(ctx, dest, 'square', 330, 0.1, 0.22, 220), 90)
+      break
+    case 'enter':
+      tone(ctx, dest, 'square', 392, 0.06, 0.22)
+      window.setTimeout(() => tone(ctx, dest, 'square', 494, 0.06, 0.22), 80)
+      window.setTimeout(() => tone(ctx, dest, 'square', 659, 0.1, 0.26), 160)
+      window.setTimeout(() => chord(ctx, dest, [659, 830, 988], 0.05, 0.18), 260)
+      break
+    case 'dexOpen':
+      burst(ctx, dest, 0.08, 0.35, 3000, 2)
+      tone(ctx, dest, 'square', 660, 0.05, 0.26, 990)
+      window.setTimeout(() => tone(ctx, dest, 'square', 990, 0.06, 0.24, 1320), 70)
+      window.setTimeout(() => chord(ctx, dest, [660, 880, 1100], 0.05, 0.14), 140)
+      break
     case 'capture':
       burst(ctx, dest, 0.09, 0.7, 420, 0.8)
       tone(ctx, dest, 'square', 140, 0.09, 0.28, 90)
@@ -500,4 +624,315 @@ export function playSfx(name: SfxName): void {
       tone(ctx, dest, 'triangle', 720, 0.1, 0.16)
       break
   }
+}
+
+// --- Original chiptune background music (synthesized, not sampled from any game) ---
+
+const BEAT = 0.22
+
+type MusicStep = { note: number | null; beats: number }
+type MusicTrack = {
+  name: string
+  leadType: OscillatorType
+  bassType: OscillatorType
+  lead: MusicStep[]
+  bass: MusicStep[]
+  percBeats: number[]
+}
+
+const C3 = 130.81
+const D3 = 146.83
+const F3 = 174.61
+const G3 = 196.0
+const A3 = 220.0
+const C4 = 261.63
+const D4 = 293.66
+const E4 = 329.63
+const F4 = 349.23
+const G4 = 392.0
+const A4 = 440.0
+const B4 = 493.88
+const C5 = 523.25
+const D5 = 587.33
+const E5 = 659.25
+const F5 = 698.46
+const G5 = 783.99
+const A5 = 880.0
+
+const ROUTE_LEAD: MusicStep[] = [
+  { note: C5, beats: 1 },
+  { note: E5, beats: 1 },
+  { note: G5, beats: 2 },
+  { note: E5, beats: 1 },
+  { note: D5, beats: 1 },
+  { note: C5, beats: 2 },
+  { note: D5, beats: 1 },
+  { note: F5, beats: 1 },
+  { note: A5, beats: 2 },
+  { note: F5, beats: 1 },
+  { note: E5, beats: 1 },
+  { note: D5, beats: 2 },
+  { note: C5, beats: 1 },
+  { note: D5, beats: 1 },
+  { note: E5, beats: 1 },
+  { note: D5, beats: 1 },
+  { note: C5, beats: 1 },
+  { note: B4, beats: 1 },
+  { note: C5, beats: 2 },
+]
+
+const ROUTE_BASS: MusicStep[] = [
+  { note: C3, beats: 2 },
+  { note: G3, beats: 2 },
+  { note: C3, beats: 2 },
+  { note: G3, beats: 2 },
+  { note: D3, beats: 2 },
+  { note: A3, beats: 2 },
+  { note: D3, beats: 2 },
+  { note: A3, beats: 2 },
+  { note: C3, beats: 2 },
+  { note: G3, beats: 2 },
+  { note: C3, beats: 2 },
+  { note: G3, beats: 2 },
+]
+
+const ROUTE_PERC = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24]
+
+const TOWN_LEAD: MusicStep[] = [
+  { note: G4, beats: 2 },
+  { note: E4, beats: 2 },
+  { note: C4, beats: 2 },
+  { note: E4, beats: 2 },
+  { note: A4, beats: 2 },
+  { note: F4, beats: 2 },
+  { note: D4, beats: 2 },
+  { note: F4, beats: 2 },
+  { note: G4, beats: 2 },
+  { note: E4, beats: 2 },
+  { note: C4, beats: 2 },
+  { note: null, beats: 2 },
+]
+
+const TOWN_BASS: MusicStep[] = [
+  { note: C3, beats: 4 },
+  { note: G3, beats: 4 },
+  { note: F3, beats: 4 },
+  { note: C3, beats: 4 },
+  { note: G3, beats: 4 },
+  { note: C3, beats: 4 },
+]
+
+const TOWN_PERC = [4, 8, 12, 16, 20, 24]
+
+const CAVE_LEAD: MusicStep[] = [
+  { note: A3, beats: 2 },
+  { note: null, beats: 1 },
+  { note: C4, beats: 1 },
+  { note: D4, beats: 2 },
+  { note: null, beats: 1 },
+  { note: E4, beats: 1 },
+  { note: G4, beats: 2 },
+  { note: null, beats: 1 },
+  { note: E4, beats: 1 },
+  { note: D4, beats: 2 },
+  { note: null, beats: 1 },
+  { note: C4, beats: 1 },
+  { note: A3, beats: 4 },
+  { note: null, beats: 4 },
+]
+
+const CAVE_BASS: MusicStep[] = [
+  { note: A3, beats: 8 },
+  { note: G3, beats: 8 },
+  { note: A3, beats: 8 },
+]
+
+const CAVE_PERC = [1, 9, 17]
+
+const MUSIC_TRACKS: MusicTrack[] = [
+  { name: 'Ruta', leadType: 'square', bassType: 'triangle', lead: ROUTE_LEAD, bass: ROUTE_BASS, percBeats: ROUTE_PERC },
+  { name: 'Pueblo', leadType: 'triangle', bassType: 'triangle', lead: TOWN_LEAD, bass: TOWN_BASS, percBeats: TOWN_PERC },
+  { name: 'Cueva', leadType: 'square', bassType: 'triangle', lead: CAVE_LEAD, bass: CAVE_BASS, percBeats: CAVE_PERC },
+]
+
+const MUSIC_MUTED_KEY = 'pokealbum-music-muted'
+const MUSIC_TRACK_KEY = 'pokealbum-music-track'
+const MUSIC_LEVEL = 0.5
+
+function readMusicMuted(): boolean {
+  try {
+    return localStorage.getItem(MUSIC_MUTED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function persistMusicMuted(value: boolean): void {
+  try {
+    localStorage.setItem(MUSIC_MUTED_KEY, value ? '1' : '0')
+  } catch {
+    /* ignore quota */
+  }
+}
+
+function readMusicTrack(): number {
+  try {
+    const stored = Number(localStorage.getItem(MUSIC_TRACK_KEY))
+    if (Number.isInteger(stored) && stored >= 0 && stored < MUSIC_TRACKS.length) {
+      return stored
+    }
+  } catch {
+    return 0
+  }
+  return 0
+}
+
+function persistMusicTrack(index: number): void {
+  try {
+    localStorage.setItem(MUSIC_TRACK_KEY, String(index))
+  } catch {
+    /* ignore quota */
+  }
+}
+
+let musicMuted = readMusicMuted()
+let currentTrackIndex = readMusicTrack()
+
+function totalBeats(steps: MusicStep[]): number {
+  return steps.reduce((sum, step) => sum + step.beats, 0)
+}
+
+function musicTone(
+  ctx: AudioContext,
+  dest: AudioNode,
+  type: OscillatorType,
+  freq: number,
+  at: number,
+  duration: number,
+  peak: number,
+): void {
+  const osc = ctx.createOscillator()
+  osc.type = type
+  osc.frequency.setValueAtTime(freq, at)
+  const gain = env(ctx, peak, 0.01, duration, at)
+  osc.connect(gain)
+  gain.connect(dest)
+  osc.start(at)
+  osc.stop(at + duration + 0.03)
+}
+
+function musicTick(ctx: AudioContext, dest: AudioNode, at: number): void {
+  if (!noise) {
+    return
+  }
+  const src = ctx.createBufferSource()
+  src.buffer = noise
+  const filter = ctx.createBiquadFilter()
+  filter.type = 'highpass'
+  filter.frequency.value = 6000
+  const gain = env(ctx, 0.06, 0.002, 0.02, at)
+  src.connect(filter)
+  filter.connect(gain)
+  gain.connect(dest)
+  src.start(at)
+  src.stop(at + 0.05)
+}
+
+let musicGain: GainNode | null = null
+let musicTimer: number | null = null
+let musicPlaying = false
+let musicCtx: AudioContext | null = null
+
+function scheduleMusicLoop(): void {
+  if (!musicPlaying || !musicGain || !musicCtx) {
+    return
+  }
+  const ctx = musicCtx
+  const gain = musicGain
+  const track = MUSIC_TRACKS[currentTrackIndex]
+  const startAt = ctx.currentTime + 0.05
+
+  let t = startAt
+  for (const step of track.lead) {
+    if (step.note) {
+      musicTone(ctx, gain, track.leadType, step.note, t, step.beats * BEAT * 0.85, 0.5)
+    }
+    t += step.beats * BEAT
+  }
+
+  let tb = startAt
+  for (const step of track.bass) {
+    if (step.note) {
+      musicTone(ctx, gain, track.bassType, step.note, tb, step.beats * BEAT * 0.9, 0.4)
+    }
+    tb += step.beats * BEAT
+  }
+
+  for (const beat of track.percBeats) {
+    musicTick(ctx, gain, startAt + (beat - 1) * BEAT)
+  }
+
+  const loopDuration = totalBeats(track.lead) * BEAT
+  musicTimer = window.setTimeout(scheduleMusicLoop, loopDuration * 1000)
+}
+
+export function startMusic(): void {
+  if (musicPlaying) {
+    return
+  }
+  const ctx = context()
+  if (!ctx || !master) {
+    return
+  }
+  musicCtx = ctx
+  if (!musicGain) {
+    musicGain = ctx.createGain()
+    musicGain.gain.value = musicMuted ? 0 : MUSIC_LEVEL
+    musicGain.connect(master)
+  }
+  musicPlaying = true
+  scheduleMusicLoop()
+}
+
+export function stopMusic(): void {
+  musicPlaying = false
+  if (musicTimer !== null) {
+    window.clearTimeout(musicTimer)
+    musicTimer = null
+  }
+  if (musicGain) {
+    musicGain.disconnect()
+    musicGain = null
+  }
+  musicCtx = null
+}
+
+export function isMusicMuted(): boolean {
+  return musicMuted
+}
+
+export function toggleMusicMuted(): boolean {
+  musicMuted = !musicMuted
+  persistMusicMuted(musicMuted)
+  if (musicGain) {
+    musicGain.gain.value = musicMuted ? 0 : MUSIC_LEVEL
+  }
+  return musicMuted
+}
+
+export function getMusicTrackName(): string {
+  return MUSIC_TRACKS[currentTrackIndex].name
+}
+
+export function cycleMusicTrack(): string {
+  currentTrackIndex = (currentTrackIndex + 1) % MUSIC_TRACKS.length
+  persistMusicTrack(currentTrackIndex)
+  if (musicPlaying) {
+    if (musicTimer !== null) {
+      window.clearTimeout(musicTimer)
+      musicTimer = null
+    }
+    scheduleMusicLoop()
+  }
+  return MUSIC_TRACKS[currentTrackIndex].name
 }

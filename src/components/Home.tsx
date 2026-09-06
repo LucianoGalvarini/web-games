@@ -11,7 +11,7 @@ export function Home({ onSelect }: HomeProps) {
       <header className="home-header">
         <p className="eyebrow">Juegos de mesa</p>
         <h1>Elegí un juego</h1>
-        <p className="lede">Catorce juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
+        <p className="lede">Quince juegos. Elegí uno y se mantienen las reglas de cada juego.</p>
       </header>
 
       <div className="home-grid">
@@ -376,6 +376,22 @@ export function Home({ onSelect }: HomeProps) {
             <p className="eyebrow">Tablero</p>
             <h2>Backgammon</h2>
             <p>Dados, blots y la barra. Recorré el tablero y sacá tus quince fichas primero.</p>
+          </div>
+        </button>
+
+        <button type="button" className="game-card" onClick={() => onSelect('pokealbum')}>
+          <svg className="game-card-board" viewBox="0 0 90 50" aria-hidden="true">
+            <rect x="4" y="4" width="82" height="42" rx="4" fill="#8f5e32" />
+            <circle cx="45" cy="25" r="17" fill="#f3e6d2" stroke="#241910" strokeWidth="1.6" />
+            <path d="M28 25a17 17 0 0 1 34 0z" fill="#c0392b" stroke="#241910" strokeWidth="1.6" />
+            <path d="M28 25h34" fill="none" stroke="#241910" strokeWidth="1.6" />
+            <circle cx="45" cy="25" r="5.4" fill="#f3e6d2" stroke="#241910" strokeWidth="1.6" />
+            <circle cx="45" cy="25" r="2" fill="#241910" />
+          </svg>
+          <div>
+            <p className="eyebrow">Colección</p>
+            <h2>Álbum Pokémon</h2>
+            <p>Abrí sobres, respondé trivia para ganar monedas y completá las 151 figuritas de Kanto.</p>
           </div>
         </button>
       </div>

@@ -359,3 +359,27 @@ export const UNO_MANUAL: ManualStep[] = [
     spot: 'hand',
   },
 ]
+
+export const POKEALBUM_MANUAL: ManualStep[] = [
+  {
+    title: 'Objetivo',
+    body: 'Coleccioná las 151 figuritas de Kanto. Cada una tiene una rareza: Común, Poco Común, Rara o Legendario.',
+    spot: 'board',
+  },
+  {
+    title: 'Sobres y monedas',
+    body: 'Un sobre cuesta 150 monedas y trae 5 figuritas al azar, más probables cuanto menos raras. Las repetidas se suman solas; las nuevas hay que pegarlas a mano: cerrá la pantalla de revelación y tocá el botón "Pegar" que aparece en su lugar del álbum.',
+    spot: 'controls',
+  },
+  {
+    title: 'Ganar monedas',
+    body: 'Respondé preguntas sobre Pokémon (estadísticas, tipos o movimientos) para ganar monedas. Es seguro por defecto, o podés apostar tus propias monedas para doble o nada.',
+    tryIt: "Presioná 'Ganar monedas'.",
+    spot: 'controls',
+  },
+  {
+    title: 'Guardado y código',
+    body: 'El progreso se guarda solo en este navegador. Copiá tu código de respaldo para no perderlo o para pasarlo a otro dispositivo.',
+    spot: 'stats',
+  },
+]
