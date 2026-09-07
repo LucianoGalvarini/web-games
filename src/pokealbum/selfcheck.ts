@@ -1,6 +1,15 @@
 import { POKEMON, RARITY_WEIGHT, TOTAL_POKEMON, bestRarity } from './data'
 import { DUPLICATE_SELL_VALUE, RECYCLE_COST } from './economy'
-import { applySticker, createInitialAlbum, openPack, progress, recycleDuplicates, sellDuplicate, weightedPick } from './pack'
+import {
+  applySticker,
+  createInitialAlbum,
+  openPack,
+  progress,
+  recycleDuplicates,
+  sellAllDuplicates,
+  sellDuplicate,
+  weightedPick,
+} from './pack'
 import { decodeSave, encodeSave } from './save'
 import type { AlbumState, Rarity } from './types'
 
@@ -135,6 +144,28 @@ assert(recycledSpread !== null, 'recycleDuplicates funciona con repetidas de Pok
 assert(
   recycledSpread.state.entries[POKEMON[10].id].duplicates === 0 && recycledSpread.state.entries[POKEMON[20].id].duplicates === 0,
   'Reciclar consume repetidas de cualquier Pokémon hasta completar RECYCLE_COST en total.',
+)
+
+assert(sellAllDuplicates(freshForDuplicates) === null, 'sellAllDuplicates devuelve null sin repetidas.')
+
+const forSellAll: AlbumState = {
+  coins: 0,
+  entries: {
+    ...freshForDuplicates.entries,
+    [POKEMON[10].id]: { owned: true, duplicates: 3 },
+    [POKEMON[20].id]: { owned: true, duplicates: 2 },
+  },
+}
+const expectedTotal =
+  3 * DUPLICATE_SELL_VALUE[POKEMON[10].rarity] + 2 * DUPLICATE_SELL_VALUE[POKEMON[20].rarity]
+const sellAllOutcome = sellAllDuplicates(forSellAll)
+assert(sellAllOutcome !== null, 'sellAllDuplicates vende cuando hay repetidas.')
+assert(sellAllOutcome.total === expectedTotal, 'sellAllDuplicates suma el valor correcto según la rareza de cada una.')
+assert(sellAllOutcome.state.coins === expectedTotal, 'sellAllDuplicates acredita el total vendido al saldo.')
+assert(
+  sellAllOutcome.state.entries[POKEMON[10].id].duplicates === 0 &&
+    sellAllOutcome.state.entries[POKEMON[20].id].duplicates === 0,
+  'sellAllDuplicates deja todas las repetidas en cero.',
 )
 
 const freshForSticker: AlbumState = createInitialAlbum(0)

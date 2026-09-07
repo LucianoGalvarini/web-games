@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { POKEMON, STAT_LABEL, TRIVIA_REWARD } from '../../pokealbum'
 import type { TriviaState } from '../../hooks/usePokeAlbum'
 import { playSfx } from '../../shared/sfx'
@@ -7,8 +7,11 @@ import { PokeSprite } from './PokeSprite'
 type TriviaCardProps = {
   trivia: TriviaState
   coins: number
+  freeTriviaUsed: number
+  freeTriviaLimit: number
   onStart: (wager: number) => void
   onNewQuestion: () => void
+  onExpire: () => void
   onAnswerStatPair: (side: 'a' | 'b') => void
   onAnswerTrueFalse: (value: boolean) => void
   onAnswerMultipleChoice: (index: number) => void
@@ -18,26 +21,72 @@ function nameOf(id: number): string {
   return POKEMON.find((p) => p.id === id)?.name ?? `#${id}`
 }
 
+function useCountdown(deadline: number | undefined, onExpire: () => void): number {
+  const [remaining, setRemaining] = useState(() => (deadline ? Math.max(0, deadline - Date.now()) : 0))
+
+  useEffect(() => {
+    if (!deadline) {
+      return
+    }
+    setRemaining(Math.max(0, deadline - Date.now()))
+    const id = window.setInterval(() => {
+      const left = deadline - Date.now()
+      if (left <= 0) {
+        setRemaining(0)
+        onExpire()
+        window.clearInterval(id)
+      } else {
+        setRemaining(left)
+      }
+    }, 200)
+    return () => window.clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deadline])
+
+  return remaining
+}
+
 export function TriviaCard({
   trivia,
   coins,
+  freeTriviaUsed,
+  freeTriviaLimit,
   onStart,
   onNewQuestion,
+  onExpire,
   onAnswerStatPair,
   onAnswerTrueFalse,
   onAnswerMultipleChoice,
 }: TriviaCardProps) {
   const [stake, setStake] = useState('')
+  const deadline = trivia.status === 'ready' ? trivia.deadline : undefined
+  const remainingMs = useCountdown(deadline, onExpire)
 
   if (trivia.status === 'idle') {
     const stakeValue = Number(stake)
     const canWager = stake !== '' && Number.isFinite(stakeValue) && stakeValue > 0 && stakeValue <= coins
+    const freeLeft = Math.max(0, freeTriviaLimit - freeTriviaUsed)
+    const freeExhausted = freeLeft <= 0
     return (
       <div className="status-card pokealbum-trivia">
         <p>Ganá monedas respondiendo preguntas sobre Pokémon.</p>
-        <button type="button" className="btn btn-gold" onMouseEnter={() => playSfx('hover')} onClick={() => onStart(0)}>
+        <p className="pokealbum-trivia-daily">
+          Preguntas gratis hoy: {freeTriviaUsed}/{freeTriviaLimit}
+        </p>
+        <button
+          type="button"
+          className="btn btn-gold"
+          onMouseEnter={() => !freeExhausted && playSfx('hover')}
+          onClick={() => onStart(0)}
+          disabled={freeExhausted}
+        >
           Responder pregunta por {TRIVIA_REWARD} monedas — gratis
         </button>
+        {freeExhausted && (
+          <p className="pokealbum-trivia-daily-warn">
+            Ya usaste tus preguntas gratis de hoy. Apostá monedas para seguir jugando.
+          </p>
+        )}
         <div className="pokealbum-wager">
           <p>¿Doble o nada? Elegí cuánto apostar de lo tuyo: si acertás lo ganás, si fallás lo perdés.</p>
           <div className="pokealbum-wager-row">
@@ -84,6 +133,10 @@ export function TriviaCard({
   }
 
   const answered = trivia.status === 'answered'
+  const secondsLeft = Math.ceil(remainingMs / 1000)
+  const timerLine = !answered && (
+    <p className={`pokealbum-trivia-timer${secondsLeft <= 5 ? ' is-urgent' : ''}`}>⏱ Tiempo: {secondsLeft}s</p>
+  )
   const wagerBanner = trivia.wager > 0 && (
     <p className="pokealbum-wager-banner">Apostando {trivia.wager} monedas — doble o nada.</p>
   )
@@ -91,11 +144,13 @@ export function TriviaCard({
   const resultLine = answered && (
     <div className="pokealbum-trivia-result">
       <p>
-        {reward > 0
-          ? `¡Correcto! Ganaste ${reward} monedas.`
-          : reward < 0
-            ? `Incorrecto. Perdiste ${Math.abs(reward)} monedas.`
-            : 'Incorrecto. No ganaste monedas.'}
+        {trivia.timedOut
+          ? `¡Se acabó el tiempo! ${reward < 0 ? `Perdiste ${Math.abs(reward)} monedas.` : 'No ganaste monedas.'}`
+          : reward > 0
+            ? `¡Correcto! Ganaste ${reward} monedas.`
+            : reward < 0
+              ? `Incorrecto. Perdiste ${Math.abs(reward)} monedas.`
+              : 'Incorrecto. No ganaste monedas.'}
       </p>
       <button type="button" className="btn btn-gold" onMouseEnter={() => playSfx('hover')} onClick={onNewQuestion}>
         Nueva pregunta
@@ -108,6 +163,7 @@ export function TriviaCard({
     return (
       <div className="status-card pokealbum-trivia">
         {wagerBanner}
+        {timerLine}
         <p>
           ¿Cuál de estos dos Pokémon tiene más <strong>{label}</strong>?
         </p>
@@ -142,6 +198,7 @@ export function TriviaCard({
     return (
       <div className="status-card pokealbum-trivia">
         {wagerBanner}
+        {timerLine}
         <p>{trivia.statement}</p>
         <div className="pokealbum-trivia-tf">
           {[true, false].map((value) => {

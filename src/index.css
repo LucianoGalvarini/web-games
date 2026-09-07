@@ -5915,7 +5915,7 @@ body.is-liga-wide {
 .pokealbum-app,
 .pokealbum-app input,
 .pokealbum-app button {
-  font-family: "Pixelify Sans", "VT323", monospace;
+  font-family: "VT323", "Pixelify Sans", monospace;
 }
 
 .pokealbum-app h1,
@@ -5931,8 +5931,8 @@ body.is-liga-wide {
 }
 
 .pokealbum-app .eyebrow {
-  font-family: "Press Start 2P", monospace;
-  font-size: 8px;
+  font-family: "VT323", monospace;
+  font-size: 12px;
   letter-spacing: 0.08em;
   color: var(--fr-red);
 }
@@ -5977,7 +5977,7 @@ body.is-liga-wide {
 }
 
 .pokealbum-shell .score .btn {
-  font-size: 8px;
+  font-size: 13px;
   padding: 6px 8px;
 }
 
@@ -5989,7 +5989,7 @@ body.is-liga-wide {
 }
 
 .pokealbum-music-controls .btn {
-  font-size: 8px;
+  font-size: 13px;
   padding: 8px 10px;
 }
 
@@ -6000,8 +6000,9 @@ body.is-liga-wide {
 }
 
 .pokealbum-shell .btn {
-  font-family: "Press Start 2P", monospace;
-  font-size: 9px;
+  font-family: "VT323", monospace;
+  font-size: 15px;
+  letter-spacing: 0.03em;
   line-height: 1.7;
   background: var(--fr-cream-2);
   border: 3px solid var(--fr-border);
@@ -6059,7 +6060,8 @@ body.is-liga-wide {
 
 .pokealbum-app .modal.pokealbum-reveal,
 .pokealbum-app .modal.pokealbum-opening,
-.pokealbum-app .modal.pokealbum-dex {
+.pokealbum-app .modal.pokealbum-dex,
+.pokealbum-app .modal.pokealbum-changelog {
   font-family: "Pixelify Sans", "VT323", monospace;
   background: var(--fr-cream);
   color: var(--fr-ink);
@@ -6069,6 +6071,7 @@ body.is-liga-wide {
 
 .pokealbum-app .modal.pokealbum-reveal h2,
 .pokealbum-app .modal.pokealbum-dex h2,
+.pokealbum-app .modal.pokealbum-changelog h2,
 .pokealbum-app .modal.pokealbum-opening p {
   color: var(--fr-red-dark);
 }
@@ -6099,8 +6102,21 @@ body.is-liga-wide {
 }
 
 .pokealbum-app .pokealbum-wager-banner,
-.pokealbum-app .pokealbum-trivia-value {
+.pokealbum-app .pokealbum-trivia-value,
+.pokealbum-app .pokealbum-trivia-timer {
   color: var(--fr-red-dark);
+}
+
+.pokealbum-app .pokealbum-trivia-daily {
+  color: var(--fr-ink);
+}
+
+.pokealbum-app .pokealbum-trivia-daily-warn {
+  color: var(--fr-red-dark);
+}
+
+.pokealbum-app .pokealbum-trivia-timer.is-urgent {
+  color: var(--fr-red);
 }
 
 .pokealbum-app .pokealbum-slot {
@@ -6188,8 +6204,8 @@ body.is-liga-wide {
 }
 
 .pokealbum-balance strong {
-  font-family: "Press Start 2P", monospace;
-  font-size: 16px;
+  font-family: "VT323", monospace;
+  font-size: 26px;
   color: var(--fr-red-dark);
 }
 
@@ -6452,6 +6468,28 @@ body.is-liga-wide {
   font-size: 12px;
   font-weight: 700;
   color: var(--gold-2);
+}
+
+.pokealbum-trivia-daily {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.pokealbum-trivia-daily-warn {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e0745a;
+}
+
+.pokealbum-trivia-timer {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold-2);
+}
+
+.pokealbum-trivia-timer.is-urgent {
+  color: #e0745a;
+  animation: pokealbum-shake 0.4s ease-in-out infinite;
 }
 
 .pokealbum-trivia-option {
@@ -7412,4 +7450,55 @@ body.is-liga-wide {
   .pokealbum-reveal-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+.pokealbum-changelog {
+  width: min(520px, 100%);
+  text-align: left;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.pokealbum-changelog h2 {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.pokealbum-changelog-current {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-bottom: 16px;
+}
+
+.pokealbum-changelog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pokealbum-changelog-entry {
+  padding-bottom: 10px;
+  border-bottom: 2px dashed rgba(58, 40, 24, 0.25);
+}
+
+.pokealbum-changelog-entry:last-child {
+  border-bottom: none;
+}
+
+.pokealbum-changelog-version {
+  font-family: "VT323", monospace;
+  font-size: 17px;
+  color: var(--fr-red-dark);
+  margin-bottom: 6px;
+}
+
+.pokealbum-changelog-entry ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--fr-ink);
+}
+
+.pokealbum-changelog-entry li + li {
+  margin-top: 4px;
 }

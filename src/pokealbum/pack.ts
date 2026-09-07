@@ -2,6 +2,8 @@ import { POKEMON, RARITY_WEIGHT } from './data'
 import { DUPLICATE_SELL_VALUE, PACK_SIZE, RECYCLE_COST } from './economy'
 import type { AlbumEntry, AlbumState, PackResult } from './types'
 
+export type SellAllResult = { state: AlbumState; total: number }
+
 export function createInitialAlbum(coins: number): AlbumState {
   const entries: Record<number, AlbumEntry> = {}
   for (const p of POKEMON) {
@@ -84,6 +86,22 @@ export function recycleDuplicates(
   const drawnId = weightedPick(rng)
   const isNew = !entries[drawnId].owned
   return { state: { ...state, entries }, result: { id: drawnId, isNew } }
+}
+
+export function sellAllDuplicates(state: AlbumState): SellAllResult | null {
+  let total = 0
+  const entries = { ...state.entries }
+  for (const p of POKEMON) {
+    const entry = entries[p.id]
+    if (entry.duplicates > 0) {
+      total += entry.duplicates * DUPLICATE_SELL_VALUE[p.rarity]
+      entries[p.id] = { ...entry, duplicates: 0 }
+    }
+  }
+  if (total === 0) {
+    return null
+  }
+  return { state: { coins: state.coins + total, entries }, total }
 }
 
 export function progress(state: AlbumState): { owned: number; total: number; duplicates: number } {

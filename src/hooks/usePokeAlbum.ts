@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import {
+  FREE_TRIVIA_DAILY_LIMIT,
   PACK_COST,
   POKEMON,
   RECYCLE_COST,
@@ -7,6 +8,7 @@ import {
   STAT_KEYS,
   STAT_LABEL,
   TRIVIA_REWARD,
+  TRIVIA_TIME_LIMIT_MS,
   TYPE_ES_BY_SLUG,
   applySticker,
   bestRarity,
@@ -17,6 +19,7 @@ import {
   prettyLabel,
   progress,
   recycleDuplicates,
+  sellAllDuplicates,
   sellDuplicate,
 } from '../pokealbum'
 import type { AlbumState, PackResult, Rarity, StatKey } from '../pokealbum'
@@ -25,6 +28,70 @@ import { playSfx } from '../shared/sfx'
 const SAVE_KEY = 'pokealbum-save'
 const PAGE_SIZE = 9
 export const PAGE_COUNT = Math.ceil(POKEMON.length / PAGE_SIZE)
+
+const COMMON_MOVE_SLUGS = [
+  'tackle',
+  'scratch',
+  'growl',
+  'ember',
+  'water-gun',
+  'vine-whip',
+  'thunder-shock',
+  'gust',
+  'bite',
+  'quick-attack',
+  'headbutt',
+  'razor-leaf',
+  'flamethrower',
+  'hydro-pump',
+  'solar-beam',
+  'thunderbolt',
+  'ice-beam',
+  'psychic',
+  'earthquake',
+  'rock-slide',
+  'dragon-rage',
+  'shadow-ball',
+  'sludge-bomb',
+  'giga-drain',
+  'stone-edge',
+  'body-slam',
+  'brick-break',
+  'swords-dance',
+  'recover',
+  'toxic',
+  'protect',
+  'substitute',
+  'double-team',
+  'hyper-beam',
+  'self-destruct',
+  'explosion',
+  'fire-blast',
+  'blizzard',
+  'thunder',
+  'surf',
+  'strength',
+  'cut',
+  'fly',
+  'dig',
+  'teleport',
+  'confusion',
+  'poison-sting',
+  'peck',
+  'wing-attack',
+  'rage',
+  'slam',
+  'stomp',
+  'hyper-fang',
+  'sing',
+  'supersonic',
+  'disable',
+  'agility',
+  'take-down',
+  'double-edge',
+  'counter',
+  'sand-attack',
+]
 
 export type PendingSticker = { id: number; isNew: boolean }
 export type RevealState =
@@ -51,6 +118,7 @@ export type TriviaState =
       status: 'ready' | 'answered'
       mode: 'statPair'
       wager: number
+      deadline: number
       aId: number
       bId: number
       statKey: StatKey
@@ -59,25 +127,30 @@ export type TriviaState =
       correct?: TriviaSide
       picked?: TriviaSide
       reward?: number
+      timedOut?: boolean
     }
   | {
       status: 'ready' | 'answered'
       mode: 'trueFalse'
       wager: number
+      deadline: number
       statement: string
       isTrue: boolean
       picked?: boolean
       reward?: number
+      timedOut?: boolean
     }
   | {
       status: 'ready' | 'answered'
       mode: 'multipleChoice'
       wager: number
+      deadline: number
       prompt: string
       options: string[]
       correctIndex: number
       picked?: number
       reward?: number
+      timedOut?: boolean
     }
 
 function readSave(): AlbumState {
@@ -98,6 +171,35 @@ function readSave(): AlbumState {
 function writeSave(state: AlbumState): void {
   try {
     localStorage.setItem(SAVE_KEY, encodeSave(state))
+  } catch {
+    /* ignore quota */
+  }
+}
+
+const DAILY_TRIVIA_KEY = 'pokealbum-trivia-daily'
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function readDailyFreeTrivia(): number {
+  try {
+    const raw = localStorage.getItem(DAILY_TRIVIA_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as { date?: string; count?: number }
+      if (parsed.date === todayStr() && typeof parsed.count === 'number') {
+        return parsed.count
+      }
+    }
+  } catch {
+    /* privacy mode / corrupt data, fall through */
+  }
+  return 0
+}
+
+function writeDailyFreeTrivia(count: number): void {
+  try {
+    localStorage.setItem(DAILY_TRIVIA_KEY, JSON.stringify({ date: todayStr(), count }))
   } catch {
     /* ignore quota */
   }
@@ -169,6 +271,18 @@ function fetchFacts(id: number): Promise<Facts> {
     })
 }
 
+function fetchMoveNameEs(slug: string): Promise<string> {
+  return fetch(`https://pokeapi.co/api/v2/move/${slug}`)
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('bad status')
+      }
+      return res.json() as Promise<{ names: { name: string; language: { name: string } }[] }>
+    })
+    .then((data) => data.names.find((entry) => entry.language.name === 'es')?.name ?? prettyLabel(slug))
+    .catch(() => prettyLabel(slug))
+}
+
 export function usePokeAlbum() {
   const [album, setAlbum] = useState<AlbumState>(readSave)
   const [page, setPage] = useState(0)
@@ -178,16 +292,20 @@ export function usePokeAlbum() {
   const [confirmingReset, setConfirmingReset] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const [importCodeValue, setImportCodeValue] = useState('')
+  const [freeTriviaUsed, setFreeTriviaUsed] = useState(readDailyFreeTrivia)
   const factsCache = useRef(new Map<number, Facts>())
+  const moveNameCache = useRef(new Map<string, string>())
   const triviaRequest = useRef(0)
   const albumRef = useRef(album)
   const triviaRef = useRef(trivia)
   const revealRef = useRef(reveal)
   const pendingRef = useRef(pending)
+  const freeTriviaUsedRef = useRef(freeTriviaUsed)
   albumRef.current = album
   triviaRef.current = trivia
   revealRef.current = reveal
   pendingRef.current = pending
+  freeTriviaUsedRef.current = freeTriviaUsed
 
   const goToPokemonPage = useCallback((id: number) => {
     const index = POKEMON.findIndex((p) => p.id === id)
@@ -310,6 +428,16 @@ export function usePokeAlbum() {
     return facts
   }, [])
 
+  const fetchMoveNameEsCached = useCallback(async (slug: string): Promise<string> => {
+    const cached = moveNameCache.current.get(slug)
+    if (cached) {
+      return cached
+    }
+    const name = await fetchMoveNameEs(slug)
+    moveNameCache.current.set(slug, name)
+    return name
+  }, [])
+
   const sellDup = useCallback((id: number) => {
     const next = sellDuplicate(albumRef.current, id)
     if (!next) {
@@ -317,6 +445,16 @@ export function usePokeAlbum() {
     }
     writeSave(next)
     setAlbum(next)
+    playSfx('coin')
+  }, [])
+
+  const sellAllDup = useCallback(() => {
+    const outcome = sellAllDuplicates(albumRef.current)
+    if (!outcome) {
+      return
+    }
+    writeSave(outcome.state)
+    setAlbum(outcome.state)
     playSfx('coin')
   }, [])
 
@@ -349,6 +487,15 @@ export function usePokeAlbum() {
       if (!Number.isFinite(wager) || wager < 0 || wager > coins) {
         return
       }
+      if (wager === 0) {
+        if (freeTriviaUsedRef.current >= FREE_TRIVIA_DAILY_LIMIT) {
+          return
+        }
+        const nextUsed = freeTriviaUsedRef.current + 1
+        freeTriviaUsedRef.current = nextUsed
+        writeDailyFreeTrivia(nextUsed)
+        setFreeTriviaUsed(nextUsed)
+      }
       const requestId = triviaRequest.current + 1
       triviaRequest.current = requestId
       setTrivia({ status: 'loading' })
@@ -370,6 +517,7 @@ export function usePokeAlbum() {
               status: 'ready',
               mode: 'statPair',
               wager,
+              deadline: Date.now() + TRIVIA_TIME_LIMIT_MS,
               aId,
               bId,
               statKey,
@@ -411,6 +559,7 @@ export function usePokeAlbum() {
                 status: 'ready',
                 mode: 'trueFalse',
                 wager,
+                deadline: Date.now() + TRIVIA_TIME_LIMIT_MS,
                 statement: `${name} es de tipo ${claimedLabel}.`,
                 isTrue: realTypes.includes(claimedSlug),
               })
@@ -440,6 +589,7 @@ export function usePokeAlbum() {
                 status: 'ready',
                 mode: 'trueFalse',
                 wager,
+                deadline: Date.now() + TRIVIA_TIME_LIMIT_MS,
                 statement: `${nameA} tiene ${claimMore ? 'más' : 'menos'} ${label} que ${nameB}.`,
                 isTrue: claimMore ? actuallyMore : !actuallyMore,
               })
@@ -455,34 +605,46 @@ export function usePokeAlbum() {
       }
 
       const aId = randomId()
-      const bId = randomId(aId)
-      Promise.all([fetchFactsCached(aId), fetchFactsCached(bId)])
-        .then(([a, b]) => {
+      fetchFactsCached(aId)
+        .then((a) => {
           if (triviaRequest.current !== requestId) {
             return
           }
           const ownMoves = a.moves
-          const foreignMoves = b.moves.filter((move) => !ownMoves.includes(move))
-          if (ownMoves.length === 0 || foreignMoves.length < 3) {
+          const distractorPool = COMMON_MOVE_SLUGS.filter((slug) => !ownMoves.includes(slug))
+          if (ownMoves.length === 0 || distractorPool.length < 3) {
             setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
             return
           }
           const realMove = ownMoves[Math.floor(Math.random() * ownMoves.length)]
           const distractors = new Set<string>()
           while (distractors.size < 3) {
-            distractors.add(foreignMoves[Math.floor(Math.random() * foreignMoves.length)])
+            distractors.add(distractorPool[Math.floor(Math.random() * distractorPool.length)])
           }
-          const options = [realMove, ...distractors].sort(() => Math.random() - 0.5).map(prettyLabel)
-          const correctIndex = options.indexOf(prettyLabel(realMove))
+          const slugs = [realMove, ...distractors].sort(() => Math.random() - 0.5)
+          const correctIndex = slugs.indexOf(realMove)
           const name = POKEMON.find((p) => p.id === aId)?.name ?? `#${aId}`
-          setTrivia({
-            status: 'ready',
-            mode: 'multipleChoice',
-            wager,
-            prompt: `¿Cuál de estos movimientos puede aprender ${name}?`,
-            options,
-            correctIndex,
-          })
+          Promise.all(slugs.map(fetchMoveNameEsCached))
+            .then((options) => {
+              if (triviaRequest.current !== requestId) {
+                return
+              }
+              setTrivia({
+                status: 'ready',
+                mode: 'multipleChoice',
+                wager,
+                deadline: Date.now() + TRIVIA_TIME_LIMIT_MS,
+                prompt: `¿Cuál de estos movimientos puede aprender ${name}?`,
+                options,
+                correctIndex,
+              })
+            })
+            .catch(() => {
+              if (triviaRequest.current !== requestId) {
+                return
+              }
+              setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
+            })
         })
         .catch(() => {
           if (triviaRequest.current !== requestId) {
@@ -491,7 +653,7 @@ export function usePokeAlbum() {
           setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
         })
     },
-    [fetchFactsCached],
+    [fetchFactsCached, fetchMoveNameEsCached],
   )
 
   const applyTriviaOutcome = useCallback((isCorrect: boolean, wager: number) => {
@@ -508,6 +670,15 @@ export function usePokeAlbum() {
     }
     return delta
   }, [])
+
+  const expireTrivia = useCallback(() => {
+    const prev = triviaRef.current
+    if (prev.status !== 'ready') {
+      return
+    }
+    const reward = applyTriviaOutcome(false, prev.wager)
+    setTrivia({ ...prev, status: 'answered', reward, timedOut: true })
+  }, [applyTriviaOutcome])
 
   const answerStatPair = useCallback(
     (picked: TriviaSide) => {
@@ -613,6 +784,8 @@ export function usePokeAlbum() {
     stats,
     canOpenPack: album.coins >= PACK_COST,
     recycleCost: RECYCLE_COST,
+    freeTriviaUsed,
+    freeTriviaLimit: FREE_TRIVIA_DAILY_LIMIT,
     openBooster,
     dismissReveal,
     stickPending,
@@ -620,9 +793,11 @@ export function usePokeAlbum() {
     goToNextDuplicate,
     goToPage,
     sellDuplicate: sellDup,
+    sellAllDuplicates: sellAllDup,
     recycleDuplicates: recycleDup,
     startTrivia,
     resetTrivia,
+    expireTrivia,
     answerStatPair,
     answerTrueFalse,
     answerMultipleChoice,

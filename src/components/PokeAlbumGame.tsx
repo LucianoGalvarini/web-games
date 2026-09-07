@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePokeAlbum } from '../hooks/usePokeAlbum'
-import { PACK_COST, PACK_SIZE, POKEMON, RARITY_LABEL } from '../pokealbum'
+import { DUPLICATE_SELL_VALUE, PACK_COST, PACK_SIZE, POKEMON, RARITY_LABEL } from '../pokealbum'
 import type { Rarity } from '../pokealbum'
 import { POKEALBUM_MANUAL } from '../shared/manuals'
 import {
@@ -13,6 +13,7 @@ import {
   toggleMusicMuted,
 } from '../shared/sfx'
 import { AlbumGrid } from './pokealbum/AlbumGrid'
+import { ChangelogModal } from './pokealbum/ChangelogModal'
 import { PackReveal } from './pokealbum/PackReveal'
 import { PokedexModal } from './pokealbum/PokedexModal'
 import { TriviaCard } from './pokealbum/TriviaCard'
@@ -30,6 +31,7 @@ let popupSeq = 0
 export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
   const game = usePokeAlbum()
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [changelogOpen, setChangelogOpen] = useState(false)
   const [coinPopups, setCoinPopups] = useState<{ id: number; delta: number }[]>([])
   const [pokedexId, setPokedexId] = useState<number | null>(null)
   const [justCopied, setJustCopied] = useState(false)
@@ -90,6 +92,11 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
     return { rarity, owned, total: ofRarity.length }
   })
 
+  const totalDuplicateValue = POKEMON.reduce((sum, p) => {
+    const duplicates = game.entries[p.id]?.duplicates ?? 0
+    return sum + duplicates * DUPLICATE_SELL_VALUE[p.rarity]
+  }, 0)
+
   return (
     <div className="app pokealbum-app">
       <TableHud onManual={() => setRulesOpen(true)} />
@@ -139,8 +146,11 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
           <TriviaCard
             trivia={game.trivia}
             coins={game.coins}
+            freeTriviaUsed={game.freeTriviaUsed}
+            freeTriviaLimit={game.freeTriviaLimit}
             onStart={game.startTrivia}
             onNewQuestion={game.resetTrivia}
+            onExpire={game.expireTrivia}
             onAnswerStatPair={game.answerStatPair}
             onAnswerTrueFalse={game.answerTrueFalse}
             onAnswerMultipleChoice={game.answerMultipleChoice}
@@ -195,6 +205,14 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             )}
             <button type="button" className="btn btn-ghost" onMouseEnter={() => playSfx('hover')} onClick={onBack}>
               Elegir juego
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onMouseEnter={() => playSfx('hover')}
+              onClick={() => setChangelogOpen(true)}
+            >
+              Notas de versión
             </button>
           </div>
         </aside>
@@ -263,6 +281,16 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
                   Reciclar {game.recycleCost} repetidas → sobre
                 </button>
               )}
+              {game.stats.duplicates > 0 && (
+                <button
+                  type="button"
+                  className="btn"
+                  onMouseEnter={() => playSfx('hover')}
+                  onClick={game.sellAllDuplicates}
+                >
+                  Vender todas (+{totalDuplicateValue})
+                </button>
+              )}
             </div>
             <div className="score">
               <div>
@@ -293,6 +321,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
       <ManualTour open={rulesOpen} steps={POKEALBUM_MANUAL} onClose={() => setRulesOpen(false)} />
       <PackReveal reveal={game.reveal} onClose={game.dismissReveal} />
       <PokedexModal id={pokedexId} onClose={() => setPokedexId(null)} />
+      <ChangelogModal open={changelogOpen} onClose={() => setChangelogOpen(false)} />
     </div>
   )
 }

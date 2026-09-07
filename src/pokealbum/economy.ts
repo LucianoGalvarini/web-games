@@ -13,3 +13,6 @@ export const DUPLICATE_SELL_VALUE: Record<Rarity, number> = {
   rare: 60,
   legendary: 150,
 }
+
+export const FREE_TRIVIA_DAILY_LIMIT = 20
+export const TRIVIA_TIME_LIMIT_MS = 15000
