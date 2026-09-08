@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import { POKEMON, RARITY_LABEL, STAT_LABEL, TYPE_COLOR, TYPE_ES_BY_SLUG } from '../../pokealbum'
 import { usePokedexEntry } from '../../hooks/usePokedexEntry'
-import { playSfx } from '../../shared/sfx'
+import { playPokemonCry, playSfx } from '../../shared/sfx'
 import { Confetti } from './Confetti'
 import { PokeSprite } from './PokeSprite'
 
@@ -61,6 +61,7 @@ export function PokedexModal({ id, onClose }: PokedexModalProps) {
     } else if (p.rarity === 'rare') {
       window.setTimeout(() => playSfx('rarePull'), 100)
     }
+    window.setTimeout(() => playPokemonCry(p.id, 0.8), 350)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 

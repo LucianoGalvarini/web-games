@@ -1,7 +1,7 @@
 import { POKEMON } from './data'
 import type { AlbumState, Rarity } from './types'
 
-export type AchievementTriviaMode = 'statPair' | 'trueFalse' | 'multipleChoice'
+export type AchievementTriviaMode = 'statPair' | 'trueFalse' | 'multipleChoice' | 'trainer'
 export type AchievementCategory = 'trivia' | 'album'
 
 export type AchievementReward = { coins?: number; bonusQuestions?: number; wagerBoost?: number }
@@ -136,6 +136,15 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🥋',
     reward: { coins: 25 },
     isMet: (ctx) => ctx.triviaCorrectByMode.multipleChoice >= 10,
+  },
+  {
+    id: 'trivia_mode_trainer',
+    category: 'trivia',
+    title: 'Maestro entrenador',
+    description: 'Acertá 10 preguntas sobre entrenadores, gimnasios y el anime.',
+    icon: '🎓',
+    reward: { coins: 40 },
+    isMet: (ctx) => ctx.triviaCorrectByMode.trainer >= 10,
   },
   {
     id: 'album_first_sticker',

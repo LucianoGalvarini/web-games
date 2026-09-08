@@ -10,6 +10,7 @@ import {
   STARTING_COINS,
   STAT_KEYS,
   STAT_LABEL,
+  TRAINER_TRIVIA,
   TRIVIA_REWARD,
   TRIVIA_TIME_LIMIT_MS,
   TYPE_ES_BY_SLUG,
@@ -34,7 +35,7 @@ import {
 } from '../pokealbum'
 import type { Achievement, AchievementContext, AlbumState, PackResult, Rarity, RouletteSegment, StatKey } from '../pokealbum'
 import { getCheatLockRemainingMs, startDevToolsWatch, triggerCheatLock } from '../shared/anticheat'
-import { playPackOpenSound, playSfx, stopPackOpenSound } from '../shared/sfx'
+import { playPackOpenSound, playPokemonCry, playSfx, stopPackOpenSound } from '../shared/sfx'
 
 const SAVE_KEY = 'pokealbum-save'
 const SIG_ACTIVE_KEY = 'pokealbum-sig-active'
@@ -119,7 +120,7 @@ const PENDING_KEY = 'pokealbum-pending'
 const REVEAL_STAGGER = 220
 
 type TriviaSide = 'a' | 'b'
-export type TriviaMode = 'statPair' | 'trueFalse' | 'multipleChoice'
+export type TriviaMode = 'statPair' | 'trueFalse' | 'multipleChoice' | 'trainer'
 
 type Facts = { stats: Record<StatKey, number>; types: string[]; moves: string[] }
 
@@ -156,6 +157,18 @@ export type TriviaState =
   | {
       status: 'ready' | 'answered'
       mode: 'multipleChoice'
+      wager: number
+      deadline: number
+      prompt: string
+      options: string[]
+      correctIndex: number
+      picked?: number
+      reward?: number
+      timedOut?: boolean
+    }
+  | {
+      status: 'ready' | 'answered'
+      mode: 'trainer'
       wager: number
       deadline: number
       prompt: string
@@ -257,17 +270,27 @@ function initialTriviaStats(): TriviaStatsState {
     streak: 0,
     bestStreak: 0,
     correctTotal: 0,
-    correctByMode: { statPair: 0, trueFalse: 0, multipleChoice: 0 },
+    correctByMode: { statPair: 0, trueFalse: 0, multipleChoice: 0, trainer: 0 },
     packsOpened: 0,
     recycleCount: 0,
     unlocked: [],
   }
 }
 
-function triviaStatsSig(state: TriviaStatsState): string {
+// Pre-"trainer mode" signature format, kept so save data signed before that field existed still
+// verifies correctly instead of being flagged as tampered. writeTriviaStats() always writes the
+// current (trainer-inclusive) format, so old saves self-heal on the next write.
+function triviaStatsSigLegacy(state: TriviaStatsState): string {
   const unlockedCanonical = [...state.unlocked].sort().join(',')
   return signPayload(
     `${state.streak}|${state.bestStreak}|${state.correctTotal}|${state.correctByMode.statPair}|${state.correctByMode.trueFalse}|${state.correctByMode.multipleChoice}|${state.packsOpened}|${state.recycleCount}|${unlockedCanonical}`,
+  )
+}
+
+function triviaStatsSig(state: TriviaStatsState): string {
+  const unlockedCanonical = [...state.unlocked].sort().join(',')
+  return signPayload(
+    `${state.streak}|${state.bestStreak}|${state.correctTotal}|${state.correctByMode.statPair}|${state.correctByMode.trueFalse}|${state.correctByMode.multipleChoice}|${state.correctByMode.trainer}|${state.packsOpened}|${state.recycleCount}|${unlockedCanonical}`,
   )
 }
 
@@ -294,12 +317,13 @@ function readTriviaStats(): TriviaStatsState {
             statPair: parsed.correctByMode.statPair ?? 0,
             trueFalse: parsed.correctByMode.trueFalse ?? 0,
             multipleChoice: parsed.correctByMode.multipleChoice ?? 0,
+            trainer: parsed.correctByMode.trainer ?? 0,
           },
           packsOpened: parsed.packsOpened,
           recycleCount: parsed.recycleCount,
           unlocked: parsed.unlocked.filter((id): id is string => typeof id === 'string'),
         }
-        if (parsed.sig !== undefined && parsed.sig !== triviaStatsSig(state)) {
+        if (parsed.sig !== undefined && parsed.sig !== triviaStatsSig(state) && parsed.sig !== triviaStatsSigLegacy(state)) {
           triggerCheatLock()
           return initialTriviaStats()
         }
@@ -517,6 +541,66 @@ function pickNonTiedStat(a: Facts, b: Facts, preferredKey: StatKey): StatKey {
   return shuffled.find((key) => a.stats[key] !== b.stats[key]) ?? preferredKey
 }
 
+// "Doble o nada" gets sharper the more times in a row it's played, and a coin-inflated balance (a
+// side effect of playing a lot) forces the hardest tier outright — otherwise stacking wins gets
+// too easy once coins pile up. Tier 0 is the baseline (a free question, or the very first wager in
+// a streak); each extra consecutive wager climbs one tier, capped at 3.
+const WAGER_DIFFICULTY_COIN_THRESHOLD = 3000
+const MAX_DIFFICULTY_TIER = 3
+
+function computeDifficultyTier(priorWagerStreak: number, coins: number, wager: number): number {
+  if (wager <= 0) {
+    return 0
+  }
+  if (coins > WAGER_DIFFICULTY_COIN_THRESHOLD) {
+    return MAX_DIFFICULTY_TIER
+  }
+  return Math.min(MAX_DIFFICULTY_TIER, priorWagerStreak)
+}
+
+function timeLimitForTier(tier: number): number {
+  switch (tier) {
+    case 0:
+      return TRIVIA_TIME_LIMIT_MS
+    case 1:
+      return Math.round(TRIVIA_TIME_LIMIT_MS * 0.8)
+    case 2:
+      return Math.round(TRIVIA_TIME_LIMIT_MS * 0.65)
+    default:
+      return Math.max(6000, Math.round(TRIVIA_TIME_LIMIT_MS * 0.45))
+  }
+}
+
+// Easy: pit an iconic (rare/legendary) Pokémon against a common one, so the stat gap tends to be
+// obvious. Hard: restrict both sides to common/uncommon Pokémon, so there's no "it's a legendary,
+// it must be bigger" shortcut and the numbers alone decide it.
+function pickPairForDifficulty(tier: number): [number, number] {
+  if (tier <= 0) {
+    const iconicPool = POKEMON.filter((p) => p.rarity === 'legendary' || p.rarity === 'rare')
+    const commonPool = POKEMON.filter((p) => p.rarity === 'common')
+    if (iconicPool.length > 0 && commonPool.length > 0) {
+      const iconic = iconicPool[Math.floor(Math.random() * iconicPool.length)].id
+      const common = commonPool[Math.floor(Math.random() * commonPool.length)].id
+      return Math.random() < 0.5 ? [iconic, common] : [common, iconic]
+    }
+  } else if (tier >= 2) {
+    const pool = POKEMON.filter((p) => p.rarity === 'common' || p.rarity === 'uncommon')
+    if (pool.length >= 2) {
+      const a = pool[Math.floor(Math.random() * pool.length)]
+      let b = pool[Math.floor(Math.random() * pool.length)]
+      let guard = 0
+      while (b.id === a.id && guard < 10) {
+        b = pool[Math.floor(Math.random() * pool.length)]
+        guard += 1
+      }
+      return [a.id, b.id]
+    }
+  }
+  const aId = randomId()
+  const bId = randomId(aId)
+  return [aId, bId]
+}
+
 function fetchFacts(id: number): Promise<Facts> {
   return fetch(`https://pokeapi.co/api/v2/pokemon/${id}`)
     .then((res) => {
@@ -575,6 +659,7 @@ export function usePokeAlbum() {
   const [triviaStats, setTriviaStats] = useState<TriviaStatsState>(readTriviaStats)
   const [achievementQueue, setAchievementQueue] = useState<Achievement[]>([])
   const [tieBugBonusGranted, setTieBugBonusGranted] = useState(false)
+  const [wagerStreak, setWagerStreak] = useState(0)
   const factsCache = useRef(new Map<number, Facts>())
   const moveNameCache = useRef(new Map<string, string>())
   const triviaRequest = useRef(0)
@@ -589,6 +674,7 @@ export function usePokeAlbum() {
   const pendingSpinRef = useRef(pendingSpin)
   const dailyLoginRef = useRef(dailyLogin)
   const triviaStatsRef = useRef(triviaStats)
+  const wagerStreakRef = useRef(wagerStreak)
   albumRef.current = album
   triviaRef.current = trivia
   revealRef.current = reveal
@@ -600,6 +686,7 @@ export function usePokeAlbum() {
   pendingSpinRef.current = pendingSpin
   dailyLoginRef.current = dailyLogin
   triviaStatsRef.current = triviaStats
+  wagerStreakRef.current = wagerStreak
 
   useEffect(() => {
     const stopDevToolsWatch = startDevToolsWatch(() => {
@@ -714,6 +801,7 @@ export function usePokeAlbum() {
         }
         const rarity = POKEMON.find((p) => p.id === item.id)?.rarity
         playSfx(rarity === 'legendary' ? 'legendary' : rarity === 'rare' ? 'rarePull' : 'promote')
+        window.setTimeout(() => playPokemonCry(item.id, 0.7), 180)
       }, i * REVEAL_STAGGER)
     })
   }, [])
@@ -1013,15 +1101,38 @@ export function usePokeAlbum() {
           setFreeTriviaUsed(nextUsed)
         }
       }
+      const tier = computeDifficultyTier(wagerStreakRef.current, coins, wager)
+      const nextWagerStreak = wager > 0 ? wagerStreakRef.current + 1 : 0
+      wagerStreakRef.current = nextWagerStreak
+      setWagerStreak(nextWagerStreak)
+      const timeLimit = timeLimitForTier(tier)
+
       const requestId = triviaRequest.current + 1
       triviaRequest.current = requestId
       setTrivia({ status: 'loading' })
 
-      const mode: TriviaMode = (['statPair', 'trueFalse', 'multipleChoice'] as const)[Math.floor(Math.random() * 3)]
+      const modePool: TriviaMode[] =
+        tier >= 2
+          ? ['statPair', 'trueFalse', 'multipleChoice', 'trainer']
+          : ['statPair', 'trueFalse', 'multipleChoice']
+      const mode: TriviaMode = modePool[Math.floor(Math.random() * modePool.length)]
+
+      if (mode === 'trainer') {
+        const item = TRAINER_TRIVIA[Math.floor(Math.random() * TRAINER_TRIVIA.length)]
+        setTrivia({
+          status: 'ready',
+          mode: 'trainer',
+          wager,
+          deadline: Date.now() + timeLimit,
+          prompt: item.prompt,
+          options: item.options,
+          correctIndex: item.correctIndex,
+        })
+        return
+      }
 
       if (mode === 'statPair') {
-        const aId = randomId()
-        const bId = randomId(aId)
+        const [aId, bId] = pickPairForDifficulty(tier)
         const statKey = STAT_KEYS[Math.floor(Math.random() * STAT_KEYS.length)]
         Promise.all([fetchFactsCached(aId), fetchFactsCached(bId)])
           .then(([a, b]) => {
@@ -1035,7 +1146,7 @@ export function usePokeAlbum() {
               status: 'ready',
               mode: 'statPair',
               wager,
-              deadline: Date.now() + TRIVIA_TIME_LIMIT_MS,
+              deadline: Date.now() + timeLimit,
               aId,
               bId,
               statKey: resolvedStatKey,
@@ -1077,7 +1188,7 @@ export function usePokeAlbum() {
                 status: 'ready',
                 mode: 'trueFalse',
                 wager,
-                deadline: Date.now() + TRIVIA_TIME_LIMIT_MS,
+                deadline: Date.now() + timeLimit,
                 statement: `${name} es de tipo ${claimedLabel}.`,
                 isTrue: realTypes.includes(claimedSlug),
               })
@@ -1089,9 +1200,9 @@ export function usePokeAlbum() {
               setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
             })
         } else {
-          const bId = randomId(aId)
+          const [aId2, bId] = pickPairForDifficulty(tier)
           const statKey = STAT_KEYS[Math.floor(Math.random() * STAT_KEYS.length)]
-          Promise.all([fetchFactsCached(aId), fetchFactsCached(bId)])
+          Promise.all([fetchFactsCached(aId2), fetchFactsCached(bId)])
             .then(([a, b]) => {
               if (triviaRequest.current !== requestId) {
                 return
@@ -1100,7 +1211,7 @@ export function usePokeAlbum() {
               const aValue = a.stats[resolvedStatKey]
               const bValue = b.stats[resolvedStatKey]
               const claimMore = Math.random() < 0.5
-              const nameA = POKEMON.find((p) => p.id === aId)?.name ?? `#${aId}`
+              const nameA = POKEMON.find((p) => p.id === aId2)?.name ?? `#${aId2}`
               const nameB = POKEMON.find((p) => p.id === bId)?.name ?? `#${bId}`
               const label = STAT_LABEL[resolvedStatKey]
               const actuallyMore = aValue > bValue
@@ -1108,7 +1219,7 @@ export function usePokeAlbum() {
                 status: 'ready',
                 mode: 'trueFalse',
                 wager,
-                deadline: Date.now() + TRIVIA_TIME_LIMIT_MS,
+                deadline: Date.now() + timeLimit,
                 statement: `${nameA} tiene ${claimMore ? 'más' : 'menos'} ${label} que ${nameB}.`,
                 isTrue: claimMore ? actuallyMore : !actuallyMore,
               })
@@ -1130,40 +1241,57 @@ export function usePokeAlbum() {
             return
           }
           const ownMoves = a.moves
-          const distractorPool = COMMON_MOVE_SLUGS.filter((slug) => !ownMoves.includes(slug))
-          if (ownMoves.length === 0 || distractorPool.length < 3) {
-            setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
-            return
-          }
-          const realMove = ownMoves[Math.floor(Math.random() * ownMoves.length)]
-          const distractors = new Set<string>()
-          while (distractors.size < 3) {
-            distractors.add(distractorPool[Math.floor(Math.random() * distractorPool.length)])
-          }
-          const slugs = [realMove, ...distractors].sort(() => Math.random() - 0.5)
-          const correctIndex = slugs.indexOf(realMove)
-          const name = POKEMON.find((p) => p.id === aId)?.name ?? `#${aId}`
-          Promise.all(slugs.map(fetchMoveNameEsCached))
-            .then((options) => {
-              if (triviaRequest.current !== requestId) {
-                return
-              }
-              setTrivia({
-                status: 'ready',
-                mode: 'multipleChoice',
-                wager,
-                deadline: Date.now() + TRIVIA_TIME_LIMIT_MS,
-                prompt: `¿Cuál de estos movimientos puede aprender ${name}?`,
-                options,
-                correctIndex,
-              })
-            })
-            .catch(() => {
-              if (triviaRequest.current !== requestId) {
-                return
-              }
+          const hardDistractors = tier >= 2
+          const buildOptions = (distractorPool: string[]) => {
+            if (ownMoves.length === 0 || distractorPool.length < 3) {
               setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
-            })
+              return
+            }
+            const realMove = ownMoves[Math.floor(Math.random() * ownMoves.length)]
+            const distractors = new Set<string>()
+            let guard = 0
+            while (distractors.size < 3 && guard < 60) {
+              distractors.add(distractorPool[Math.floor(Math.random() * distractorPool.length)])
+              guard += 1
+            }
+            if (distractors.size < 3) {
+              setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
+              return
+            }
+            const slugs = [realMove, ...distractors].sort(() => Math.random() - 0.5)
+            const correctIndex = slugs.indexOf(realMove)
+            const name = POKEMON.find((p) => p.id === aId)?.name ?? `#${aId}`
+            Promise.all(slugs.map(fetchMoveNameEsCached))
+              .then((options) => {
+                if (triviaRequest.current !== requestId) {
+                  return
+                }
+                setTrivia({
+                  status: 'ready',
+                  mode: 'multipleChoice',
+                  wager,
+                  deadline: Date.now() + timeLimit,
+                  prompt: `¿Cuál de estos movimientos puede aprender ${name}?`,
+                  options,
+                  correctIndex,
+                })
+              })
+              .catch(() => {
+                if (triviaRequest.current !== requestId) {
+                  return
+                }
+                setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
+              })
+          }
+          if (hardDistractors) {
+            // Distractors pulled from a real Pokémon's actual moves are far more plausible than
+            // COMMON_MOVE_SLUGS' generic pool, since they're all genuinely learnable moves too.
+            fetchFactsCached(randomId(aId))
+              .then((decoy) => buildOptions(decoy.moves.filter((slug) => !ownMoves.includes(slug))))
+              .catch(() => buildOptions(COMMON_MOVE_SLUGS.filter((slug) => !ownMoves.includes(slug))))
+          } else {
+            buildOptions(COMMON_MOVE_SLUGS.filter((slug) => !ownMoves.includes(slug)))
+          }
         })
         .catch(() => {
           if (triviaRequest.current !== requestId) {
@@ -1269,6 +1397,19 @@ export function usePokeAlbum() {
     [applyTriviaOutcome],
   )
 
+  const answerTrainer = useCallback(
+    (picked: number) => {
+      const prev = triviaRef.current
+      if (prev.status !== 'ready' || prev.mode !== 'trainer') {
+        return
+      }
+      const isCorrect = picked === prev.correctIndex
+      const reward = applyTriviaOutcome(isCorrect, prev.wager, prev.mode)
+      setTrivia({ ...prev, status: 'answered', picked, reward })
+    },
+    [applyTriviaOutcome],
+  )
+
   const resetTrivia = useCallback(() => setTrivia({ status: 'idle' }), [])
 
   const requestReset = useCallback(() => {
@@ -1329,6 +1470,9 @@ export function usePokeAlbum() {
       : 1
     : null
 
+  // What tier the *next* wager would land on, shown to the player before they commit to it.
+  const nextWagerDifficultyTier = computeDifficultyTier(wagerStreak, album.coins, 1)
+
   return {
     coins: album.coins,
     entries: album.entries,
@@ -1376,6 +1520,11 @@ export function usePokeAlbum() {
     answerStatPair,
     answerTrueFalse,
     answerMultipleChoice,
+    answerTrainer,
+    wagerStreak,
+    nextWagerDifficultyTier,
+    maxWagerDifficultyTier: MAX_DIFFICULTY_TIER,
+    wagerDifficultyCoinThreshold: WAGER_DIFFICULTY_COIN_THRESHOLD,
     requestReset,
     cancelReset,
     confirmReset,

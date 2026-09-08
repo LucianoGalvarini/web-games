@@ -13,16 +13,26 @@ type TriviaCardProps = {
   wagerBoost: number
   triviaStreak: number
   bestTriviaStreak: number
+  nextWagerDifficultyTier: number
+  maxWagerDifficultyTier: number
+  wagerDifficultyCoinThreshold: number
   onStart: (wager: number) => void
   onNewQuestion: () => void
   onExpire: () => void
   onAnswerStatPair: (side: 'a' | 'b') => void
   onAnswerTrueFalse: (value: boolean) => void
   onAnswerMultipleChoice: (index: number) => void
+  onAnswerTrainer: (index: number) => void
 }
 
 function nameOf(id: number): string {
   return POKEMON.find((p) => p.id === id)?.name ?? `#${id}`
+}
+
+const DIFFICULTY_LABELS = ['Fácil', 'Normal', 'Difícil', '¡Extrema!']
+
+function difficultyLabel(tier: number): string {
+  return DIFFICULTY_LABELS[Math.min(Math.max(tier, 0), DIFFICULTY_LABELS.length - 1)]
 }
 
 function useCountdown(deadline: number | undefined, onExpire: () => void): number {
@@ -59,12 +69,16 @@ export function TriviaCard({
   wagerBoost,
   triviaStreak,
   bestTriviaStreak,
+  nextWagerDifficultyTier,
+  maxWagerDifficultyTier,
+  wagerDifficultyCoinThreshold,
   onStart,
   onNewQuestion,
   onExpire,
   onAnswerStatPair,
   onAnswerTrueFalse,
   onAnswerMultipleChoice,
+  onAnswerTrainer,
 }: TriviaCardProps) {
   const [stake, setStake] = useState('')
   const deadline = trivia.status === 'ready' ? trivia.deadline : undefined
@@ -109,6 +123,14 @@ export function TriviaCard({
         )}
         <div className="pokealbum-wager">
           <p>¿Doble o nada? Elegí cuánto apostar de lo tuyo: si acertás lo ganás, si fallás lo perdés.</p>
+          <p className={`pokealbum-difficulty-badge is-tier-${nextWagerDifficultyTier}`}>
+            Próxima pregunta: dificultad {difficultyLabel(nextWagerDifficultyTier)}
+            {nextWagerDifficultyTier >= maxWagerDifficultyTier
+              ? coins > wagerDifficultyCoinThreshold
+                ? ' (tenés demasiado oro, se pone brava)'
+                : ' (venís en racha de apuestas)'
+              : ''}
+          </p>
           <div className="pokealbum-wager-row">
             <input
               type="number"
@@ -239,6 +261,36 @@ export function TriviaCard({
                 disabled={answered}
               >
                 {value ? 'Verdadero' : 'Falso'}
+              </button>
+            )
+          })}
+        </div>
+        {resultLine}
+      </div>
+    )
+  }
+
+  if (trivia.mode === 'trainer') {
+    return (
+      <div className="status-card pokealbum-trivia">
+        {wagerBanner}
+        {timerLine}
+        <p className="pokealbum-trivia-trainer-tag">🎓 Trivia de entrenadores</p>
+        <p>{trivia.prompt}</p>
+        <div className="pokealbum-trivia-mc">
+          {trivia.options.map((option, index) => {
+            const isPicked = answered && trivia.picked === index
+            const isRight = answered && trivia.correctIndex === index
+            return (
+              <button
+                key={option}
+                type="button"
+                className={`pokealbum-trivia-option${isRight ? ' is-correct' : ''}${isPicked && !isRight ? ' is-wrong' : ''}`}
+                onClick={() => onAnswerTrainer(index)}
+                onMouseEnter={() => !answered && playSfx('hover')}
+                disabled={answered}
+              >
+                {option}
               </button>
             )
           })}

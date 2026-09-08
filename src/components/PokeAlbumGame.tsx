@@ -18,6 +18,7 @@ import { AchievementToast } from './pokealbum/AchievementToast'
 import { AlbumGrid } from './pokealbum/AlbumGrid'
 import { ChangelogModal } from './pokealbum/ChangelogModal'
 import { CheatLockOverlay } from './pokealbum/CheatLockOverlay'
+import { OverworldParade } from './pokealbum/OverworldParade'
 import { PackReveal } from './pokealbum/PackReveal'
 import { PokedexModal } from './pokealbum/PokedexModal'
 import { RouletteModal } from './pokealbum/RouletteModal'
@@ -108,6 +109,8 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
     return sum + duplicates * DUPLICATE_SELL_VALUE[p.rarity]
   }, 0)
 
+  const ownedIds = POKEMON.filter((p) => game.entries[p.id]?.owned).map((p) => p.id)
+
   return (
     <div className="app pokealbum-app">
       {game.cheatLocked && <CheatLockOverlay remainingMs={game.cheatLockRemainingMs} />}
@@ -171,12 +174,16 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             wagerBoost={game.wagerBoost}
             triviaStreak={game.triviaStreak}
             bestTriviaStreak={game.bestTriviaStreak}
+            nextWagerDifficultyTier={game.nextWagerDifficultyTier}
+            maxWagerDifficultyTier={game.maxWagerDifficultyTier}
+            wagerDifficultyCoinThreshold={game.wagerDifficultyCoinThreshold}
             onStart={game.startTrivia}
             onNewQuestion={game.resetTrivia}
             onExpire={game.expireTrivia}
             onAnswerStatPair={game.answerStatPair}
             onAnswerTrueFalse={game.answerTrueFalse}
             onAnswerMultipleChoice={game.answerMultipleChoice}
+            onAnswerTrainer={game.answerTrainer}
           />
 
           <button
@@ -299,6 +306,8 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
           </ul>
         </aside>
       </div>
+
+      <OverworldParade ownedIds={ownedIds} />
 
       <ManualTour open={rulesOpen} steps={POKEALBUM_MANUAL} onClose={() => setRulesOpen(false)} />
       <PackReveal reveal={game.reveal} onClose={game.dismissReveal} />

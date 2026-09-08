@@ -14,6 +14,7 @@ import {
 } from './pack'
 import { ROULETTE_SEGMENTS, rollSegmentAmount, spinRoulette } from './roulette'
 import { decodeSave, encodeSave, wasSignatureTampered } from './save'
+import { TRAINER_TRIVIA } from './trainerTrivia'
 import type { AlbumState, Rarity } from './types'
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -252,7 +253,7 @@ assert(achievementIds.size === ACHIEVEMENTS.length, 'Los ids de logros son únic
 const emptyCtx = {
   album: createInitialAlbum(0),
   triviaCorrectTotal: 0,
-  triviaCorrectByMode: { statPair: 0, trueFalse: 0, multipleChoice: 0 },
+  triviaCorrectByMode: { statPair: 0, trueFalse: 0, multipleChoice: 0, trainer: 0 },
   bestTriviaStreak: 0,
   packsOpened: 0,
   recycleCount: 0,
@@ -269,7 +270,7 @@ for (const p of POKEMON) {
 const fullCtx = {
   album: fullAlbum,
   triviaCorrectTotal: 999,
-  triviaCorrectByMode: { statPair: 999, trueFalse: 999, multipleChoice: 999 },
+  triviaCorrectByMode: { statPair: 999, trueFalse: 999, multipleChoice: 999, trainer: 999 },
   bestTriviaStreak: 999,
   packsOpened: 999,
   recycleCount: 999,
@@ -289,5 +290,17 @@ assert(
   firstCorrect.length === 1 && firstCorrect[0].id === 'trivia_first_correct',
   'Una sola respuesta correcta solo desbloquea el logro de primera correcta.',
 )
+
+assert(TRAINER_TRIVIA.length >= 10, 'Hay una cantidad razonable de preguntas de entrenadores.')
+for (const item of TRAINER_TRIVIA) {
+  assert(item.options.length === 4, `"${item.prompt}" tiene exactamente 4 opciones.`)
+  assert(
+    item.correctIndex >= 0 && item.correctIndex < item.options.length,
+    `"${item.prompt}" tiene un índice de respuesta correcta válido.`,
+  )
+  assert(new Set(item.options).size === item.options.length, `"${item.prompt}" no repite ninguna opción.`)
+}
+const trainerPrompts = new Set(TRAINER_TRIVIA.map((item) => item.prompt))
+assert(trainerPrompts.size === TRAINER_TRIVIA.length, 'Las preguntas de entrenadores no se repiten.')
 
 console.log('pokealbum selfcheck ok')

@@ -1,8 +1,27 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.12.0'
+export const CURRENT_VERSION = '1.14.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.14.0',
+    date: '2026-09-08',
+    changes: [
+      'Cada Pokémon ahora tiene su cry real: suena al abrir su ficha en la Pokédex y al sacarlo nuevo de un sobre.',
+      'La ruleta usa íconos de objetos reales en vez de emojis donde correspondía (Master Ball para el premio mayor, Moneda Amuleto para "todo o nada", etc.).',
+      'Nueva tira decorativa de Pokémon caminando (sprites overworld) debajo del álbum, con las especies que ya conseguiste.',
+    ],
+  },
+  {
+    version: '1.13.0',
+    date: '2026-09-08',
+    changes: [
+      '"Doble o nada" ahora se pone más difícil cuanto más seguido lo jugás: la primera apuesta es fácil, y cada apuesta consecutiva sube un nivel (Fácil → Normal → Difícil → ¡Extrema!), con menos tiempo para responder. Un cartel te avisa qué dificultad te toca antes de apostar.',
+      'Si tenés más de 3000 monedas y hacés una apuesta, la pregunta sale directo en dificultad Extrema.',
+      'Nueva modalidad de trivia sobre entrenadores, gimnasios, la Liga Pokémon y el anime de Kanto — aparece solo en las apuestas más difíciles.',
+      'En dificultad alta, las preguntas de "quién tiene más/menos" comparan Pokémon menos obvios, y las de movimientos usan señuelos más creíbles (movimientos reales de otro Pokémon en vez de una lista genérica).',
+    ],
+  },
   {
     version: '1.12.0',
     date: '2026-09-08',

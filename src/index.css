@@ -6116,8 +6116,22 @@ body.is-liga-wide {
 .pokealbum-app .pokealbum-wager-banner,
 .pokealbum-app .pokealbum-trivia-value,
 .pokealbum-app .pokealbum-trivia-timer,
-.pokealbum-app .pokealbum-trivia-streak {
+.pokealbum-app .pokealbum-trivia-streak,
+.pokealbum-app .pokealbum-trivia-trainer-tag {
   color: var(--fr-red-dark);
+}
+
+.pokealbum-app .pokealbum-difficulty-badge {
+  color: var(--fr-red-dark);
+  border-color: rgba(58, 40, 24, 0.3);
+  background: rgba(58, 40, 24, 0.08);
+}
+
+.pokealbum-app .pokealbum-difficulty-badge.is-tier-2,
+.pokealbum-app .pokealbum-difficulty-badge.is-tier-3 {
+  color: var(--fr-red);
+  border-color: var(--fr-red);
+  background: rgba(192, 57, 43, 0.14);
 }
 
 .pokealbum-app .pokealbum-trivia-daily {
@@ -6506,6 +6520,46 @@ body.is-liga-wide {
   font-size: 13.5px;
   font-weight: 700;
   color: var(--gold-2);
+}
+
+.pokealbum-difficulty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  width: fit-content;
+  border: 1px solid rgba(228, 180, 90, 0.3);
+  background: rgba(228, 180, 90, 0.12);
+  color: var(--gold-2);
+}
+
+.pokealbum-difficulty-badge.is-tier-1 {
+  border-color: rgba(255, 173, 74, 0.4);
+  background: rgba(255, 173, 74, 0.14);
+  color: #ffad4a;
+}
+
+.pokealbum-difficulty-badge.is-tier-2 {
+  border-color: rgba(224, 116, 90, 0.45);
+  background: rgba(224, 116, 90, 0.16);
+  color: #e0745a;
+}
+
+.pokealbum-difficulty-badge.is-tier-3 {
+  border-color: #e0745a;
+  background: rgba(224, 116, 90, 0.25);
+  color: #ff5a3d;
+  animation: pokealbum-shake 1.6s ease-in-out infinite;
+}
+
+.pokealbum-trivia-trainer-tag {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--gold-2);
+  opacity: 0.9;
 }
 
 .pokealbum-trivia-timer {
@@ -7635,6 +7689,14 @@ body.is-liga-wide {
   filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.5));
 }
 
+.pokealbum-roulette-icon-img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.5));
+}
+
 .pokealbum-roulette-hub {
   position: absolute;
   top: 50%;
@@ -7677,6 +7739,16 @@ body.is-liga-wide {
 .pokealbum-roulette-result-icon {
   font-size: 36px;
   line-height: 1;
+}
+
+.pokealbum-roulette-result-icon .pokealbum-roulette-icon-img {
+  width: 36px;
+  height: 36px;
+}
+
+.pokealbum-roulette-landed-card .pokealbum-roulette-result-icon .pokealbum-roulette-icon-img {
+  width: 44px;
+  height: 44px;
 }
 
 .pokealbum-roulette-result-text {
@@ -8119,4 +8191,60 @@ body.is-liga-wide {
   font-weight: 700;
   color: var(--gold-2);
   margin-bottom: 16px;
+}
+
+.pokealbum-parade {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  margin: 4px auto 0;
+  height: 52px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pokealbum-parade-walker {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
+}
+
+.pokealbum-parade-walker.is-right {
+  animation-name: pokealbum-parade-walk-right;
+}
+
+.pokealbum-parade-walker.is-left {
+  animation-name: pokealbum-parade-walk-left;
+}
+
+@keyframes pokealbum-parade-walk-right {
+  from {
+    left: -40px;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+@keyframes pokealbum-parade-walk-left {
+  from {
+    left: 100%;
+  }
+  to {
+    left: -40px;
+  }
+}
+
+@media (max-width: 640px) {
+  .pokealbum-parade {
+    height: 40px;
+  }
+  .pokealbum-parade-walker {
+    width: 24px;
+    height: 24px;
+  }
 }

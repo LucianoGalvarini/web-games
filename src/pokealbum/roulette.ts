@@ -13,6 +13,8 @@ export type RouletteSegment = {
   label: string
   description: string
   icon: string
+  // Optional item-sprite icon shown instead of the emoji, when one fits the reward thematically.
+  image?: string
   kind: RouletteRewardKind
   weight: number
   amount?: number
@@ -20,12 +22,15 @@ export type RouletteSegment = {
   max?: number
 }
 
+const ITEM_IMG = '/pokealbum/images/items/'
+
 export const ROULETTE_SEGMENTS: RouletteSegment[] = [
   {
     id: 'coins10',
     label: 'Monedas',
     description: 'Ganás 10 monedas directas a tu saldo.',
     icon: '🪙',
+    image: `${ITEM_IMG}nugget.png`,
     kind: 'coins',
     weight: 16,
     amount: 10,
@@ -35,6 +40,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: 'Monedas',
     description: 'Ganás 25 monedas directas a tu saldo.',
     icon: '💰',
+    image: `${ITEM_IMG}big-nugget.png`,
     kind: 'coins',
     weight: 10,
     amount: 25,
@@ -44,6 +50,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: 'Monedón',
     description: 'Ganás 50 monedas directas a tu saldo.',
     icon: '💵',
+    image: `${ITEM_IMG}coin-case.png`,
     kind: 'coins',
     weight: 5,
     amount: 50,
@@ -53,6 +60,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: 'Bote variable',
     description: 'Un bote de monedas al azar, entre 20 y 150.',
     icon: '🎁',
+    image: `${ITEM_IMG}rare-candy.png`,
     kind: 'coins',
     weight: 8,
     min: 20,
@@ -63,6 +71,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: 'Sobre gratis',
     description: 'Un sobre de 5 figuritas, sin gastar monedas.',
     icon: '📦',
+    image: `${ITEM_IMG}poke-ball.png`,
     kind: 'freePack',
     weight: 10,
   },
@@ -71,6 +80,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: 'Pregunta de bonus',
     description: 'Una pregunta de trivia que no gasta tu límite diario.',
     icon: '❓',
+    image: `${ITEM_IMG}exp-share.png`,
     kind: 'freeQuestion',
     weight: 15,
   },
@@ -79,6 +89,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: 'Todo o nada',
     description: 'Tu próxima apuesta acertada paga el doble.',
     icon: '🎯',
+    image: `${ITEM_IMG}amulet-coin.png`,
     kind: 'wagerBoost',
     weight: 8,
   },
@@ -87,6 +98,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: 'Giro extra',
     description: 'Girás la ruleta de nuevo, ahora mismo, sin esperar.',
     icon: '🔄',
+    image: `${ITEM_IMG}premier-ball.png`,
     kind: 'extraSpin',
     weight: 6,
   },
@@ -121,6 +133,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: '¡Mewtwo!',
     description: 'El premio mayor: ganás 150 monedas de una.',
     icon: '🏆',
+    image: `${ITEM_IMG}master-ball.png`,
     kind: 'jackpot',
     weight: 1,
     amount: 150,

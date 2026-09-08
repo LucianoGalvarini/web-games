@@ -827,3 +827,18 @@ function retryPackOpenSoundIfStuck(): void {
     void packOpenAudio.play().catch(() => {})
   }
 }
+
+// --- Pokémon cries (Kanto only, ids 1-151) ---
+
+const POKEMON_CRY_DIR = '/pokealbum/audio/cries/'
+
+// A short one-shot per species, not a long-lived singleton like music/pack-open sound — a fresh
+// Audio element per call is fine here and avoids juggling 151 pre-allocated elements.
+export function playPokemonCry(id: number, volumeScale = 1): void {
+  if (muted || id < 1 || id > 151) {
+    return
+  }
+  const el = new Audio(`${POKEMON_CRY_DIR}${id}.ogg`)
+  el.volume = Math.max(0, Math.min(1, (volume / VOLUME_MAX) * volumeScale))
+  void el.play().catch(() => {})
+}

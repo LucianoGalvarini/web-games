@@ -19,6 +19,13 @@ const WHEEL_COLORS = ['#e0402c', '#3868c8', '#e4b45a', '#3a2818']
 const SPIN_ANIMATION_MS = 3200
 const ICON_RADIUS = 150
 
+function SegmentIcon({ segment }: { segment: RouletteSegment }) {
+  if (segment.image) {
+    return <img src={segment.image} alt={segment.label} className="pokealbum-roulette-icon-img" draggable={false} />
+  }
+  return <>{segment.icon}</>
+}
+
 function formatCountdown(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
   const h = Math.floor(totalSeconds / 3600)
@@ -111,7 +118,7 @@ export function RouletteWheel({ spinReadyAt, pendingSpin, lastSpinResult, onSpin
                 className="pokealbum-roulette-icon"
                 style={{ transform: `rotate(${angle}deg) translate(${ICON_RADIUS}px) rotate(${-angle}deg)` }}
               >
-                {seg.icon}
+                <SegmentIcon segment={seg} />
               </span>
             )
           })}
@@ -138,7 +145,9 @@ export function RouletteWheel({ spinReadyAt, pendingSpin, lastSpinResult, onSpin
       <div className="pokealbum-roulette-reward-slot">
         {pendingSpin && !spinning && (
           <div className="pokealbum-roulette-landed-card">
-            <span className="pokealbum-roulette-result-icon">{pendingSpin.segment.icon}</span>
+            <span className="pokealbum-roulette-result-icon">
+              <SegmentIcon segment={pendingSpin.segment} />
+            </span>
             <strong>{pendingSpin.segment.label}</strong>
             <p>{pendingSpin.segment.description}</p>
             <button type="button" className="btn btn-gold" onMouseEnter={() => playSfx('hover')} onClick={handleClaim}>
@@ -149,7 +158,9 @@ export function RouletteWheel({ spinReadyAt, pendingSpin, lastSpinResult, onSpin
 
         {!pendingSpin && lastSpinResult && !spinning && (
           <div className="pokealbum-roulette-result-card">
-            <span className="pokealbum-roulette-result-icon">{lastSpinResult.segment.icon}</span>
+            <span className="pokealbum-roulette-result-icon">
+              <SegmentIcon segment={lastSpinResult.segment} />
+            </span>
             <span className="pokealbum-roulette-result-text">{claimedMessage(lastSpinResult)}</span>
           </div>
         )}
