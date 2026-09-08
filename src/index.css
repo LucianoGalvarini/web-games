@@ -6063,7 +6063,9 @@ body.is-liga-wide {
 .pokealbum-app .modal.pokealbum-dex,
 .pokealbum-app .modal.pokealbum-changelog,
 .pokealbum-app .modal.pokealbum-menu,
-.pokealbum-app .modal.pokealbum-roulette-modal {
+.pokealbum-app .modal.pokealbum-roulette-modal,
+.pokealbum-app .modal.pokealbum-achievements-modal,
+.pokealbum-app .modal.pokealbum-tie-bonus {
   font-family: "Pixelify Sans", "VT323", monospace;
   background: var(--fr-cream);
   color: var(--fr-ink);
@@ -6076,6 +6078,8 @@ body.is-liga-wide {
 .pokealbum-app .modal.pokealbum-changelog h2,
 .pokealbum-app .modal.pokealbum-menu h2,
 .pokealbum-app .modal.pokealbum-roulette-modal h2,
+.pokealbum-app .modal.pokealbum-achievements-modal h2,
+.pokealbum-app .modal.pokealbum-tie-bonus h2,
 .pokealbum-app .modal.pokealbum-opening p {
   color: var(--fr-red-dark);
 }
@@ -6111,7 +6115,8 @@ body.is-liga-wide {
 
 .pokealbum-app .pokealbum-wager-banner,
 .pokealbum-app .pokealbum-trivia-value,
-.pokealbum-app .pokealbum-trivia-timer {
+.pokealbum-app .pokealbum-trivia-timer,
+.pokealbum-app .pokealbum-trivia-streak {
   color: var(--fr-red-dark);
 }
 
@@ -6495,6 +6500,12 @@ body.is-liga-wide {
   font-size: 13.5px;
   font-weight: 700;
   color: #e0745a;
+}
+
+.pokealbum-trivia-streak {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--gold-2);
 }
 
 .pokealbum-trivia-timer {
@@ -7732,6 +7743,10 @@ body.is-liga-wide {
   position: relative;
 }
 
+.pokealbum-achievements-open {
+  width: 100%;
+}
+
 .pokealbum-menu-dot {
   position: absolute;
   top: -5px;
@@ -7941,4 +7956,167 @@ body.is-liga-wide {
   font-size: 20px;
   font-weight: 700;
   color: var(--gold-2, #e4b45a);
+}
+
+.pokealbum-achievements-modal {
+  width: min(560px, 96vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.pokealbum-achievements-progress {
+  font-weight: 700;
+  color: var(--fr-red-dark);
+  margin-bottom: 12px;
+}
+
+.pokealbum-achievements-group {
+  margin-top: 14px;
+}
+
+.pokealbum-achievements-group-title {
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+  margin-bottom: 8px;
+}
+
+.pokealbum-achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pokealbum-achievement {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px solid rgba(58, 40, 24, 0.2);
+  background: rgba(58, 40, 24, 0.05);
+  opacity: 0.6;
+}
+
+.pokealbum-achievement.is-unlocked {
+  opacity: 1;
+  border-color: var(--gold);
+  background: rgba(228, 180, 90, 0.14);
+}
+
+.pokealbum-achievement-icon {
+  font-size: 26px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.pokealbum-achievement-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pokealbum-achievement-body strong {
+  font-size: 14px;
+}
+
+.pokealbum-achievement-body p {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.pokealbum-achievement-reward {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--fr-red-dark);
+}
+
+.pokealbum-achievement-toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: var(--fr-cream, #2a1c10);
+  color: var(--fr-ink, #f4e6cf);
+  border: 3px solid var(--gold, #e4b45a);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.4);
+  animation: pokealbum-achievement-toast-in 0.35s cubic-bezier(0.2, 1.4, 0.5, 1);
+  pointer-events: none;
+}
+
+@keyframes pokealbum-achievement-toast-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -16px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.pokealbum-achievement-toast-icon {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.pokealbum-achievement-toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pokealbum-achievement-toast-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gold-2, #e4b45a);
+}
+
+.pokealbum-achievement-toast-body strong {
+  font-size: 15px;
+}
+
+.pokealbum-achievement-toast-reward {
+  font-size: 12.5px;
+  opacity: 0.85;
+}
+
+.pokealbum-tie-bonus {
+  width: min(460px, 96vw);
+}
+
+.pokealbum-tie-bonus-icon {
+  font-size: 44px;
+  line-height: 1;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.pokealbum-tie-bonus h2 {
+  font-size: 24px;
+  line-height: 1.2;
+  margin: 4px 0 12px;
+}
+
+.pokealbum-tie-bonus p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.pokealbum-tie-bonus-amount {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold-2);
+  margin-bottom: 16px;
 }

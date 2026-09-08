@@ -164,6 +164,7 @@ export function unlockSfx(): void {
   if (musicPlaying && musicAudio?.paused) {
     void musicAudio.play().catch(() => {})
   }
+  retryPackOpenSoundIfStuck()
 }
 
 export function installSfxUnlock(): void {
@@ -302,6 +303,7 @@ function chord(ctx: AudioContext, dest: AudioNode, freqs: number[], gap: number,
 }
 
 export function playSfx(name: SfxName): void {
+  retryPackOpenSoundIfStuck()
   const dest = out()
   const ctx = audio
   if (!dest || !ctx) {
@@ -765,12 +767,19 @@ export function cycleMusicTrack(): string {
 const PACK_OPEN_START_OFFSET = 1
 
 let packOpenAudio: HTMLAudioElement | null = null
+// True from playPackOpenSound() until it actually ends or is stopped — used to notice a play()
+// call that got silently blocked (some browsers, e.g. Brave, are stricter about which calls count
+// as "triggered by a user gesture") and retry it on the next interaction instead of staying silent.
+let packOpenActive = false
 
 function getPackOpenAudio(): HTMLAudioElement {
   if (!packOpenAudio) {
     packOpenAudio = new Audio(PACK_OPEN_SRC)
     packOpenAudio.preload = 'auto'
-    packOpenAudio.addEventListener('ended', restoreMusicVolume)
+    packOpenAudio.addEventListener('ended', () => {
+      packOpenActive = false
+      restoreMusicVolume()
+    })
   }
   return packOpenAudio
 }
@@ -784,6 +793,7 @@ export function playPackOpenSound(): void {
   if (muted) {
     return
   }
+  packOpenActive = true
   const el = getPackOpenAudio()
   el.volume = volume / VOLUME_MAX
   const seekAndPlay = () => {
@@ -792,7 +802,9 @@ export function playPackOpenSound(): void {
     } catch {
       /* seeking before metadata is ready on some browsers; play from the start instead */
     }
-    void el.play().catch(() => {})
+    void el.play().catch(() => {
+      /* blocked; retryPackOpenSoundIfStuck() below picks it up on the next interaction */
+    })
   }
   if (el.readyState >= 1) {
     seekAndPlay()
@@ -802,9 +814,16 @@ export function playPackOpenSound(): void {
 }
 
 export function stopPackOpenSound(): void {
+  packOpenActive = false
   if (packOpenAudio && !packOpenAudio.paused) {
     packOpenAudio.pause()
     packOpenAudio.currentTime = 0
   }
   restoreMusicVolume()
+}
+
+function retryPackOpenSoundIfStuck(): void {
+  if (packOpenActive && packOpenAudio?.paused) {
+    void packOpenAudio.play().catch(() => {})
+  }
 }

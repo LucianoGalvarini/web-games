@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePokeAlbum } from '../hooks/usePokeAlbum'
-import { DUPLICATE_SELL_VALUE, PACK_COST, PACK_SIZE, POKEMON, RARITY_LABEL } from '../pokealbum'
+import { ACHIEVEMENTS, DUPLICATE_SELL_VALUE, PACK_COST, PACK_SIZE, POKEMON, RARITY_LABEL } from '../pokealbum'
 import type { Rarity } from '../pokealbum'
 import { POKEALBUM_MANUAL } from '../shared/manuals'
 import {
@@ -13,6 +13,8 @@ import {
   stopMusic,
   toggleMusicMuted,
 } from '../shared/sfx'
+import { AchievementsModal } from './pokealbum/AchievementsModal'
+import { AchievementToast } from './pokealbum/AchievementToast'
 import { AlbumGrid } from './pokealbum/AlbumGrid'
 import { ChangelogModal } from './pokealbum/ChangelogModal'
 import { CheatLockOverlay } from './pokealbum/CheatLockOverlay'
@@ -20,6 +22,7 @@ import { PackReveal } from './pokealbum/PackReveal'
 import { PokedexModal } from './pokealbum/PokedexModal'
 import { RouletteModal } from './pokealbum/RouletteModal'
 import { SettingsMenu } from './pokealbum/SettingsMenu'
+import { TieBugBonusModal } from './pokealbum/TieBugBonusModal'
 import { TriviaCard } from './pokealbum/TriviaCard'
 import { ManualTour } from './ManualTour'
 import { TableHud } from './TableHud'
@@ -38,6 +41,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
   const [changelogOpen, setChangelogOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [rouletteOpen, setRouletteOpen] = useState(false)
+  const [achievementsOpen, setAchievementsOpen] = useState(false)
   const [coinPopups, setCoinPopups] = useState<{ id: number; delta: number }[]>([])
   const [pokedexId, setPokedexId] = useState<number | null>(null)
   const [justCopied, setJustCopied] = useState(false)
@@ -107,6 +111,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
   return (
     <div className="app pokealbum-app">
       {game.cheatLocked && <CheatLockOverlay remainingMs={game.cheatLockRemainingMs} />}
+      <AchievementToast queue={game.achievementQueue} onDismiss={game.dismissAchievement} />
       <TableHud onManual={() => setRulesOpen(true)} />
       <div className="shell pokealbum-shell">
         <aside className="panel panel-controls" data-manual="controls">
@@ -164,6 +169,8 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             freeTriviaLimit={game.freeTriviaLimit}
             bonusQuestions={game.bonusQuestions}
             wagerBoost={game.wagerBoost}
+            triviaStreak={game.triviaStreak}
+            bestTriviaStreak={game.bestTriviaStreak}
             onStart={game.startTrivia}
             onNewQuestion={game.resetTrivia}
             onExpire={game.expireTrivia}
@@ -180,6 +187,15 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
           >
             🎰 Ruleta y recompensas
             {game.canClaimDailyLogin && <span className="pokealbum-menu-dot" aria-hidden="true" />}
+          </button>
+
+          <button
+            type="button"
+            className="btn pokealbum-achievements-open"
+            onMouseEnter={() => playSfx('hover')}
+            onClick={() => setAchievementsOpen(true)}
+          >
+            🏆 Logros ({game.unlockedAchievements.length}/{ACHIEVEMENTS.length})
           </button>
         </aside>
 
@@ -326,6 +342,16 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
         lastSpinResult={game.lastSpinResult}
         onSpin={game.spin}
         onClaimSpin={game.claimSpin}
+      />
+      <AchievementsModal
+        open={achievementsOpen}
+        onClose={() => setAchievementsOpen(false)}
+        unlockedAchievements={game.unlockedAchievements}
+      />
+      <TieBugBonusModal
+        open={game.tieBugBonusGranted}
+        amount={game.tieBugBonusAmount}
+        onClose={game.dismissTieBugBonus}
       />
     </div>
   )

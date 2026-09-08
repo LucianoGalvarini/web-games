@@ -19,6 +19,7 @@ import {
   creditDuplicate,
   decodeSave,
   encodeSave,
+  evaluateNewAchievements,
   hasSignature,
   openPack,
   prettyLabel,
@@ -31,7 +32,7 @@ import {
   spinRoulette,
   wasSignatureTampered,
 } from '../pokealbum'
-import type { AlbumState, PackResult, Rarity, RouletteSegment, StatKey } from '../pokealbum'
+import type { Achievement, AchievementContext, AlbumState, PackResult, Rarity, RouletteSegment, StatKey } from '../pokealbum'
 import { getCheatLockRemainingMs, startDevToolsWatch, triggerCheatLock } from '../shared/anticheat'
 import { playPackOpenSound, playSfx, stopPackOpenSound } from '../shared/sfx'
 
@@ -193,6 +194,148 @@ function writeSave(state: AlbumState): void {
   } catch {
     /* ignore quota */
   }
+}
+
+// Whether a save already existed before this session started — used to gate the one-time
+// tie-bug compensation bonus to returning players only, not to brand-new saves created after
+// the fix already shipped.
+function hadExistingSaveAtLoad(): boolean {
+  try {
+    return localStorage.getItem(SAVE_KEY) !== null
+  } catch {
+    return false
+  }
+}
+
+const TIE_BUG_BONUS_KEY = 'pokealbum-tie-bug-bonus-claimed'
+const TIE_BUG_BONUS_AMOUNT = 2000
+
+function readTieBugBonusClaimed(): boolean {
+  try {
+    const raw = localStorage.getItem(TIE_BUG_BONUS_KEY)
+    if (!raw) {
+      return false
+    }
+    const parsed = JSON.parse(raw) as { claimed?: boolean; sig?: string }
+    if (typeof parsed.claimed !== 'boolean') {
+      return false
+    }
+    if (parsed.sig !== undefined && parsed.sig !== signPayload(`tieBugBonus|${parsed.claimed}`)) {
+      // Tampered claim record (e.g. flipped back to false to re-claim) — treat as already
+      // claimed so it can't be farmed, and let the shared cheat-lock catch the tamper attempt.
+      triggerCheatLock()
+      return true
+    }
+    return parsed.claimed
+  } catch {
+    return false
+  }
+}
+
+function writeTieBugBonusClaimed(): void {
+  try {
+    localStorage.setItem(TIE_BUG_BONUS_KEY, JSON.stringify({ claimed: true, sig: signPayload('tieBugBonus|true') }))
+  } catch {
+    /* ignore quota */
+  }
+}
+
+const TRIVIA_STATS_KEY = 'pokealbum-trivia-stats'
+
+export type TriviaStatsState = {
+  streak: number
+  bestStreak: number
+  correctTotal: number
+  correctByMode: Record<TriviaMode, number>
+  packsOpened: number
+  recycleCount: number
+  unlocked: string[]
+}
+
+function initialTriviaStats(): TriviaStatsState {
+  return {
+    streak: 0,
+    bestStreak: 0,
+    correctTotal: 0,
+    correctByMode: { statPair: 0, trueFalse: 0, multipleChoice: 0 },
+    packsOpened: 0,
+    recycleCount: 0,
+    unlocked: [],
+  }
+}
+
+function triviaStatsSig(state: TriviaStatsState): string {
+  const unlockedCanonical = [...state.unlocked].sort().join(',')
+  return signPayload(
+    `${state.streak}|${state.bestStreak}|${state.correctTotal}|${state.correctByMode.statPair}|${state.correctByMode.trueFalse}|${state.correctByMode.multipleChoice}|${state.packsOpened}|${state.recycleCount}|${unlockedCanonical}`,
+  )
+}
+
+function readTriviaStats(): TriviaStatsState {
+  try {
+    const raw = localStorage.getItem(TRIVIA_STATS_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<TriviaStatsState> & { sig?: string }
+      if (
+        typeof parsed.streak === 'number' &&
+        typeof parsed.bestStreak === 'number' &&
+        typeof parsed.correctTotal === 'number' &&
+        typeof parsed.correctByMode === 'object' &&
+        parsed.correctByMode !== null &&
+        typeof parsed.packsOpened === 'number' &&
+        typeof parsed.recycleCount === 'number' &&
+        Array.isArray(parsed.unlocked)
+      ) {
+        const state: TriviaStatsState = {
+          streak: parsed.streak,
+          bestStreak: parsed.bestStreak,
+          correctTotal: parsed.correctTotal,
+          correctByMode: {
+            statPair: parsed.correctByMode.statPair ?? 0,
+            trueFalse: parsed.correctByMode.trueFalse ?? 0,
+            multipleChoice: parsed.correctByMode.multipleChoice ?? 0,
+          },
+          packsOpened: parsed.packsOpened,
+          recycleCount: parsed.recycleCount,
+          unlocked: parsed.unlocked.filter((id): id is string => typeof id === 'string'),
+        }
+        if (parsed.sig !== undefined && parsed.sig !== triviaStatsSig(state)) {
+          triggerCheatLock()
+          return initialTriviaStats()
+        }
+        return state
+      }
+    }
+  } catch {
+    /* privacy mode / corrupt data, fall through */
+  }
+  return initialTriviaStats()
+}
+
+function writeTriviaStats(state: TriviaStatsState): void {
+  try {
+    localStorage.setItem(TRIVIA_STATS_KEY, JSON.stringify({ ...state, sig: triviaStatsSig(state) }))
+  } catch {
+    /* ignore quota */
+  }
+}
+
+// Small, stepped bonus on top of the normal trivia reward while a correct-answer streak is alive —
+// it only ever adds coins on a correct answer, so it can't be farmed by answering wrong on purpose.
+function streakBonus(streak: number): number {
+  if (streak >= 20) {
+    return 40
+  }
+  if (streak >= 10) {
+    return 20
+  }
+  if (streak >= 5) {
+    return 10
+  }
+  if (streak >= 3) {
+    return 5
+  }
+  return 0
 }
 
 const DAILY_TRIVIA_KEY = 'pokealbum-trivia-daily'
@@ -363,6 +506,17 @@ function randomId(exclude?: number): number {
   return id
 }
 
+// A "who has more/less" question has no fair answer when the stat is tied — prefer the stat that
+// was already picked, but fall back to any stat that actually differs between the two Pokémon so
+// the question is never unwinnable by construction.
+function pickNonTiedStat(a: Facts, b: Facts, preferredKey: StatKey): StatKey {
+  if (a.stats[preferredKey] !== b.stats[preferredKey]) {
+    return preferredKey
+  }
+  const shuffled = [...STAT_KEYS].sort(() => Math.random() - 0.5)
+  return shuffled.find((key) => a.stats[key] !== b.stats[key]) ?? preferredKey
+}
+
 function fetchFacts(id: number): Promise<Facts> {
   return fetch(`https://pokeapi.co/api/v2/pokemon/${id}`)
     .then((res) => {
@@ -401,6 +555,7 @@ function fetchMoveNameEs(slug: string): Promise<string> {
 }
 
 export function usePokeAlbum() {
+  const hadPriorSave = useRef(hadExistingSaveAtLoad())
   const [album, setAlbum] = useState<AlbumState>(readSave)
   const [page, setPage] = useState(0)
   const [reveal, setReveal] = useState<RevealState>({ phase: 'closed' })
@@ -417,6 +572,9 @@ export function usePokeAlbum() {
   const [lastSpinResult, setLastSpinResult] = useState<{ segment: RouletteSegment; amount: number } | null>(null)
   const [dailyLogin, setDailyLogin] = useState<DailyLoginState>(readDailyLogin)
   const [cheatLockRemainingMs, setCheatLockRemainingMs] = useState<number>(getCheatLockRemainingMs)
+  const [triviaStats, setTriviaStats] = useState<TriviaStatsState>(readTriviaStats)
+  const [achievementQueue, setAchievementQueue] = useState<Achievement[]>([])
+  const [tieBugBonusGranted, setTieBugBonusGranted] = useState(false)
   const factsCache = useRef(new Map<number, Facts>())
   const moveNameCache = useRef(new Map<string, string>())
   const triviaRequest = useRef(0)
@@ -430,6 +588,7 @@ export function usePokeAlbum() {
   const lastSpinAtRef = useRef(lastSpinAt)
   const pendingSpinRef = useRef(pendingSpin)
   const dailyLoginRef = useRef(dailyLogin)
+  const triviaStatsRef = useRef(triviaStats)
   albumRef.current = album
   triviaRef.current = trivia
   revealRef.current = reveal
@@ -440,6 +599,7 @@ export function usePokeAlbum() {
   lastSpinAtRef.current = lastSpinAt
   pendingSpinRef.current = pendingSpin
   dailyLoginRef.current = dailyLogin
+  triviaStatsRef.current = triviaStats
 
   useEffect(() => {
     const stopDevToolsWatch = startDevToolsWatch(() => {
@@ -453,6 +613,89 @@ export function usePokeAlbum() {
       stopDevToolsWatch()
       window.clearInterval(intervalId)
     }
+  }, [])
+
+  // currentAlbum is threaded through explicitly (never read from albumRef here) because these can
+  // run synchronously right after a setAlbum() call in the same event handler, before React has
+  // re-rendered and refreshed albumRef.current — reading the ref here would see stale data.
+  const applyAchievementRewards = useCallback((newlyUnlocked: Achievement[], currentAlbum: AlbumState) => {
+    if (newlyUnlocked.length === 0) {
+      return
+    }
+    let coinDelta = 0
+    let bonusDelta = 0
+    let wagerDelta = 0
+    for (const achievement of newlyUnlocked) {
+      coinDelta += achievement.reward.coins ?? 0
+      bonusDelta += achievement.reward.bonusQuestions ?? 0
+      wagerDelta += achievement.reward.wagerBoost ?? 0
+    }
+    if (coinDelta !== 0) {
+      const next = { ...currentAlbum, coins: currentAlbum.coins + coinDelta }
+      writeSave(next)
+      setAlbum(next)
+    }
+    if (bonusDelta !== 0) {
+      const next = bonusQuestionsRef.current + bonusDelta
+      bonusQuestionsRef.current = next
+      writeNumber(BONUS_QUESTIONS_KEY, next)
+      setBonusQuestions(next)
+    }
+    if (wagerDelta !== 0) {
+      const next = wagerBoostRef.current + wagerDelta
+      wagerBoostRef.current = next
+      writeNumber(WAGER_BOOST_KEY, next)
+      setWagerBoost(next)
+    }
+    const nextUnlocked = [...triviaStatsRef.current.unlocked, ...newlyUnlocked.map((a) => a.id)]
+    const nextStats = { ...triviaStatsRef.current, unlocked: nextUnlocked }
+    triviaStatsRef.current = nextStats
+    writeTriviaStats(nextStats)
+    setTriviaStats(nextStats)
+    setAchievementQueue((prev) => [...prev, ...newlyUnlocked])
+    playSfx('legendary')
+  }, [])
+
+  const checkAchievements = useCallback(
+    (currentAlbum: AlbumState) => {
+      const ctx: AchievementContext = {
+        album: currentAlbum,
+        triviaCorrectTotal: triviaStatsRef.current.correctTotal,
+        triviaCorrectByMode: triviaStatsRef.current.correctByMode,
+        bestTriviaStreak: triviaStatsRef.current.bestStreak,
+        packsOpened: triviaStatsRef.current.packsOpened,
+        recycleCount: triviaStatsRef.current.recycleCount,
+      }
+      const unlockedSet = new Set(triviaStatsRef.current.unlocked)
+      const newlyUnlocked = evaluateNewAchievements(ctx, unlockedSet)
+      applyAchievementRewards(newlyUnlocked, currentAlbum)
+    },
+    [applyAchievementRewards],
+  )
+
+  const dismissAchievement = useCallback(() => {
+    setAchievementQueue((prev) => prev.slice(1))
+  }, [])
+
+  useEffect(() => {
+    // currentAlbum is threaded through (not re-read from albumRef) so the achievement check below
+    // sees the bonus coins immediately, instead of the stale pre-bonus value.
+    let currentAlbum = albumRef.current
+    if (hadPriorSave.current && !readTieBugBonusClaimed()) {
+      currentAlbum = { ...currentAlbum, coins: currentAlbum.coins + TIE_BUG_BONUS_AMOUNT }
+      writeSave(currentAlbum)
+      setAlbum(currentAlbum)
+      writeTieBugBonusClaimed()
+      setTieBugBonusGranted(true)
+    }
+    // Covers save codes imported from elsewhere, or players updating into this feature with an
+    // album/trivia history that already satisfies some achievements.
+    checkAchievements(currentAlbum)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const dismissTieBugBonus = useCallback(() => {
+    setTieBugBonusGranted(false)
   }, [])
 
   const goToPokemonPage = useCallback((id: number) => {
@@ -500,6 +743,11 @@ export function usePokeAlbum() {
       const withDuplicates = applyDuplicatesFrom(afterCost, result)
       writeSave(withDuplicates)
       setAlbum(withDuplicates)
+      const nextStats = { ...triviaStatsRef.current, packsOpened: triviaStatsRef.current.packsOpened + 1 }
+      triviaStatsRef.current = nextStats
+      writeTriviaStats(nextStats)
+      setTriviaStats(nextStats)
+      checkAchievements(withDuplicates)
       const rarity = bestRarity(result.map((item) => item.id))
       setReveal({ phase: 'opening', kind, rarity })
       const duration =
@@ -510,7 +758,7 @@ export function usePokeAlbum() {
         playRevealSfx(result)
       }, duration)
     },
-    [applyDuplicatesFrom, playRevealSfx, reclassifyAgainstPending],
+    [applyDuplicatesFrom, checkAchievements, playRevealSfx, reclassifyAgainstPending],
   )
 
   const openBooster = useCallback(() => {
@@ -639,6 +887,7 @@ export function usePokeAlbum() {
     const nextAlbum = applySticker(albumRef.current, { id, isNew: !wasOwned })
     writeSave(nextAlbum)
     setAlbum(nextAlbum)
+    checkAchievements(nextAlbum)
     const isLegendary = POKEMON.find((p) => p.id === id)?.rarity === 'legendary'
     playSfx(!wasOwned && isLegendary ? 'legendary' : 'sticker')
     const nextPending = current.filter((_, i) => i !== index)
@@ -647,7 +896,7 @@ export function usePokeAlbum() {
     if (nextPending.length === 0) {
       window.setTimeout(() => playSfx('placeAll'), 150)
     }
-  }, [])
+  }, [checkAchievements])
 
   const goToNextPending = useCallback(() => {
     const first = pendingRef.current[0]
@@ -725,6 +974,11 @@ export function usePokeAlbum() {
       const withDuplicate = applyDuplicatesFrom(outcome.state, items)
       writeSave(withDuplicate)
       setAlbum(withDuplicate)
+      const nextStats = { ...triviaStatsRef.current, recycleCount: triviaStatsRef.current.recycleCount + 1 }
+      triviaStatsRef.current = nextStats
+      writeTriviaStats(nextStats)
+      setTriviaStats(nextStats)
+      checkAchievements(withDuplicate)
       const rarity = bestRarity(items.map((item) => item.id))
       setReveal({ phase: 'opening', kind: 'recycle', rarity })
       const duration =
@@ -735,7 +989,7 @@ export function usePokeAlbum() {
         playRevealSfx(items)
       }, duration)
     },
-    [applyDuplicatesFrom, playRevealSfx, reclassifyAgainstPending],
+    [applyDuplicatesFrom, checkAchievements, playRevealSfx, reclassifyAgainstPending],
   )
 
   const startTrivia = useCallback(
@@ -774,8 +1028,9 @@ export function usePokeAlbum() {
             if (triviaRequest.current !== requestId) {
               return
             }
-            const aValue = a.stats[statKey]
-            const bValue = b.stats[statKey]
+            const resolvedStatKey = pickNonTiedStat(a, b, statKey)
+            const aValue = a.stats[resolvedStatKey]
+            const bValue = b.stats[resolvedStatKey]
             setTrivia({
               status: 'ready',
               mode: 'statPair',
@@ -783,10 +1038,10 @@ export function usePokeAlbum() {
               deadline: Date.now() + TRIVIA_TIME_LIMIT_MS,
               aId,
               bId,
-              statKey,
+              statKey: resolvedStatKey,
               aValue,
               bValue,
-              correct: aValue >= bValue ? 'a' : 'b',
+              correct: aValue > bValue ? 'a' : 'b',
             })
           })
           .catch(() => {
@@ -841,13 +1096,14 @@ export function usePokeAlbum() {
               if (triviaRequest.current !== requestId) {
                 return
               }
-              const aValue = a.stats[statKey]
-              const bValue = b.stats[statKey]
+              const resolvedStatKey = pickNonTiedStat(a, b, statKey)
+              const aValue = a.stats[resolvedStatKey]
+              const bValue = b.stats[resolvedStatKey]
               const claimMore = Math.random() < 0.5
               const nameA = POKEMON.find((p) => p.id === aId)?.name ?? `#${aId}`
               const nameB = POKEMON.find((p) => p.id === bId)?.name ?? `#${bId}`
-              const label = STAT_LABEL[statKey]
-              const actuallyMore = aValue >= bValue
+              const label = STAT_LABEL[resolvedStatKey]
+              const actuallyMore = aValue > bValue
               setTrivia({
                 status: 'ready',
                 mode: 'trueFalse',
@@ -919,35 +1175,58 @@ export function usePokeAlbum() {
     [fetchFactsCached, fetchMoveNameEsCached],
   )
 
-  const applyTriviaOutcome = useCallback((isCorrect: boolean, wager: number) => {
-    let boosted = false
-    if (wager > 0 && isCorrect && wagerBoostRef.current > 0) {
-      boosted = true
-      const nextBoost = wagerBoostRef.current - 1
-      wagerBoostRef.current = nextBoost
-      writeNumber(WAGER_BOOST_KEY, nextBoost)
-      setWagerBoost(nextBoost)
-    }
-    const delta = wager > 0 ? (isCorrect ? wager * (boosted ? 2 : 1) : -wager) : isCorrect ? TRIVIA_REWARD : 0
-    if (delta !== 0) {
-      const next = { ...albumRef.current, coins: albumRef.current.coins + delta }
-      writeSave(next)
-      setAlbum(next)
-    }
-    if (wager > 0) {
-      playSfx(isCorrect ? 'wagerWin' : 'wagerLose')
-    } else {
-      playSfx(isCorrect ? 'coin' : 'error')
-    }
-    return delta
-  }, [])
+  const applyTriviaOutcome = useCallback(
+    (isCorrect: boolean, wager: number, mode: TriviaMode) => {
+      let boosted = false
+      if (wager > 0 && isCorrect && wagerBoostRef.current > 0) {
+        boosted = true
+        const nextBoost = wagerBoostRef.current - 1
+        wagerBoostRef.current = nextBoost
+        writeNumber(WAGER_BOOST_KEY, nextBoost)
+        setWagerBoost(nextBoost)
+      }
+
+      const prevStats = triviaStatsRef.current
+      const nextStreak = isCorrect ? prevStats.streak + 1 : 0
+      const streakCoinBonus = isCorrect ? streakBonus(nextStreak) : 0
+      const nextStats: TriviaStatsState = {
+        ...prevStats,
+        streak: nextStreak,
+        bestStreak: Math.max(prevStats.bestStreak, nextStreak),
+        correctTotal: prevStats.correctTotal + (isCorrect ? 1 : 0),
+        correctByMode: {
+          ...prevStats.correctByMode,
+          [mode]: prevStats.correctByMode[mode] + (isCorrect ? 1 : 0),
+        },
+      }
+      triviaStatsRef.current = nextStats
+      writeTriviaStats(nextStats)
+      setTriviaStats(nextStats)
+
+      const baseDelta = wager > 0 ? (isCorrect ? wager * (boosted ? 2 : 1) : -wager) : isCorrect ? TRIVIA_REWARD : 0
+      const delta = baseDelta + streakCoinBonus
+      const currentAlbum = delta !== 0 ? { ...albumRef.current, coins: albumRef.current.coins + delta } : albumRef.current
+      if (delta !== 0) {
+        writeSave(currentAlbum)
+        setAlbum(currentAlbum)
+      }
+      if (wager > 0) {
+        playSfx(isCorrect ? 'wagerWin' : 'wagerLose')
+      } else {
+        playSfx(isCorrect ? 'coin' : 'error')
+      }
+      checkAchievements(currentAlbum)
+      return delta
+    },
+    [checkAchievements],
+  )
 
   const expireTrivia = useCallback(() => {
     const prev = triviaRef.current
     if (prev.status !== 'ready') {
       return
     }
-    const reward = applyTriviaOutcome(false, prev.wager)
+    const reward = applyTriviaOutcome(false, prev.wager, prev.mode)
     setTrivia({ ...prev, status: 'answered', reward, timedOut: true })
   }, [applyTriviaOutcome])
 
@@ -958,7 +1237,7 @@ export function usePokeAlbum() {
         return
       }
       const isCorrect = picked === prev.correct
-      const reward = applyTriviaOutcome(isCorrect, prev.wager)
+      const reward = applyTriviaOutcome(isCorrect, prev.wager, prev.mode)
       setTrivia({ ...prev, status: 'answered', picked, reward })
     },
     [applyTriviaOutcome],
@@ -971,7 +1250,7 @@ export function usePokeAlbum() {
         return
       }
       const isCorrect = picked === prev.isTrue
-      const reward = applyTriviaOutcome(isCorrect, prev.wager)
+      const reward = applyTriviaOutcome(isCorrect, prev.wager, prev.mode)
       setTrivia({ ...prev, status: 'answered', picked, reward })
     },
     [applyTriviaOutcome],
@@ -984,7 +1263,7 @@ export function usePokeAlbum() {
         return
       }
       const isCorrect = picked === prev.correctIndex
-      const reward = applyTriviaOutcome(isCorrect, prev.wager)
+      const reward = applyTriviaOutcome(isCorrect, prev.wager, prev.mode)
       setTrivia({ ...prev, status: 'answered', picked, reward })
     },
     [applyTriviaOutcome],
@@ -1105,5 +1384,13 @@ export function usePokeAlbum() {
     importCode,
     cheatLocked: cheatLockRemainingMs > 0,
     cheatLockRemainingMs,
+    triviaStreak: triviaStats.streak,
+    bestTriviaStreak: triviaStats.bestStreak,
+    unlockedAchievements: triviaStats.unlocked,
+    achievementQueue,
+    dismissAchievement,
+    tieBugBonusGranted,
+    tieBugBonusAmount: TIE_BUG_BONUS_AMOUNT,
+    dismissTieBugBonus,
   }
 }

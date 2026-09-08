@@ -1,8 +1,26 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.10.0'
+export const CURRENT_VERSION = '1.12.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.12.0',
+    date: '2026-09-08',
+    changes: [
+      'Se arregló un bug en las preguntas de "¿quién tiene más/menos?": cuando los dos Pokémon empataban en esa estadística, el juego igual marcaba una respuesta como incorrecta y podías perder monedas sin poder acertar. Ahora esas preguntas nunca salen empatadas.',
+      'Regalo de disculpas: los jugadores que ya tenían una partida reciben 2000 monedas una única vez por el percance.',
+      'Se corrigió que el sonido de abrir sobre a veces se quedara mudo en algunos navegadores (como Brave); ahora se reintenta solo en la siguiente interacción si eso pasa.',
+    ],
+  },
+  {
+    version: '1.11.0',
+    date: '2026-09-08',
+    changes: [
+      'Racha de trivia: acertar preguntas seguidas da un bonus de monedas creciente, y se corta apenas fallás una.',
+      'Nuevos logros (🏆 Logros en la barra lateral): de trivia (rachas, totales acertados, cada modalidad) y de álbum (primera figurita, página completa, mitad del dex, cada rareza completa, dex completo, sobres abiertos, reciclajes). Cada uno da monedas y algunos también preguntas de bonus o el multiplicador "todo o nada".',
+      'Un cartel avisa apenas se desbloquea un logro nuevo.',
+    ],
+  },
   {
     version: '1.10.0',
     date: '2026-09-08',

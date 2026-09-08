@@ -36,6 +36,7 @@ export {
   sellDuplicate,
   weightedPick,
 } from './pack'
+export { ACHIEVEMENTS, evaluateNewAchievements } from './achievements'
 export { decodeSave, encodeSave, hasSignature, wasSignatureTampered } from './save'
 export { signPayload, verifyPayload } from './anticheat'
 export { CHANGELOG, CURRENT_VERSION } from './changelog'
@@ -45,3 +46,4 @@ export type { StatKey } from './data'
 export type { SellAllResult } from './pack'
 export type { ChangelogEntry } from './changelog'
 export type { RouletteRewardKind, RouletteSegment } from './roulette'
+export type { Achievement, AchievementCategory, AchievementContext, AchievementReward, AchievementTriviaMode } from './achievements'

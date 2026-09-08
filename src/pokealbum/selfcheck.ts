@@ -1,3 +1,4 @@
+import { ACHIEVEMENTS, evaluateNewAchievements } from './achievements'
 import { POKEMON, RARITY_WEIGHT, TOTAL_POKEMON, bestRarity } from './data'
 import { DUPLICATE_SELL_VALUE, RECYCLE_COST } from './economy'
 import {
@@ -244,5 +245,49 @@ assert(
   'rollSegmentAmount con rng()≈1 devuelve el máximo del bote.',
 )
 assert(jackpot && rollSegmentAmount(jackpot, () => 0) === jackpot.amount, 'rollSegmentAmount de un monto fijo ignora el rng.')
+
+const achievementIds = new Set(ACHIEVEMENTS.map((a) => a.id))
+assert(achievementIds.size === ACHIEVEMENTS.length, 'Los ids de logros son únicos.')
+
+const emptyCtx = {
+  album: createInitialAlbum(0),
+  triviaCorrectTotal: 0,
+  triviaCorrectByMode: { statPair: 0, trueFalse: 0, multipleChoice: 0 },
+  bestTriviaStreak: 0,
+  packsOpened: 0,
+  recycleCount: 0,
+}
+assert(
+  evaluateNewAchievements(emptyCtx, new Set()).length === 0,
+  'Un contexto vacío no desbloquea ningún logro.',
+)
+
+const fullAlbum = createInitialAlbum(0)
+for (const p of POKEMON) {
+  fullAlbum.entries[p.id] = { owned: true, duplicates: 0 }
+}
+const fullCtx = {
+  album: fullAlbum,
+  triviaCorrectTotal: 999,
+  triviaCorrectByMode: { statPair: 999, trueFalse: 999, multipleChoice: 999 },
+  bestTriviaStreak: 999,
+  packsOpened: 999,
+  recycleCount: 999,
+}
+assert(
+  evaluateNewAchievements(fullCtx, new Set()).length === ACHIEVEMENTS.length,
+  'Un contexto que cumple todo desbloquea todos los logros.',
+)
+assert(
+  evaluateNewAchievements(fullCtx, achievementIds).length === 0,
+  'Los logros ya desbloqueados no se vuelven a reportar como nuevos.',
+)
+
+const oneCorrectCtx = { ...emptyCtx, triviaCorrectTotal: 1 }
+const firstCorrect = evaluateNewAchievements(oneCorrectCtx, new Set())
+assert(
+  firstCorrect.length === 1 && firstCorrect[0].id === 'trivia_first_correct',
+  'Una sola respuesta correcta solo desbloquea el logro de primera correcta.',
+)
 
 console.log('pokealbum selfcheck ok')

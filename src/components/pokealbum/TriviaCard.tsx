@@ -11,6 +11,8 @@ type TriviaCardProps = {
   freeTriviaLimit: number
   bonusQuestions: number
   wagerBoost: number
+  triviaStreak: number
+  bestTriviaStreak: number
   onStart: (wager: number) => void
   onNewQuestion: () => void
   onExpire: () => void
@@ -55,6 +57,8 @@ export function TriviaCard({
   freeTriviaLimit,
   bonusQuestions,
   wagerBoost,
+  triviaStreak,
+  bestTriviaStreak,
   onStart,
   onNewQuestion,
   onExpire,
@@ -81,6 +85,12 @@ export function TriviaCard({
         {wagerBoost > 0 && (
           <p className="pokealbum-trivia-daily">
             Tenés {wagerBoost} bonus de "Todo o nada": tu próxima apuesta acertada paga el doble.
+          </p>
+        )}
+        {(triviaStreak > 0 || bestTriviaStreak > 0) && (
+          <p className="pokealbum-trivia-streak">
+            {triviaStreak > 0 ? `🔥 Racha actual: ${triviaStreak}` : 'Sin racha activa'}
+            {bestTriviaStreak > 0 ? ` · Mejor racha: ${bestTriviaStreak}` : ''}
           </p>
         )}
         <button
@@ -162,6 +172,11 @@ export function TriviaCard({
               ? `Incorrecto. Perdiste ${Math.abs(reward)} monedas.`
               : 'Incorrecto. No ganaste monedas.'}
       </p>
+      {triviaStreak > 0 ? (
+        <p className="pokealbum-trivia-streak">🔥 Racha actual: {triviaStreak}</p>
+      ) : (
+        bestTriviaStreak > 0 && <p className="pokealbum-trivia-streak">Se cortó la racha.</p>
+      )}
       <button type="button" className="btn btn-gold" onMouseEnter={() => playSfx('hover')} onClick={onNewQuestion}>
         Nueva pregunta
       </button>
