@@ -8,6 +8,7 @@ import {
   getMusicTrackName,
   isMusicMuted,
   playSfx,
+  preloadPackOpenSound,
   startMusic,
   stopMusic,
   toggleMusicMuted,
@@ -74,6 +75,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
   useEffect(() => {
     playSfx('enter')
     startMusic()
+    preloadPackOpenSound()
     return () => stopMusic()
   }, [])
 
@@ -316,10 +318,12 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
         canClaim={game.canClaimDailyLogin}
         rewards={game.dailyLoginRewards}
         streakLength={game.dailyLoginStreakLength}
-        onClaim={game.claimDailyLogin}
+        onClaimDailyLogin={game.claimDailyLogin}
         spinReadyAt={game.spinReadyAt}
+        pendingSpin={game.pendingSpin}
         lastSpinResult={game.lastSpinResult}
         onSpin={game.spin}
+        onClaimSpin={game.claimSpin}
       />
     </div>
   )

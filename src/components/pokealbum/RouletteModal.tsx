@@ -2,6 +2,8 @@ import type { RouletteSegment } from '../../pokealbum'
 import { DailyLogin } from './DailyLogin'
 import { RouletteWheel } from './RouletteWheel'
 
+type SpinResult = { segment: RouletteSegment; amount: number }
+
 type RouletteModalProps = {
   open: boolean
   onClose: () => void
@@ -10,10 +12,12 @@ type RouletteModalProps = {
   canClaim: boolean
   rewards: number[]
   streakLength: number
-  onClaim: () => void
+  onClaimDailyLogin: () => void
   spinReadyAt: number
-  lastSpinResult: { segment: RouletteSegment; amount: number } | null
+  pendingSpin: SpinResult | null
+  lastSpinResult: SpinResult | null
   onSpin: () => void
+  onClaimSpin: () => void
 }
 
 export function RouletteModal({
@@ -24,10 +28,12 @@ export function RouletteModal({
   canClaim,
   rewards,
   streakLength,
-  onClaim,
+  onClaimDailyLogin,
   spinReadyAt,
+  pendingSpin,
   lastSpinResult,
   onSpin,
+  onClaimSpin,
 }: RouletteModalProps) {
   if (!open) {
     return null
@@ -52,9 +58,15 @@ export function RouletteModal({
           canClaim={canClaim}
           rewards={rewards}
           streakLength={streakLength}
-          onClaim={onClaim}
+          onClaim={onClaimDailyLogin}
         />
-        <RouletteWheel spinReadyAt={spinReadyAt} lastSpinResult={lastSpinResult} onSpin={onSpin} />
+        <RouletteWheel
+          spinReadyAt={spinReadyAt}
+          pendingSpin={pendingSpin}
+          lastSpinResult={lastSpinResult}
+          onSpin={onSpin}
+          onClaim={onClaimSpin}
+        />
       </div>
     </div>
   )

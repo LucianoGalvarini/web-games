@@ -3,10 +3,14 @@ import { ROULETTE_SEGMENTS } from '../../pokealbum'
 import type { RouletteSegment } from '../../pokealbum'
 import { playSfx } from '../../shared/sfx'
 
+type SpinResult = { segment: RouletteSegment; amount: number }
+
 type RouletteWheelProps = {
   spinReadyAt: number
-  lastSpinResult: { segment: RouletteSegment; amount: number } | null
+  pendingSpin: SpinResult | null
+  lastSpinResult: SpinResult | null
   onSpin: () => void
+  onClaim: () => void
 }
 
 const SEGMENT_COUNT = ROULETTE_SEGMENTS.length
@@ -23,22 +27,32 @@ function formatCountdown(ms: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-function resultSuffix(result: { segment: RouletteSegment; amount: number }): string {
-  if (result.segment.kind === 'coins' || result.segment.kind === 'jackpot') {
-    return ` +${result.amount} monedas`
+function claimedMessage(result: SpinResult): string {
+  const { segment, amount } = result
+  switch (segment.kind) {
+    case 'coins':
+    case 'jackpot':
+      return `¡Ganaste +${amount} monedas!`
+    case 'loseCoins':
+      return `Perdiste ${amount} monedas.`
+    case 'freePack':
+      return '¡Se abrió tu sobre gratis!'
+    case 'freeQuestion':
+      return 'Sumaste 1 pregunta de bonus, no gasta tu límite diario.'
+    case 'wagerBoost':
+      return 'Tu próxima apuesta acertada va a pagar el doble.'
+    case 'extraSpin':
+      return '¡Ya podés girar de nuevo, sin esperar!'
+    default:
+      return 'No pasó nada esta vez.'
   }
-  if (result.segment.kind === 'loseCoins') {
-    return ` -${result.amount} monedas`
-  }
-  return ''
 }
 
-export function RouletteWheel({ spinReadyAt, lastSpinResult, onSpin }: RouletteWheelProps) {
+export function RouletteWheel({ spinReadyAt, pendingSpin, lastSpinResult, onSpin, onClaim }: RouletteWheelProps) {
   const [rotation, setRotation] = useState(0)
   const [spinning, setSpinning] = useState(false)
   const [now, setNow] = useState(() => Date.now())
-  const [resultSeq, setResultSeq] = useState(0)
-  const lastHandledResult = useRef<{ segment: RouletteSegment; amount: number } | null>(null)
+  const lastHandledResult = useRef<SpinResult | null>(null)
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000)
@@ -46,11 +60,11 @@ export function RouletteWheel({ spinReadyAt, lastSpinResult, onSpin }: RouletteW
   }, [])
 
   useEffect(() => {
-    if (!lastSpinResult || lastSpinResult === lastHandledResult.current) {
+    if (!pendingSpin || pendingSpin === lastHandledResult.current) {
       return
     }
-    lastHandledResult.current = lastSpinResult
-    const index = ROULETTE_SEGMENTS.findIndex((seg) => seg.id === lastSpinResult.segment.id)
+    lastHandledResult.current = pendingSpin
+    const index = ROULETTE_SEGMENTS.findIndex((seg) => seg.id === pendingSpin.segment.id)
     if (index === -1) {
       return
     }
@@ -63,10 +77,10 @@ export function RouletteWheel({ spinReadyAt, lastSpinResult, onSpin }: RouletteW
     })
     const timeout = window.setTimeout(() => {
       setSpinning(false)
-      setResultSeq((seq) => seq + 1)
+      playSfx('dexOpen')
     }, SPIN_ANIMATION_MS)
     return () => window.clearTimeout(timeout)
-  }, [lastSpinResult])
+  }, [pendingSpin])
 
   const gradientStops = ROULETTE_SEGMENTS.map((_, i) => {
     const color = WHEEL_COLORS[i % WHEEL_COLORS.length]
@@ -74,7 +88,12 @@ export function RouletteWheel({ spinReadyAt, lastSpinResult, onSpin }: RouletteW
   }).join(', ')
 
   const readyMs = spinReadyAt - now
-  const canSpinNow = readyMs <= 0
+  const canSpinNow = readyMs <= 0 && !pendingSpin
+
+  const handleClaim = () => {
+    playSfx('coin')
+    onClaim()
+  }
 
   return (
     <div className="pokealbum-roulette">
@@ -96,26 +115,45 @@ export function RouletteWheel({ spinReadyAt, lastSpinResult, onSpin }: RouletteW
               </span>
             )
           })}
+          <div className="pokealbum-roulette-hub" aria-hidden="true" />
         </div>
       </div>
+
       <button
         type="button"
         className="btn btn-gold pokealbum-roulette-btn"
-        onMouseEnter={() => canSpinNow && !spinning && playSfx('hover')}
+        onMouseEnter={() => canSpinNow && playSfx('hover')}
         onClick={onSpin}
         disabled={!canSpinNow || spinning}
       >
-        {spinning ? 'Girando...' : canSpinNow ? 'Girar la ruleta' : `Próximo giro: ${formatCountdown(readyMs)}`}
+        {spinning
+          ? 'Girando...'
+          : pendingSpin
+            ? 'Reclamá tu premio para girar de nuevo'
+            : readyMs > 0
+              ? `Próximo giro: ${formatCountdown(readyMs)}`
+              : 'Girar la ruleta'}
       </button>
-      {lastSpinResult && !spinning && (
-        <div key={resultSeq} className="pokealbum-roulette-result-card">
-          <span className="pokealbum-roulette-result-icon">{lastSpinResult.segment.icon}</span>
-          <span className="pokealbum-roulette-result-text">
-            ¡{lastSpinResult.segment.label}!
-            {resultSuffix(lastSpinResult) && <strong>{resultSuffix(lastSpinResult)}</strong>}
-          </span>
-        </div>
-      )}
+
+      <div className="pokealbum-roulette-reward-slot">
+        {pendingSpin && !spinning && (
+          <div className="pokealbum-roulette-landed-card">
+            <span className="pokealbum-roulette-result-icon">{pendingSpin.segment.icon}</span>
+            <strong>{pendingSpin.segment.label}</strong>
+            <p>{pendingSpin.segment.description}</p>
+            <button type="button" className="btn btn-gold" onMouseEnter={() => playSfx('hover')} onClick={handleClaim}>
+              Reclamar recompensa
+            </button>
+          </div>
+        )}
+
+        {!pendingSpin && lastSpinResult && !spinning && (
+          <div className="pokealbum-roulette-result-card">
+            <span className="pokealbum-roulette-result-icon">{lastSpinResult.segment.icon}</span>
+            <span className="pokealbum-roulette-result-text">{claimedMessage(lastSpinResult)}</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

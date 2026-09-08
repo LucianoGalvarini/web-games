@@ -7565,9 +7565,8 @@ body.is-liga-wide {
 
 .pokealbum-roulette-frame {
   position: relative;
-  width: 420px;
-  height: 420px;
-  max-width: 100%;
+  width: min(420px, 100%, 62vh);
+  aspect-ratio: 1 / 1;
 }
 
 .pokealbum-roulette-pointer {
@@ -7580,18 +7579,30 @@ body.is-liga-wide {
   border-left: 18px solid transparent;
   border-right: 18px solid transparent;
   border-top: 28px solid var(--fr-red-dark);
-  z-index: 2;
+  z-index: 3;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35));
 }
 
 .pokealbum-roulette-wheel {
   position: relative;
-  width: 420px;
-  height: 420px;
-  max-width: 100%;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   border: 10px solid var(--fr-border);
   box-shadow: 0 0 0 5px var(--fr-cream-2), 8px 8px 0 var(--fr-shadow);
   transition: transform 3.2s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+.pokealbum-roulette-wheel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.32), transparent 55%),
+    repeating-conic-gradient(rgba(0, 0, 0, 0.16) 0deg 0.6deg, transparent 0.6deg calc(360deg / 12));
+  pointer-events: none;
 }
 
 .pokealbum-roulette-icon {
@@ -7610,10 +7621,32 @@ body.is-liga-wide {
   filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.5));
 }
 
+.pokealbum-roulette-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 13%;
+  height: 13%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--fr-cream-2);
+  border: 4px solid var(--fr-border);
+  box-shadow: 0 0 0 3px var(--fr-red), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
 .pokealbum-roulette-btn {
   width: 100%;
   font-size: 20px !important;
   padding: 16px !important;
+}
+
+.pokealbum-roulette-reward-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 224px;
 }
 
 .pokealbum-roulette-result-card {
@@ -7642,6 +7675,39 @@ body.is-liga-wide {
 .pokealbum-roulette-result-text strong {
   display: block;
   font-size: 20px;
+}
+
+.pokealbum-roulette-landed-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 18px 20px;
+  background: var(--fr-cream-2);
+  border: 3px solid var(--fr-border);
+  box-shadow: 4px 4px 0 var(--fr-shadow);
+  text-align: center;
+  animation: pokealbum-roulette-result-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pokealbum-roulette-landed-card .pokealbum-roulette-result-icon {
+  font-size: 44px;
+}
+
+.pokealbum-roulette-landed-card strong {
+  font-size: 18px;
+  color: var(--fr-red-dark);
+}
+
+.pokealbum-roulette-landed-card p {
+  font-size: 14px;
+  color: var(--fr-ink);
+  margin: 0 0 4px;
+}
+
+.pokealbum-roulette-landed-card .btn {
+  width: 100%;
 }
 
 @keyframes pokealbum-roulette-result-pop {

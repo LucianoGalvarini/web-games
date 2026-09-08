@@ -3,6 +3,7 @@ import { DUPLICATE_SELL_VALUE, RECYCLE_COST } from './economy'
 import {
   applySticker,
   createInitialAlbum,
+  creditDuplicate,
   openPack,
   progress,
   recycleDuplicates,
@@ -175,6 +176,14 @@ assert(stuckNew.entries[dupTarget].owned, 'applySticker marca la figurita como o
 assert(stuckNew.entries[dupTarget].duplicates === 0, 'Pegar una figurita nueva no suma duplicados.')
 const stuckDup = applySticker(stuckNew, { id: dupTarget, isNew: false })
 assert(stuckDup.entries[dupTarget].duplicates === 1, 'Pegar una repetida suma 1 al contador de duplicados.')
+
+const beforeCredit = createInitialAlbum(0)
+const credited = creditDuplicate(beforeCredit, dupTarget)
+assert(!credited.entries[dupTarget].owned, 'creditDuplicate no marca la figurita como obtenida.')
+assert(
+  credited.entries[dupTarget].duplicates === beforeCredit.entries[dupTarget].duplicates + 1,
+  'creditDuplicate suma 1 al contador de duplicados sin tocar owned.',
+)
 
 const stats = progress(album)
 assert(stats.total === TOTAL_POKEMON, 'El progreso reporta el total correcto de figuritas.')

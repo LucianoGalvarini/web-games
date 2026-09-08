@@ -16,6 +16,7 @@ import {
   applySticker,
   bestRarity,
   createInitialAlbum,
+  creditDuplicate,
   decodeSave,
   encodeSave,
   openPack,
@@ -28,7 +29,7 @@ import {
   spinRoulette,
 } from '../pokealbum'
 import type { AlbumState, PackResult, Rarity, RouletteSegment, StatKey } from '../pokealbum'
-import { playSfx } from '../shared/sfx'
+import { playPackOpenSound, playSfx, stopPackOpenSound } from '../shared/sfx'
 
 const SAVE_KEY = 'pokealbum-save'
 const PAGE_SIZE = 9
@@ -388,6 +389,7 @@ export function usePokeAlbum() {
   const [bonusQuestions, setBonusQuestions] = useState(() => readNumber(BONUS_QUESTIONS_KEY))
   const [wagerBoost, setWagerBoost] = useState(() => readNumber(WAGER_BOOST_KEY))
   const [lastSpinAt, setLastSpinAt] = useState<number | null>(readLastSpinAt)
+  const [pendingSpin, setPendingSpin] = useState<{ segment: RouletteSegment; amount: number } | null>(null)
   const [lastSpinResult, setLastSpinResult] = useState<{ segment: RouletteSegment; amount: number } | null>(null)
   const [dailyLogin, setDailyLogin] = useState<DailyLoginState>(readDailyLogin)
   const factsCache = useRef(new Map<number, Facts>())
@@ -401,6 +403,7 @@ export function usePokeAlbum() {
   const bonusQuestionsRef = useRef(bonusQuestions)
   const wagerBoostRef = useRef(wagerBoost)
   const lastSpinAtRef = useRef(lastSpinAt)
+  const pendingSpinRef = useRef(pendingSpin)
   const dailyLoginRef = useRef(dailyLogin)
   albumRef.current = album
   triviaRef.current = trivia
@@ -410,6 +413,7 @@ export function usePokeAlbum() {
   bonusQuestionsRef.current = bonusQuestions
   wagerBoostRef.current = wagerBoost
   lastSpinAtRef.current = lastSpinAt
+  pendingSpinRef.current = pendingSpin
   dailyLoginRef.current = dailyLogin
 
   const goToPokemonPage = useCallback((id: number) => {
@@ -436,15 +440,24 @@ export function usePokeAlbum() {
     let next = state
     for (const item of items) {
       if (!item.isNew) {
-        next = applySticker(next, item)
+        next = creditDuplicate(next, item.id)
       }
     }
     return next
   }, [])
 
+  // A species still sitting in the pending "to stick" tray isn't marked owned yet, so
+  // openPack would call it "new" again if drawn twice before the player sticks it. Treat
+  // anything already pending as not-new so a second pull auto-credits a duplicate instead.
+  const reclassifyAgainstPending = useCallback((items: PackResult): PackResult => {
+    const pendingIds = new Set(pendingRef.current.map((item) => item.id))
+    return items.map((item) => (item.isNew && pendingIds.has(item.id) ? { id: item.id, isNew: false } : item))
+  }, [])
+
   const runPackReveal = useCallback(
     (afterCost: AlbumState, kind: RevealKind) => {
-      const { result } = openPack(afterCost, Math.random)
+      const { result: rawResult } = openPack(afterCost, Math.random)
+      const result = reclassifyAgainstPending(rawResult)
       const withDuplicates = applyDuplicatesFrom(afterCost, result)
       writeSave(withDuplicates)
       setAlbum(withDuplicates)
@@ -452,13 +465,13 @@ export function usePokeAlbum() {
       setReveal({ phase: 'opening', kind, rarity })
       const duration =
         rarity === 'legendary' ? OPENING_DURATION_LEGENDARY : rarity === 'rare' ? OPENING_DURATION_RARE : OPENING_DURATION
-      playSfx(rarity === 'legendary' ? 'packLegendary' : rarity === 'rare' ? 'packRare' : 'pack')
+      playPackOpenSound()
       window.setTimeout(() => {
         setReveal({ phase: 'revealed', kind, items: result })
         playRevealSfx(result)
       }, duration)
     },
-    [applyDuplicatesFrom, playRevealSfx],
+    [applyDuplicatesFrom, playRevealSfx, reclassifyAgainstPending],
   )
 
   const openBooster = useCallback(() => {
@@ -479,9 +492,22 @@ export function usePokeAlbum() {
     if (lastSpinAtRef.current !== null && now - lastSpinAtRef.current < SPIN_COOLDOWN_MS) {
       return
     }
+    if (pendingSpinRef.current !== null) {
+      return
+    }
     const segment = spinRoulette(Math.random)
     const amount = rollSegmentAmount(segment, Math.random)
-    setLastSpinResult({ segment, amount })
+    setLastSpinResult(null)
+    setPendingSpin({ segment, amount })
+    pendingSpinRef.current = { segment, amount }
+  }, [])
+
+  const claimSpin = useCallback(() => {
+    const landed = pendingSpinRef.current
+    if (!landed) {
+      return
+    }
+    const { segment, amount } = landed
 
     if (segment.kind === 'coins' || segment.kind === 'jackpot') {
       const next = { ...albumRef.current, coins: albumRef.current.coins + amount }
@@ -507,17 +533,21 @@ export function usePokeAlbum() {
       writeNumber(WAGER_BOOST_KEY, next)
       setWagerBoost(next)
       playSfx('coin')
+    } else if (segment.kind === 'extraSpin') {
+      playSfx('coin')
     } else {
       playSfx('hover')
     }
 
-    if (segment.kind === 'extraSpin') {
-      playSfx('coin')
-      return
+    if (segment.kind !== 'extraSpin') {
+      const now = Date.now()
+      lastSpinAtRef.current = now
+      writeLastSpinAt(now)
+      setLastSpinAt(now)
     }
-    lastSpinAtRef.current = now
-    writeLastSpinAt(now)
-    setLastSpinAt(now)
+    pendingSpinRef.current = null
+    setPendingSpin(null)
+    setLastSpinResult({ segment, amount })
   }, [openFreePack])
 
   const claimDailyLogin = useCallback(() => {
@@ -543,6 +573,7 @@ export function usePokeAlbum() {
   }, [openFreePack])
 
   const dismissReveal = useCallback(() => {
+    stopPackOpenSound()
     const current = revealRef.current
     if (current.phase === 'revealed') {
       const newOnes = current.items.filter((item) => item.isNew).map((item) => ({ id: item.id, isNew: true }))
@@ -562,12 +593,15 @@ export function usePokeAlbum() {
     if (index === -1) {
       return
     }
-    const item = current[index]
-    const nextAlbum = applySticker(albumRef.current, item)
+    // Recompute new-vs-duplicate at stick time (not from the stale pull-time flag): if a
+    // second pending copy of the same species gets stuck after the first, it must count as
+    // a duplicate now that the species is owned, instead of silently vanishing.
+    const wasOwned = albumRef.current.entries[id].owned
+    const nextAlbum = applySticker(albumRef.current, { id, isNew: !wasOwned })
     writeSave(nextAlbum)
     setAlbum(nextAlbum)
     const isLegendary = POKEMON.find((p) => p.id === id)?.rarity === 'legendary'
-    playSfx(item.isNew && isLegendary ? 'legendary' : 'sticker')
+    playSfx(!wasOwned && isLegendary ? 'legendary' : 'sticker')
     const nextPending = current.filter((_, i) => i !== index)
     writePending(nextPending)
     setPending(nextPending)
@@ -648,7 +682,7 @@ export function usePokeAlbum() {
       if (!outcome) {
         return
       }
-      const items: PackResult = [outcome.result]
+      const items: PackResult = reclassifyAgainstPending([outcome.result])
       const withDuplicate = applyDuplicatesFrom(outcome.state, items)
       writeSave(withDuplicate)
       setAlbum(withDuplicate)
@@ -662,7 +696,7 @@ export function usePokeAlbum() {
         playRevealSfx(items)
       }, duration)
     },
-    [applyDuplicatesFrom, playRevealSfx],
+    [applyDuplicatesFrom, playRevealSfx, reclassifyAgainstPending],
   )
 
   const startTrivia = useCallback(
@@ -999,6 +1033,7 @@ export function usePokeAlbum() {
     wagerBoost,
     canSpin,
     spinReadyAt,
+    pendingSpin,
     lastSpinResult,
     dailyLoginStreak: dailyLogin.streak,
     canClaimDailyLogin,
@@ -1006,6 +1041,7 @@ export function usePokeAlbum() {
     dailyLoginRewards: DAILY_LOGIN_COINS,
     dailyLoginStreakLength: DAILY_LOGIN_STREAK_LENGTH,
     spin,
+    claimSpin,
     claimDailyLogin,
     openBooster,
     dismissReveal,

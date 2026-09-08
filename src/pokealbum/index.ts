@@ -28,6 +28,7 @@ export {
 export {
   applySticker,
   createInitialAlbum,
+  creditDuplicate,
   openPack,
   progress,
   recycleDuplicates,

@@ -1,8 +1,19 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.8.0'
+export const CURRENT_VERSION = '1.9.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.9.0',
+    date: '2026-09-08',
+    changes: [
+      'La ruleta ahora muestra el nombre y la explicación del premio antes de dártelo, con un botón "Reclamar recompensa" que confirma qué ganaste recién al presionarlo.',
+      'La ruleta es un círculo perfecto en cualquier tamaño de pantalla, con más brillo y detalle visual.',
+      'Se solucionó que una figurita nueva todavía sin pegar volviera a salir como "¡Nueva!" en otro sobre en vez de contar como repetida.',
+      'Se solucionó que pegar una figurita repetida pendiente necesitara dos clics.',
+      'Música de fondo y sonido de abrir sobre reemplazados por los audios reales subidos por el usuario.',
+    ],
+  },
   {
     version: '1.8.0',
     date: '2026-09-07',

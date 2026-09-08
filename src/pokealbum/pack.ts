@@ -33,6 +33,11 @@ export function applySticker(state: AlbumState, item: { id: number; isNew: boole
   return { ...state, entries: { ...state.entries, [item.id]: next } }
 }
 
+export function creditDuplicate(state: AlbumState, id: number): AlbumState {
+  const entry = state.entries[id]
+  return { ...state, entries: { ...state.entries, [id]: { ...entry, duplicates: entry.duplicates + 1 } } }
+}
+
 export function openPack(state: AlbumState, rng: () => number): { state: AlbumState; result: PackResult } {
   let entries = state.entries
   const result: PackResult = []

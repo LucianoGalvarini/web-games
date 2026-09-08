@@ -157,13 +157,13 @@ function context(): AudioContext | null {
 
 export function unlockSfx(): void {
   const ctx = context()
-  if (!ctx) {
-    return
-  }
-  if (ctx.state === 'suspended') {
+  if (ctx && ctx.state === 'suspended') {
     void ctx.resume()
   }
   unlocked = true
+  if (musicPlaying && musicAudio?.paused) {
+    void musicAudio.play().catch(() => {})
+  }
 }
 
 export function installSfxUnlock(): void {
@@ -190,6 +190,7 @@ export function setVolume(value: number): void {
   muted = next === 0
   persistVolume(next)
   applyMasterGain()
+  applyMusicVolume()
   for (const listener of volumeListeners) {
     listener(volume)
   }
@@ -626,134 +627,17 @@ export function playSfx(name: SfxName): void {
   }
 }
 
-// --- Original chiptune background music (synthesized, not sampled from any game) ---
+// --- Background music and pack-open sound, played from the uploaded audio files ---
 
-const BEAT = 0.22
-
-type MusicStep = { note: number | null; beats: number }
-type MusicTrack = {
-  name: string
-  leadType: OscillatorType
-  bassType: OscillatorType
-  lead: MusicStep[]
-  bass: MusicStep[]
-  percBeats: number[]
-}
-
-const C3 = 130.81
-const D3 = 146.83
-const F3 = 174.61
-const G3 = 196.0
-const A3 = 220.0
-const C4 = 261.63
-const D4 = 293.66
-const E4 = 329.63
-const F4 = 349.23
-const G4 = 392.0
-const A4 = 440.0
-const B4 = 493.88
-const C5 = 523.25
-const D5 = 587.33
-const E5 = 659.25
-const F5 = 698.46
-const G5 = 783.99
-const A5 = 880.0
-
-const ROUTE_LEAD: MusicStep[] = [
-  { note: C5, beats: 1 },
-  { note: E5, beats: 1 },
-  { note: G5, beats: 2 },
-  { note: E5, beats: 1 },
-  { note: D5, beats: 1 },
-  { note: C5, beats: 2 },
-  { note: D5, beats: 1 },
-  { note: F5, beats: 1 },
-  { note: A5, beats: 2 },
-  { note: F5, beats: 1 },
-  { note: E5, beats: 1 },
-  { note: D5, beats: 2 },
-  { note: C5, beats: 1 },
-  { note: D5, beats: 1 },
-  { note: E5, beats: 1 },
-  { note: D5, beats: 1 },
-  { note: C5, beats: 1 },
-  { note: B4, beats: 1 },
-  { note: C5, beats: 2 },
-]
-
-const ROUTE_BASS: MusicStep[] = [
-  { note: C3, beats: 2 },
-  { note: G3, beats: 2 },
-  { note: C3, beats: 2 },
-  { note: G3, beats: 2 },
-  { note: D3, beats: 2 },
-  { note: A3, beats: 2 },
-  { note: D3, beats: 2 },
-  { note: A3, beats: 2 },
-  { note: C3, beats: 2 },
-  { note: G3, beats: 2 },
-  { note: C3, beats: 2 },
-  { note: G3, beats: 2 },
-]
-
-const ROUTE_PERC = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24]
-
-const TOWN_LEAD: MusicStep[] = [
-  { note: G4, beats: 2 },
-  { note: E4, beats: 2 },
-  { note: C4, beats: 2 },
-  { note: E4, beats: 2 },
-  { note: A4, beats: 2 },
-  { note: F4, beats: 2 },
-  { note: D4, beats: 2 },
-  { note: F4, beats: 2 },
-  { note: G4, beats: 2 },
-  { note: E4, beats: 2 },
-  { note: C4, beats: 2 },
-  { note: null, beats: 2 },
-]
-
-const TOWN_BASS: MusicStep[] = [
-  { note: C3, beats: 4 },
-  { note: G3, beats: 4 },
-  { note: F3, beats: 4 },
-  { note: C3, beats: 4 },
-  { note: G3, beats: 4 },
-  { note: C3, beats: 4 },
-]
-
-const TOWN_PERC = [4, 8, 12, 16, 20, 24]
-
-const CAVE_LEAD: MusicStep[] = [
-  { note: A3, beats: 2 },
-  { note: null, beats: 1 },
-  { note: C4, beats: 1 },
-  { note: D4, beats: 2 },
-  { note: null, beats: 1 },
-  { note: E4, beats: 1 },
-  { note: G4, beats: 2 },
-  { note: null, beats: 1 },
-  { note: E4, beats: 1 },
-  { note: D4, beats: 2 },
-  { note: null, beats: 1 },
-  { note: C4, beats: 1 },
-  { note: A3, beats: 4 },
-  { note: null, beats: 4 },
-]
-
-const CAVE_BASS: MusicStep[] = [
-  { note: A3, beats: 8 },
-  { note: G3, beats: 8 },
-  { note: A3, beats: 8 },
-]
-
-const CAVE_PERC = [1, 9, 17]
+type MusicTrack = { name: string; src: string }
 
 const MUSIC_TRACKS: MusicTrack[] = [
-  { name: 'Ruta', leadType: 'square', bassType: 'triangle', lead: ROUTE_LEAD, bass: ROUTE_BASS, percBeats: ROUTE_PERC },
-  { name: 'Pueblo', leadType: 'triangle', bassType: 'triangle', lead: TOWN_LEAD, bass: TOWN_BASS, percBeats: TOWN_PERC },
-  { name: 'Cueva', leadType: 'square', bassType: 'triangle', lead: CAVE_LEAD, bass: CAVE_BASS, percBeats: CAVE_PERC },
+  { name: 'Tono 1', src: '/pokealbum/audio/Musica1.mp3' },
+  { name: 'Tono 2', src: '/pokealbum/audio/Musica2.mp3' },
+  { name: 'Tono 3', src: '/pokealbum/audio/Musica3.mp3' },
 ]
+
+const PACK_OPEN_SRC = '/pokealbum/audio/AbrirSobre.mp3'
 
 const MUSIC_MUTED_KEY = 'pokealbum-music-muted'
 const MUSIC_TRACK_KEY = 'pokealbum-music-track'
@@ -797,114 +681,58 @@ function persistMusicTrack(index: number): void {
 
 let musicMuted = readMusicMuted()
 let currentTrackIndex = readMusicTrack()
-
-function totalBeats(steps: MusicStep[]): number {
-  return steps.reduce((sum, step) => sum + step.beats, 0)
-}
-
-function musicTone(
-  ctx: AudioContext,
-  dest: AudioNode,
-  type: OscillatorType,
-  freq: number,
-  at: number,
-  duration: number,
-  peak: number,
-): void {
-  const osc = ctx.createOscillator()
-  osc.type = type
-  osc.frequency.setValueAtTime(freq, at)
-  const gain = env(ctx, peak, 0.01, duration, at)
-  osc.connect(gain)
-  gain.connect(dest)
-  osc.start(at)
-  osc.stop(at + duration + 0.03)
-}
-
-function musicTick(ctx: AudioContext, dest: AudioNode, at: number): void {
-  if (!noise) {
-    return
-  }
-  const src = ctx.createBufferSource()
-  src.buffer = noise
-  const filter = ctx.createBiquadFilter()
-  filter.type = 'highpass'
-  filter.frequency.value = 6000
-  const gain = env(ctx, 0.06, 0.002, 0.02, at)
-  src.connect(filter)
-  filter.connect(gain)
-  gain.connect(dest)
-  src.start(at)
-  src.stop(at + 0.05)
-}
-
-let musicGain: GainNode | null = null
-let musicTimer: number | null = null
+let musicAudio: HTMLAudioElement | null = null
 let musicPlaying = false
-let musicCtx: AudioContext | null = null
 
-function scheduleMusicLoop(): void {
-  if (!musicPlaying || !musicGain || !musicCtx) {
+function getMusicAudio(): HTMLAudioElement {
+  if (!musicAudio) {
+    musicAudio = new Audio()
+    musicAudio.loop = true
+    musicAudio.preload = 'auto'
+  }
+  return musicAudio
+}
+
+const MUSIC_DUCK_FACTOR = 0.22
+
+let musicDucked = false
+
+function applyMusicVolume(): void {
+  if (!musicAudio) {
     return
   }
-  const ctx = musicCtx
-  const gain = musicGain
-  const track = MUSIC_TRACKS[currentTrackIndex]
-  const startAt = ctx.currentTime + 0.05
+  const duck = musicDucked ? MUSIC_DUCK_FACTOR : 1
+  musicAudio.volume = musicMuted || muted ? 0 : MUSIC_LEVEL * (volume / VOLUME_MAX) * duck
+}
 
-  let t = startAt
-  for (const step of track.lead) {
-    if (step.note) {
-      musicTone(ctx, gain, track.leadType, step.note, t, step.beats * BEAT * 0.85, 0.5)
-    }
-    t += step.beats * BEAT
-  }
+function duckMusic(): void {
+  musicDucked = true
+  applyMusicVolume()
+}
 
-  let tb = startAt
-  for (const step of track.bass) {
-    if (step.note) {
-      musicTone(ctx, gain, track.bassType, step.note, tb, step.beats * BEAT * 0.9, 0.4)
-    }
-    tb += step.beats * BEAT
-  }
-
-  for (const beat of track.percBeats) {
-    musicTick(ctx, gain, startAt + (beat - 1) * BEAT)
-  }
-
-  const loopDuration = totalBeats(track.lead) * BEAT
-  musicTimer = window.setTimeout(scheduleMusicLoop, loopDuration * 1000)
+function restoreMusicVolume(): void {
+  musicDucked = false
+  applyMusicVolume()
 }
 
 export function startMusic(): void {
   if (musicPlaying) {
     return
   }
-  const ctx = context()
-  if (!ctx || !master) {
-    return
-  }
-  musicCtx = ctx
-  if (!musicGain) {
-    musicGain = ctx.createGain()
-    musicGain.gain.value = musicMuted ? 0 : MUSIC_LEVEL
-    musicGain.connect(master)
-  }
+  const el = getMusicAudio()
+  el.src = MUSIC_TRACKS[currentTrackIndex].src
+  applyMusicVolume()
   musicPlaying = true
-  scheduleMusicLoop()
+  void el.play().catch(() => {
+    /* blocked until a user gesture unlocks audio; unlockSfx() retries it */
+  })
 }
 
 export function stopMusic(): void {
   musicPlaying = false
-  if (musicTimer !== null) {
-    window.clearTimeout(musicTimer)
-    musicTimer = null
+  if (musicAudio) {
+    musicAudio.pause()
   }
-  if (musicGain) {
-    musicGain.disconnect()
-    musicGain = null
-  }
-  musicCtx = null
 }
 
 export function isMusicMuted(): boolean {
@@ -914,9 +742,7 @@ export function isMusicMuted(): boolean {
 export function toggleMusicMuted(): boolean {
   musicMuted = !musicMuted
   persistMusicMuted(musicMuted)
-  if (musicGain) {
-    musicGain.gain.value = musicMuted ? 0 : MUSIC_LEVEL
-  }
+  applyMusicVolume()
   return musicMuted
 }
 
@@ -927,12 +753,58 @@ export function getMusicTrackName(): string {
 export function cycleMusicTrack(): string {
   currentTrackIndex = (currentTrackIndex + 1) % MUSIC_TRACKS.length
   persistMusicTrack(currentTrackIndex)
-  if (musicPlaying) {
-    if (musicTimer !== null) {
-      window.clearTimeout(musicTimer)
-      musicTimer = null
-    }
-    scheduleMusicLoop()
+  if (musicPlaying && musicAudio) {
+    musicAudio.src = MUSIC_TRACKS[currentTrackIndex].src
+    applyMusicVolume()
+    void musicAudio.play().catch(() => {})
   }
   return MUSIC_TRACKS[currentTrackIndex].name
+}
+
+// The provided file has ~1s of silence before the actual sound; skip straight past it.
+const PACK_OPEN_START_OFFSET = 1
+
+let packOpenAudio: HTMLAudioElement | null = null
+
+function getPackOpenAudio(): HTMLAudioElement {
+  if (!packOpenAudio) {
+    packOpenAudio = new Audio(PACK_OPEN_SRC)
+    packOpenAudio.preload = 'auto'
+    packOpenAudio.addEventListener('ended', restoreMusicVolume)
+  }
+  return packOpenAudio
+}
+
+export function preloadPackOpenSound(): void {
+  getPackOpenAudio()
+}
+
+export function playPackOpenSound(): void {
+  duckMusic()
+  if (muted) {
+    return
+  }
+  const el = getPackOpenAudio()
+  el.volume = volume / VOLUME_MAX
+  const seekAndPlay = () => {
+    try {
+      el.currentTime = Math.min(PACK_OPEN_START_OFFSET, el.duration || PACK_OPEN_START_OFFSET)
+    } catch {
+      /* seeking before metadata is ready on some browsers; play from the start instead */
+    }
+    void el.play().catch(() => {})
+  }
+  if (el.readyState >= 1) {
+    seekAndPlay()
+  } else {
+    el.addEventListener('loadedmetadata', seekAndPlay, { once: true })
+  }
+}
+
+export function stopPackOpenSound(): void {
+  if (packOpenAudio && !packOpenAudio.paused) {
+    packOpenAudio.pause()
+    packOpenAudio.currentTime = 0
+  }
+  restoreMusicVolume()
 }
