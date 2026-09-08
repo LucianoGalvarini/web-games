@@ -16,3 +16,8 @@ export const DUPLICATE_SELL_VALUE: Record<Rarity, number> = {
 
 export const FREE_TRIVIA_DAILY_LIMIT = 20
 export const TRIVIA_TIME_LIMIT_MS = 15000
+
+export const SPIN_COOLDOWN_MS = 4 * 60 * 60 * 1000
+
+export const DAILY_LOGIN_COINS = [10, 15, 20, 25, 30, 40]
+export const DAILY_LOGIN_STREAK_LENGTH = 7

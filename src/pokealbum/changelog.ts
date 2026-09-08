@@ -1,8 +1,16 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.7.0'
+export const CURRENT_VERSION = '1.8.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.8.0',
+    date: '2026-09-07',
+    changes: [
+      'Ruleta de la fortuna: un giro gratis cada 4 horas que puede dar monedas, un sobre gratis, una pregunta de bonus, un multiplicador para apuestas, un giro extra o (raramente) un jackpot.',
+      'Recompensa diaria por iniciar sesión: una racha de 7 días con monedas crecientes y un sobre especial el día 7.',
+    ],
+  },
   {
     version: '1.7.0',
     date: '2026-09-07',

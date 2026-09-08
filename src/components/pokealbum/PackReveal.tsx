@@ -15,7 +15,7 @@ export function PackReveal({ reveal, onClose }: PackRevealProps) {
   }
 
   if (reveal.phase === 'opening') {
-    const isPack = reveal.kind === 'pack'
+    const isPack = reveal.kind !== 'recycle'
     const isEpic = reveal.rarity === 'rare' || reveal.rarity === 'legendary'
     const duration = reveal.rarity === 'legendary' ? OPENING_DURATION_LEGENDARY : reveal.rarity === 'rare' ? OPENING_DURATION_RARE : OPENING_DURATION
     return (
@@ -88,7 +88,9 @@ export function PackReveal({ reveal, onClose }: PackRevealProps) {
       >
         {rarity === 'legendary' && <div className="pokealbum-rays" aria-hidden="true" />}
         {isBig && <Confetti rarity={rarity} count={rarity === 'legendary' ? 32 : 20} />}
-        <p className="eyebrow">{reveal.kind === 'pack' ? 'Nuevo sobre' : 'Reciclaje'}</p>
+        <p className="eyebrow">
+          {reveal.kind === 'pack' ? 'Nuevo sobre' : reveal.kind === 'freePack' ? 'Sobre gratis' : 'Reciclaje'}
+        </p>
         <h2 id="pack-title">Obtuviste:</h2>
         <div className="pokealbum-reveal-grid">
           {reveal.items.map((item, index) => {

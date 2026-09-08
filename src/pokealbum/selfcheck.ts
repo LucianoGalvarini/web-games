@@ -10,6 +10,7 @@ import {
   sellDuplicate,
   weightedPick,
 } from './pack'
+import { ROULETTE_SEGMENTS, rollSegmentAmount, spinRoulette } from './roulette'
 import { decodeSave, encodeSave } from './save'
 import type { AlbumState, Rarity } from './types'
 
@@ -208,5 +209,21 @@ assert(bestRarity([1, 2]) === 'uncommon', 'bestRarity elige la más alta entre c
 assert(bestRarity([1, 2, 3]) === 'rare', 'bestRarity elige rara sobre común/poco común (Venusaur).')
 assert(bestRarity([1, 144]) === 'legendary', 'bestRarity elige legendaria sobre cualquier otra (Articuno).')
 assert(bestRarity([]) === 'common', 'bestRarity de una lista vacía devuelve común por defecto.')
+
+const negativeWeight = ROULETTE_SEGMENTS.filter((seg) => seg.kind === 'loseCoins').reduce((sum, seg) => sum + seg.weight, 0)
+const rouletteTotalWeight = ROULETTE_SEGMENTS.reduce((sum, seg) => sum + seg.weight, 0)
+assert(negativeWeight / rouletteTotalWeight <= 0.15, 'Los segmentos que quitan monedas pesan poco en la ruleta (máximo 15%).')
+assert(spinRoulette(() => 0) === ROULETTE_SEGMENTS[0], 'spinRoulette con rng()=0 siempre elige el primer segmento.')
+const jackpot = ROULETTE_SEGMENTS.find((seg) => seg.id === 'jackpot')
+assert(jackpot !== undefined, 'Existe un segmento de jackpot en la ruleta.')
+assert(spinRoulette(() => 0.9999) === ROULETTE_SEGMENTS[ROULETTE_SEGMENTS.length - 1], 'spinRoulette con rng()≈1 elige el último segmento.')
+const potSegment = ROULETTE_SEGMENTS.find((seg) => seg.id === 'pot')
+assert(potSegment !== undefined, 'Existe un segmento de bote variable en la ruleta.')
+assert(rollSegmentAmount(potSegment, () => 0) === potSegment.min, 'rollSegmentAmount con rng()=0 devuelve el mínimo del bote.')
+assert(
+  rollSegmentAmount(potSegment, () => 0.999) === potSegment.max,
+  'rollSegmentAmount con rng()≈1 devuelve el máximo del bote.',
+)
+assert(jackpot && rollSegmentAmount(jackpot, () => 0) === jackpot.amount, 'rollSegmentAmount de un monto fijo ignora el rng.')
 
 console.log('pokealbum selfcheck ok')

@@ -16,6 +16,8 @@ import { AlbumGrid } from './pokealbum/AlbumGrid'
 import { ChangelogModal } from './pokealbum/ChangelogModal'
 import { PackReveal } from './pokealbum/PackReveal'
 import { PokedexModal } from './pokealbum/PokedexModal'
+import { RouletteModal } from './pokealbum/RouletteModal'
+import { SettingsMenu } from './pokealbum/SettingsMenu'
 import { TriviaCard } from './pokealbum/TriviaCard'
 import { ManualTour } from './ManualTour'
 import { TableHud } from './TableHud'
@@ -32,6 +34,8 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
   const game = usePokeAlbum()
   const [rulesOpen, setRulesOpen] = useState(false)
   const [changelogOpen, setChangelogOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [rouletteOpen, setRouletteOpen] = useState(false)
   const [coinPopups, setCoinPopups] = useState<{ id: number; delta: number }[]>([])
   const [pokedexId, setPokedexId] = useState<number | null>(null)
   const [justCopied, setJustCopied] = useState(false)
@@ -103,17 +107,23 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
       <div className="shell pokealbum-shell">
         <aside className="panel panel-controls" data-manual="controls">
           <header className="panel-header">
-            <p className="eyebrow">Kanto</p>
-            <h1>Álbum Pokémon</h1>
-            <p className="lede">Migrado del álbum de Excel: sobres, trivia y las 151 figuritas de Kanto.</p>
-            <div className="pokealbum-music-controls">
-              <button type="button" className="btn" onMouseEnter={() => playSfx('hover')} onClick={toggleMusic}>
-                {musicMuted ? 'Música: silenciada' : 'Música: sonando'}
-              </button>
-              <button type="button" className="btn" onMouseEnter={() => playSfx('hover')} onClick={nextTrack}>
-                Tono: {trackName}
+            <div className="pokealbum-header-top">
+              <div>
+                <p className="eyebrow">Kanto</p>
+                <h1>Álbum Pokémon</h1>
+              </div>
+              <button
+                type="button"
+                className="pokealbum-menu-btn"
+                onMouseEnter={() => playSfx('hover')}
+                onClick={() => setMenuOpen(true)}
+                aria-label="Menú"
+                title="Menú"
+              >
+                ☰
               </button>
             </div>
+            <p className="lede">Migrado del álbum de Excel: sobres, trivia y las 151 figuritas de Kanto.</p>
           </header>
 
           <div className="pokealbum-balance">
@@ -148,6 +158,8 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             coins={game.coins}
             freeTriviaUsed={game.freeTriviaUsed}
             freeTriviaLimit={game.freeTriviaLimit}
+            bonusQuestions={game.bonusQuestions}
+            wagerBoost={game.wagerBoost}
             onStart={game.startTrivia}
             onNewQuestion={game.resetTrivia}
             onExpire={game.expireTrivia}
@@ -156,65 +168,15 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             onAnswerMultipleChoice={game.answerMultipleChoice}
           />
 
-          <div className="pokealbum-save">
-            <span>Código de respaldo</span>
-            <button
-              type="button"
-              className={`btn${justCopied ? ' btn-gold' : ''}`}
-              onMouseEnter={() => playSfx('hover')}
-              onClick={copyCode}
-            >
-              {justCopied ? '¡Copiado! ✓' : 'Copiar código'}
-            </button>
-            <input
-              type="text"
-              placeholder="Pegá un código para importar"
-              value={game.importCodeValue}
-              onChange={(event) => game.setImportCode(event.target.value)}
-            />
-            <button
-              type="button"
-              className={`btn${justImported ? ' btn-gold' : ''}`}
-              onMouseEnter={() => playSfx('hover')}
-              onClick={importCode}
-            >
-              {justImported ? '¡Importado! ✓' : 'Importar'}
-            </button>
-            {game.importError && <p className="pokealbum-error">{game.importError}</p>}
-          </div>
-
-          <div className="actions">
-            {game.confirmingReset ? (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-gold"
-                  onMouseEnter={() => playSfx('hover')}
-                  onClick={game.confirmReset}
-                >
-                  Sí, borrar todo
-                </button>
-                <button type="button" className="btn" onMouseEnter={() => playSfx('hover')} onClick={game.cancelReset}>
-                  Cancelar
-                </button>
-              </>
-            ) : (
-              <button type="button" className="btn" onMouseEnter={() => playSfx('hover')} onClick={game.requestReset}>
-                Reiniciar álbum
-              </button>
-            )}
-            <button type="button" className="btn btn-ghost" onMouseEnter={() => playSfx('hover')} onClick={onBack}>
-              Elegir juego
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onMouseEnter={() => playSfx('hover')}
-              onClick={() => setChangelogOpen(true)}
-            >
-              Notas de versión
-            </button>
-          </div>
+          <button
+            type="button"
+            className="btn btn-gold pokealbum-roulette-open"
+            onMouseEnter={() => playSfx('hover')}
+            onClick={() => setRouletteOpen(true)}
+          >
+            🎰 Ruleta y recompensas
+            {game.canClaimDailyLogin && <span className="pokealbum-menu-dot" aria-hidden="true" />}
+          </button>
         </aside>
 
         <main className="table pokealbum-table" data-manual="board">
@@ -322,6 +284,43 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
       <PackReveal reveal={game.reveal} onClose={game.dismissReveal} />
       <PokedexModal id={pokedexId} onClose={() => setPokedexId(null)} />
       <ChangelogModal open={changelogOpen} onClose={() => setChangelogOpen(false)} />
+      <SettingsMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        musicMuted={musicMuted}
+        trackName={trackName}
+        onToggleMusic={toggleMusic}
+        onNextTrack={nextTrack}
+        justCopied={justCopied}
+        onCopyCode={copyCode}
+        importCodeValue={game.importCodeValue}
+        onSetImportCode={game.setImportCode}
+        justImported={justImported}
+        onImportCode={importCode}
+        importError={game.importError}
+        confirmingReset={game.confirmingReset}
+        onRequestReset={game.requestReset}
+        onConfirmReset={game.confirmReset}
+        onCancelReset={game.cancelReset}
+        onOpenChangelog={() => {
+          setMenuOpen(false)
+          setChangelogOpen(true)
+        }}
+        onBack={onBack}
+      />
+      <RouletteModal
+        open={rouletteOpen}
+        onClose={() => setRouletteOpen(false)}
+        streak={game.dailyLoginStreak}
+        nextDay={game.dailyLoginNextDay}
+        canClaim={game.canClaimDailyLogin}
+        rewards={game.dailyLoginRewards}
+        streakLength={game.dailyLoginStreakLength}
+        onClaim={game.claimDailyLogin}
+        spinReadyAt={game.spinReadyAt}
+        lastSpinResult={game.lastSpinResult}
+        onSpin={game.spin}
+      />
     </div>
   )
 }

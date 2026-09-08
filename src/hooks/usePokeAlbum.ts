@@ -1,9 +1,12 @@
 import { useCallback, useRef, useState } from 'react'
 import {
+  DAILY_LOGIN_COINS,
+  DAILY_LOGIN_STREAK_LENGTH,
   FREE_TRIVIA_DAILY_LIMIT,
   PACK_COST,
   POKEMON,
   RECYCLE_COST,
+  SPIN_COOLDOWN_MS,
   STARTING_COINS,
   STAT_KEYS,
   STAT_LABEL,
@@ -19,10 +22,12 @@ import {
   prettyLabel,
   progress,
   recycleDuplicates,
+  rollSegmentAmount,
   sellAllDuplicates,
   sellDuplicate,
+  spinRoulette,
 } from '../pokealbum'
-import type { AlbumState, PackResult, Rarity, StatKey } from '../pokealbum'
+import type { AlbumState, PackResult, Rarity, RouletteSegment, StatKey } from '../pokealbum'
 import { playSfx } from '../shared/sfx'
 
 const SAVE_KEY = 'pokealbum-save'
@@ -94,10 +99,11 @@ const COMMON_MOVE_SLUGS = [
 ]
 
 export type PendingSticker = { id: number; isNew: boolean }
+type RevealKind = 'pack' | 'recycle' | 'freePack'
 export type RevealState =
   | { phase: 'closed' }
-  | { phase: 'opening'; kind: 'pack' | 'recycle'; rarity: Rarity }
-  | { phase: 'revealed'; kind: 'pack' | 'recycle'; items: PackResult }
+  | { phase: 'opening'; kind: RevealKind; rarity: Rarity }
+  | { phase: 'revealed'; kind: RevealKind; items: PackResult }
 
 export const OPENING_DURATION = 650
 export const OPENING_DURATION_RARE = 1600
@@ -205,6 +211,92 @@ function writeDailyFreeTrivia(count: number): void {
   }
 }
 
+const SPIN_KEY = 'pokealbum-roulette-last'
+const BONUS_QUESTIONS_KEY = 'pokealbum-bonus-questions'
+const WAGER_BOOST_KEY = 'pokealbum-wager-boost'
+const DAILY_LOGIN_KEY = 'pokealbum-daily-login'
+
+function readNumber(key: string): number {
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw !== null) {
+      const value = Number(raw)
+      if (Number.isFinite(value)) {
+        return value
+      }
+    }
+  } catch {
+    /* privacy mode / corrupt data, fall through */
+  }
+  return 0
+}
+
+function writeNumber(key: string, value: number): void {
+  try {
+    localStorage.setItem(key, String(value))
+  } catch {
+    /* ignore quota */
+  }
+}
+
+function readLastSpinAt(): number | null {
+  try {
+    const raw = localStorage.getItem(SPIN_KEY)
+    if (raw !== null) {
+      const value = Number(raw)
+      if (Number.isFinite(value)) {
+        return value
+      }
+    }
+  } catch {
+    /* privacy mode / corrupt data, fall through */
+  }
+  return null
+}
+
+function writeLastSpinAt(value: number | null): void {
+  try {
+    if (value === null) {
+      localStorage.removeItem(SPIN_KEY)
+    } else {
+      localStorage.setItem(SPIN_KEY, String(value))
+    }
+  } catch {
+    /* ignore quota */
+  }
+}
+
+type DailyLoginState = { lastClaimDate: string | null; streak: number }
+
+function readDailyLogin(): DailyLoginState {
+  try {
+    const raw = localStorage.getItem(DAILY_LOGIN_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<DailyLoginState>
+      if (typeof parsed.streak === 'number') {
+        return { lastClaimDate: parsed.lastClaimDate ?? null, streak: parsed.streak }
+      }
+    }
+  } catch {
+    /* privacy mode / corrupt data, fall through */
+  }
+  return { lastClaimDate: null, streak: 0 }
+}
+
+function writeDailyLogin(state: DailyLoginState): void {
+  try {
+    localStorage.setItem(DAILY_LOGIN_KEY, JSON.stringify(state))
+  } catch {
+    /* ignore quota */
+  }
+}
+
+function yesterdayStr(): string {
+  const date = new Date()
+  date.setDate(date.getDate() - 1)
+  return date.toISOString().slice(0, 10)
+}
+
 const VALID_IDS = new Set(POKEMON.map((p) => p.id))
 
 function isPendingSticker(value: unknown): value is PendingSticker {
@@ -293,6 +385,11 @@ export function usePokeAlbum() {
   const [importError, setImportError] = useState<string | null>(null)
   const [importCodeValue, setImportCodeValue] = useState('')
   const [freeTriviaUsed, setFreeTriviaUsed] = useState(readDailyFreeTrivia)
+  const [bonusQuestions, setBonusQuestions] = useState(() => readNumber(BONUS_QUESTIONS_KEY))
+  const [wagerBoost, setWagerBoost] = useState(() => readNumber(WAGER_BOOST_KEY))
+  const [lastSpinAt, setLastSpinAt] = useState<number | null>(readLastSpinAt)
+  const [lastSpinResult, setLastSpinResult] = useState<{ segment: RouletteSegment; amount: number } | null>(null)
+  const [dailyLogin, setDailyLogin] = useState<DailyLoginState>(readDailyLogin)
   const factsCache = useRef(new Map<number, Facts>())
   const moveNameCache = useRef(new Map<string, string>())
   const triviaRequest = useRef(0)
@@ -301,11 +398,19 @@ export function usePokeAlbum() {
   const revealRef = useRef(reveal)
   const pendingRef = useRef(pending)
   const freeTriviaUsedRef = useRef(freeTriviaUsed)
+  const bonusQuestionsRef = useRef(bonusQuestions)
+  const wagerBoostRef = useRef(wagerBoost)
+  const lastSpinAtRef = useRef(lastSpinAt)
+  const dailyLoginRef = useRef(dailyLogin)
   albumRef.current = album
   triviaRef.current = trivia
   revealRef.current = reveal
   pendingRef.current = pending
   freeTriviaUsedRef.current = freeTriviaUsed
+  bonusQuestionsRef.current = bonusQuestions
+  wagerBoostRef.current = wagerBoost
+  lastSpinAtRef.current = lastSpinAt
+  dailyLoginRef.current = dailyLogin
 
   const goToPokemonPage = useCallback((id: number) => {
     const index = POKEMON.findIndex((p) => p.id === id)
@@ -337,26 +442,105 @@ export function usePokeAlbum() {
     return next
   }, [])
 
+  const runPackReveal = useCallback(
+    (afterCost: AlbumState, kind: RevealKind) => {
+      const { result } = openPack(afterCost, Math.random)
+      const withDuplicates = applyDuplicatesFrom(afterCost, result)
+      writeSave(withDuplicates)
+      setAlbum(withDuplicates)
+      const rarity = bestRarity(result.map((item) => item.id))
+      setReveal({ phase: 'opening', kind, rarity })
+      const duration =
+        rarity === 'legendary' ? OPENING_DURATION_LEGENDARY : rarity === 'rare' ? OPENING_DURATION_RARE : OPENING_DURATION
+      playSfx(rarity === 'legendary' ? 'packLegendary' : rarity === 'rare' ? 'packRare' : 'pack')
+      window.setTimeout(() => {
+        setReveal({ phase: 'revealed', kind, items: result })
+        playRevealSfx(result)
+      }, duration)
+    },
+    [applyDuplicatesFrom, playRevealSfx],
+  )
+
   const openBooster = useCallback(() => {
     const prev = albumRef.current
     if (prev.coins < PACK_COST) {
       return
     }
     const afterCost = { ...prev, coins: prev.coins - PACK_COST }
-    const { result } = openPack(afterCost, Math.random)
-    const withDuplicates = applyDuplicatesFrom(afterCost, result)
-    writeSave(withDuplicates)
-    setAlbum(withDuplicates)
-    const rarity = bestRarity(result.map((item) => item.id))
-    setReveal({ phase: 'opening', kind: 'pack', rarity })
-    const duration =
-      rarity === 'legendary' ? OPENING_DURATION_LEGENDARY : rarity === 'rare' ? OPENING_DURATION_RARE : OPENING_DURATION
-    playSfx(rarity === 'legendary' ? 'packLegendary' : rarity === 'rare' ? 'packRare' : 'pack')
-    window.setTimeout(() => {
-      setReveal({ phase: 'revealed', kind: 'pack', items: result })
-      playRevealSfx(result)
-    }, duration)
-  }, [applyDuplicatesFrom, playRevealSfx])
+    runPackReveal(afterCost, 'pack')
+  }, [runPackReveal])
+
+  const openFreePack = useCallback(() => {
+    runPackReveal(albumRef.current, 'freePack')
+  }, [runPackReveal])
+
+  const spin = useCallback(() => {
+    const now = Date.now()
+    if (lastSpinAtRef.current !== null && now - lastSpinAtRef.current < SPIN_COOLDOWN_MS) {
+      return
+    }
+    const segment = spinRoulette(Math.random)
+    const amount = rollSegmentAmount(segment, Math.random)
+    setLastSpinResult({ segment, amount })
+
+    if (segment.kind === 'coins' || segment.kind === 'jackpot') {
+      const next = { ...albumRef.current, coins: albumRef.current.coins + amount }
+      writeSave(next)
+      setAlbum(next)
+      playSfx(segment.kind === 'jackpot' ? 'legendary' : 'coin')
+    } else if (segment.kind === 'loseCoins') {
+      const next = { ...albumRef.current, coins: Math.max(0, albumRef.current.coins - amount) }
+      writeSave(next)
+      setAlbum(next)
+      playSfx('wagerLose')
+    } else if (segment.kind === 'freePack') {
+      openFreePack()
+    } else if (segment.kind === 'freeQuestion') {
+      const next = bonusQuestionsRef.current + 1
+      bonusQuestionsRef.current = next
+      writeNumber(BONUS_QUESTIONS_KEY, next)
+      setBonusQuestions(next)
+      playSfx('coin')
+    } else if (segment.kind === 'wagerBoost') {
+      const next = wagerBoostRef.current + 1
+      wagerBoostRef.current = next
+      writeNumber(WAGER_BOOST_KEY, next)
+      setWagerBoost(next)
+      playSfx('coin')
+    } else {
+      playSfx('hover')
+    }
+
+    if (segment.kind === 'extraSpin') {
+      playSfx('coin')
+      return
+    }
+    lastSpinAtRef.current = now
+    writeLastSpinAt(now)
+    setLastSpinAt(now)
+  }, [openFreePack])
+
+  const claimDailyLogin = useCallback(() => {
+    const current = dailyLoginRef.current
+    const today = todayStr()
+    if (current.lastClaimDate === today) {
+      return
+    }
+    const continuesStreak = current.lastClaimDate === yesterdayStr()
+    const nextDay = continuesStreak ? (current.streak % DAILY_LOGIN_STREAK_LENGTH) + 1 : 1
+    const next: DailyLoginState = { lastClaimDate: today, streak: nextDay }
+    writeDailyLogin(next)
+    setDailyLogin(next)
+    if (nextDay === DAILY_LOGIN_STREAK_LENGTH) {
+      openFreePack()
+    } else {
+      const reward = DAILY_LOGIN_COINS[nextDay - 1]
+      const withCoins = { ...albumRef.current, coins: albumRef.current.coins + reward }
+      writeSave(withCoins)
+      setAlbum(withCoins)
+      playSfx('coin')
+    }
+  }, [openFreePack])
 
   const dismissReveal = useCallback(() => {
     const current = revealRef.current
@@ -488,13 +672,19 @@ export function usePokeAlbum() {
         return
       }
       if (wager === 0) {
-        if (freeTriviaUsedRef.current >= FREE_TRIVIA_DAILY_LIMIT) {
+        if (bonusQuestionsRef.current > 0) {
+          const nextBonus = bonusQuestionsRef.current - 1
+          bonusQuestionsRef.current = nextBonus
+          writeNumber(BONUS_QUESTIONS_KEY, nextBonus)
+          setBonusQuestions(nextBonus)
+        } else if (freeTriviaUsedRef.current >= FREE_TRIVIA_DAILY_LIMIT) {
           return
+        } else {
+          const nextUsed = freeTriviaUsedRef.current + 1
+          freeTriviaUsedRef.current = nextUsed
+          writeDailyFreeTrivia(nextUsed)
+          setFreeTriviaUsed(nextUsed)
         }
-        const nextUsed = freeTriviaUsedRef.current + 1
-        freeTriviaUsedRef.current = nextUsed
-        writeDailyFreeTrivia(nextUsed)
-        setFreeTriviaUsed(nextUsed)
       }
       const requestId = triviaRequest.current + 1
       triviaRequest.current = requestId
@@ -657,7 +847,15 @@ export function usePokeAlbum() {
   )
 
   const applyTriviaOutcome = useCallback((isCorrect: boolean, wager: number) => {
-    const delta = wager > 0 ? (isCorrect ? wager : -wager) : isCorrect ? TRIVIA_REWARD : 0
+    let boosted = false
+    if (wager > 0 && isCorrect && wagerBoostRef.current > 0) {
+      boosted = true
+      const nextBoost = wagerBoostRef.current - 1
+      wagerBoostRef.current = nextBoost
+      writeNumber(WAGER_BOOST_KEY, nextBoost)
+      setWagerBoost(nextBoost)
+    }
+    const delta = wager > 0 ? (isCorrect ? wager * (boosted ? 2 : 1) : -wager) : isCorrect ? TRIVIA_REWARD : 0
     if (delta !== 0) {
       const next = { ...albumRef.current, coins: albumRef.current.coins + delta }
       writeSave(next)
@@ -768,6 +966,17 @@ export function usePokeAlbum() {
     pendingCounts[item.id] = (pendingCounts[item.id] ?? 0) + 1
   }
 
+  const spinReadyAt = lastSpinAt === null ? 0 : lastSpinAt + SPIN_COOLDOWN_MS
+  const canSpin = Date.now() >= spinReadyAt
+
+  const today = todayStr()
+  const canClaimDailyLogin = dailyLogin.lastClaimDate !== today
+  const dailyLoginNextDay = canClaimDailyLogin
+    ? dailyLogin.lastClaimDate === yesterdayStr()
+      ? (dailyLogin.streak % DAILY_LOGIN_STREAK_LENGTH) + 1
+      : 1
+    : null
+
   return {
     coins: album.coins,
     entries: album.entries,
@@ -786,6 +995,18 @@ export function usePokeAlbum() {
     recycleCost: RECYCLE_COST,
     freeTriviaUsed,
     freeTriviaLimit: FREE_TRIVIA_DAILY_LIMIT,
+    bonusQuestions,
+    wagerBoost,
+    canSpin,
+    spinReadyAt,
+    lastSpinResult,
+    dailyLoginStreak: dailyLogin.streak,
+    canClaimDailyLogin,
+    dailyLoginNextDay,
+    dailyLoginRewards: DAILY_LOGIN_COINS,
+    dailyLoginStreakLength: DAILY_LOGIN_STREAK_LENGTH,
+    spin,
+    claimDailyLogin,
     openBooster,
     dismissReveal,
     stickPending,

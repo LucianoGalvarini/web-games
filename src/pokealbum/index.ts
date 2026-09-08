@@ -13,11 +13,14 @@ export {
   spriteUrl,
 } from './data'
 export {
+  DAILY_LOGIN_COINS,
+  DAILY_LOGIN_STREAK_LENGTH,
   DUPLICATE_SELL_VALUE,
   FREE_TRIVIA_DAILY_LIMIT,
   PACK_COST,
   PACK_SIZE,
   RECYCLE_COST,
+  SPIN_COOLDOWN_MS,
   STARTING_COINS,
   TRIVIA_REWARD,
   TRIVIA_TIME_LIMIT_MS,
@@ -34,7 +37,9 @@ export {
 } from './pack'
 export { decodeSave, encodeSave } from './save'
 export { CHANGELOG, CURRENT_VERSION } from './changelog'
+export { ROULETTE_SEGMENTS, rollSegmentAmount, spinRoulette } from './roulette'
 export type { AlbumEntry, AlbumState, PackResult, PokedexEntry, Rarity, SaveData } from './types'
 export type { StatKey } from './data'
 export type { SellAllResult } from './pack'
 export type { ChangelogEntry } from './changelog'
+export type { RouletteRewardKind, RouletteSegment } from './roulette'

@@ -9,6 +9,8 @@ type TriviaCardProps = {
   coins: number
   freeTriviaUsed: number
   freeTriviaLimit: number
+  bonusQuestions: number
+  wagerBoost: number
   onStart: (wager: number) => void
   onNewQuestion: () => void
   onExpire: () => void
@@ -51,6 +53,8 @@ export function TriviaCard({
   coins,
   freeTriviaUsed,
   freeTriviaLimit,
+  bonusQuestions,
+  wagerBoost,
   onStart,
   onNewQuestion,
   onExpire,
@@ -66,13 +70,19 @@ export function TriviaCard({
     const stakeValue = Number(stake)
     const canWager = stake !== '' && Number.isFinite(stakeValue) && stakeValue > 0 && stakeValue <= coins
     const freeLeft = Math.max(0, freeTriviaLimit - freeTriviaUsed)
-    const freeExhausted = freeLeft <= 0
+    const freeExhausted = freeLeft <= 0 && bonusQuestions <= 0
     return (
       <div className="status-card pokealbum-trivia">
         <p>Ganá monedas respondiendo preguntas sobre Pokémon.</p>
         <p className="pokealbum-trivia-daily">
           Preguntas gratis hoy: {freeTriviaUsed}/{freeTriviaLimit}
+          {bonusQuestions > 0 ? ` · +${bonusQuestions} de bonus` : ''}
         </p>
+        {wagerBoost > 0 && (
+          <p className="pokealbum-trivia-daily">
+            Tenés {wagerBoost} bonus de "Todo o nada": tu próxima apuesta acertada paga el doble.
+          </p>
+        )}
         <button
           type="button"
           className="btn btn-gold"
@@ -226,6 +236,7 @@ export function TriviaCard({
   return (
     <div className="status-card pokealbum-trivia">
       {wagerBanner}
+      {timerLine}
       <p>{trivia.prompt}</p>
       <div className="pokealbum-trivia-mc">
         {trivia.options.map((option, index) => {
