@@ -36,7 +36,8 @@ export {
   sellDuplicate,
   weightedPick,
 } from './pack'
-export { decodeSave, encodeSave } from './save'
+export { decodeSave, encodeSave, hasSignature, wasSignatureTampered } from './save'
+export { signPayload, verifyPayload } from './anticheat'
 export { CHANGELOG, CURRENT_VERSION } from './changelog'
 export { ROULETTE_SEGMENTS, rollSegmentAmount, spinRoulette } from './roulette'
 export type { AlbumEntry, AlbumState, PackResult, PokedexEntry, Rarity, SaveData } from './types'

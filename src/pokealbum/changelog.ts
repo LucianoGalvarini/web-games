@@ -1,8 +1,17 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.9.0'
+export const CURRENT_VERSION = '1.10.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.10.0',
+    date: '2026-09-08',
+    changes: [
+      'Nuevo filtro por rareza en el álbum: tildá común, poco común, rara y/o legendaria para mostrar solo esas figuritas.',
+      'Letra más grande y legible en toda la app (monto a apostar, nombres de figuritas, textos de trivia y menús), y barras de desplazamiento personalizadas en vez de las del navegador.',
+      'Seguridad: se detecta si se abren las herramientas de desarrollador o si se edita a mano el guardado (monedas, racha) y se bloquea el juego unas horas con un cartel de aviso.',
+    ],
+  },
   {
     version: '1.9.0',
     date: '2026-09-08',

@@ -1,5 +1,6 @@
-import { POKEMON } from '../../pokealbum'
-import type { AlbumEntry } from '../../pokealbum'
+import { useState } from 'react'
+import { POKEMON, RARITY_LABEL } from '../../pokealbum'
+import type { AlbumEntry, Rarity } from '../../pokealbum'
 import { playSfx } from '../../shared/sfx'
 import { AlbumSlot } from './AlbumSlot'
 
@@ -15,6 +16,8 @@ type AlbumGridProps = {
   onOpenPokedex: (id: number) => void
 }
 
+const ALL_RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'legendary']
+
 export function AlbumGrid({
   entries,
   page,
@@ -26,17 +29,64 @@ export function AlbumGrid({
   onStick,
   onOpenPokedex,
 }: AlbumGridProps) {
+  const [activeRarities, setActiveRarities] = useState<Set<Rarity>>(new Set(ALL_RARITIES))
+  const [filterPage, setFilterPage] = useState(0)
+
+  const isFiltering = activeRarities.size < ALL_RARITIES.length
+  const filteredItems = POKEMON.filter((p) => activeRarities.has(p.rarity))
+  const filteredPageCount = Math.max(1, Math.ceil(filteredItems.length / pageSize))
+
   const start = page * pageSize
-  const items = POKEMON.slice(start, start + pageSize)
+  const items = isFiltering
+    ? filteredItems.slice(filterPage * pageSize, filterPage * pageSize + pageSize)
+    : POKEMON.slice(start, start + pageSize)
+
+  const currentPage = isFiltering ? filterPage : page
+  const currentPageCount = isFiltering ? filteredPageCount : pageCount
 
   const changePage = (next: number) => {
     playSfx('pageTurn')
-    onPageChange(next)
+    if (isFiltering) {
+      setFilterPage(Math.max(0, Math.min(filteredPageCount - 1, next)))
+    } else {
+      onPageChange(next)
+    }
+  }
+
+  const toggleRarity = (rarity: Rarity) => {
+    playSfx('hover')
+    setFilterPage(0)
+    setActiveRarities((prev) => {
+      const next = new Set(prev)
+      if (next.has(rarity)) {
+        if (next.size > 1) {
+          next.delete(rarity)
+        }
+      } else {
+        next.add(rarity)
+      }
+      return next
+    })
   }
 
   return (
     <div className="pokealbum-page">
-      <div className="pokealbum-grid" key={page}>
+      <div className="pokealbum-rarity-filter">
+        {ALL_RARITIES.map((rarity) => {
+          const isActive = activeRarities.has(rarity)
+          return (
+            <label
+              key={rarity}
+              className={`pokealbum-rarity-filter-item${isActive ? ' is-active' : ''}`}
+              data-rarity={rarity}
+            >
+              <input type="checkbox" checked={isActive} onChange={() => toggleRarity(rarity)} />
+              {RARITY_LABEL[rarity]}
+            </label>
+          )
+        })}
+      </div>
+      <div className="pokealbum-grid" key={isFiltering ? `filtered-${filterPage}` : page}>
         {items.map((p) => (
           <AlbumSlot
             key={p.id}
@@ -53,21 +103,21 @@ export function AlbumGrid({
         <button
           type="button"
           className="btn"
-          onClick={() => changePage(page - 1)}
-          onMouseEnter={() => page > 0 && playSfx('hover')}
-          disabled={page === 0}
+          onClick={() => changePage(currentPage - 1)}
+          onMouseEnter={() => currentPage > 0 && playSfx('hover')}
+          disabled={currentPage === 0}
         >
           ← Anterior
         </button>
         <span>
-          Hoja {page + 1} · página {page + 1} de {pageCount}
+          Hoja {currentPage + 1} · página {currentPage + 1} de {currentPageCount}
         </span>
         <button
           type="button"
           className="btn"
-          onClick={() => changePage(page + 1)}
-          onMouseEnter={() => page < pageCount - 1 && playSfx('hover')}
-          disabled={page === pageCount - 1}
+          onClick={() => changePage(currentPage + 1)}
+          onMouseEnter={() => currentPage < currentPageCount - 1 && playSfx('hover')}
+          disabled={currentPage === currentPageCount - 1}
         >
           Siguiente →
         </button>

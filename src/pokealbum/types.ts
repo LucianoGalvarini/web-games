@@ -26,4 +26,5 @@ export type SaveData = {
   version: 1
   coins: number
   entries: Record<number, AlbumEntry>
+  sig?: string
 }

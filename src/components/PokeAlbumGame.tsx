@@ -15,6 +15,7 @@ import {
 } from '../shared/sfx'
 import { AlbumGrid } from './pokealbum/AlbumGrid'
 import { ChangelogModal } from './pokealbum/ChangelogModal'
+import { CheatLockOverlay } from './pokealbum/CheatLockOverlay'
 import { PackReveal } from './pokealbum/PackReveal'
 import { PokedexModal } from './pokealbum/PokedexModal'
 import { RouletteModal } from './pokealbum/RouletteModal'
@@ -105,6 +106,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
 
   return (
     <div className="app pokealbum-app">
+      {game.cheatLocked && <CheatLockOverlay remainingMs={game.cheatLockRemainingMs} />}
       <TableHud onManual={() => setRulesOpen(true)} />
       <div className="shell pokealbum-shell">
         <aside className="panel panel-controls" data-manual="controls">

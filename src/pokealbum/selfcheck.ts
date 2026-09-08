@@ -12,7 +12,7 @@ import {
   weightedPick,
 } from './pack'
 import { ROULETTE_SEGMENTS, rollSegmentAmount, spinRoulette } from './roulette'
-import { decodeSave, encodeSave } from './save'
+import { decodeSave, encodeSave, wasSignatureTampered } from './save'
 import type { AlbumState, Rarity } from './types'
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -211,6 +211,16 @@ assert(
 assert(
   decodeSave(btoa(JSON.stringify({ version: 1, coins: 0, entries: { '9999': { owned: true, duplicates: 0 } } }))) === null,
   'Un id fuera de rango es rechazado.',
+)
+
+assert(wasSignatureTampered(code) === false, 'Un código de guardado recién generado no se marca como manipulado.')
+const tamperedCode = btoa(
+  encodeURIComponent(JSON.stringify({ ...JSON.parse(decodeURIComponent(atob(code))), coins: 999999 })),
+)
+assert(wasSignatureTampered(tamperedCode) === true, 'Cambiar las monedas de un código firmado sin recalcular la firma se detecta.')
+assert(
+  wasSignatureTampered(btoa(encodeURIComponent(JSON.stringify({ version: 1, coins: 50, entries: {} })))) === false,
+  'Un código sin firma (guardado antiguo) no se marca como manipulado.',
 )
 
 assert(bestRarity([1]) === 'common', 'bestRarity de un solo común es común (Bulbasaur).')

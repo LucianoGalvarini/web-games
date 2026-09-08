@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   DAILY_LOGIN_COINS,
   DAILY_LOGIN_STREAK_LENGTH,
@@ -19,6 +19,7 @@ import {
   creditDuplicate,
   decodeSave,
   encodeSave,
+  hasSignature,
   openPack,
   prettyLabel,
   progress,
@@ -26,12 +27,16 @@ import {
   rollSegmentAmount,
   sellAllDuplicates,
   sellDuplicate,
+  signPayload,
   spinRoulette,
+  wasSignatureTampered,
 } from '../pokealbum'
 import type { AlbumState, PackResult, Rarity, RouletteSegment, StatKey } from '../pokealbum'
+import { getCheatLockRemainingMs, startDevToolsWatch, triggerCheatLock } from '../shared/anticheat'
 import { playPackOpenSound, playSfx, stopPackOpenSound } from '../shared/sfx'
 
 const SAVE_KEY = 'pokealbum-save'
+const SIG_ACTIVE_KEY = 'pokealbum-sig-active'
 const PAGE_SIZE = 9
 export const PAGE_COUNT = Math.ceil(POKEMON.length / PAGE_SIZE)
 
@@ -164,6 +169,12 @@ function readSave(): AlbumState {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
     if (raw) {
+      const sigWasActive = localStorage.getItem(SIG_ACTIVE_KEY) === '1'
+      const tampered = wasSignatureTampered(raw) || (sigWasActive && !hasSignature(raw))
+      if (tampered) {
+        triggerCheatLock()
+        return createInitialAlbum(STARTING_COINS)
+      }
       const decoded = decodeSave(raw)
       if (decoded) {
         return decoded
@@ -178,6 +189,7 @@ function readSave(): AlbumState {
 function writeSave(state: AlbumState): void {
   try {
     localStorage.setItem(SAVE_KEY, encodeSave(state))
+    localStorage.setItem(SIG_ACTIVE_KEY, '1')
   } catch {
     /* ignore quota */
   }
@@ -269,13 +281,22 @@ function writeLastSpinAt(value: number | null): void {
 
 type DailyLoginState = { lastClaimDate: string | null; streak: number }
 
+function dailyLoginSig(streak: number, lastClaimDate: string | null): string {
+  return signPayload(`${streak}|${lastClaimDate ?? ''}`)
+}
+
 function readDailyLogin(): DailyLoginState {
   try {
     const raw = localStorage.getItem(DAILY_LOGIN_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<DailyLoginState>
+      const parsed = JSON.parse(raw) as Partial<DailyLoginState> & { sig?: string }
       if (typeof parsed.streak === 'number') {
-        return { lastClaimDate: parsed.lastClaimDate ?? null, streak: parsed.streak }
+        const lastClaimDate = parsed.lastClaimDate ?? null
+        if (parsed.sig !== undefined && parsed.sig !== dailyLoginSig(parsed.streak, lastClaimDate)) {
+          triggerCheatLock()
+          return { lastClaimDate: null, streak: 0 }
+        }
+        return { lastClaimDate, streak: parsed.streak }
       }
     }
   } catch {
@@ -286,7 +307,10 @@ function readDailyLogin(): DailyLoginState {
 
 function writeDailyLogin(state: DailyLoginState): void {
   try {
-    localStorage.setItem(DAILY_LOGIN_KEY, JSON.stringify(state))
+    localStorage.setItem(
+      DAILY_LOGIN_KEY,
+      JSON.stringify({ ...state, sig: dailyLoginSig(state.streak, state.lastClaimDate) }),
+    )
   } catch {
     /* ignore quota */
   }
@@ -392,6 +416,7 @@ export function usePokeAlbum() {
   const [pendingSpin, setPendingSpin] = useState<{ segment: RouletteSegment; amount: number } | null>(null)
   const [lastSpinResult, setLastSpinResult] = useState<{ segment: RouletteSegment; amount: number } | null>(null)
   const [dailyLogin, setDailyLogin] = useState<DailyLoginState>(readDailyLogin)
+  const [cheatLockRemainingMs, setCheatLockRemainingMs] = useState<number>(getCheatLockRemainingMs)
   const factsCache = useRef(new Map<number, Facts>())
   const moveNameCache = useRef(new Map<string, string>())
   const triviaRequest = useRef(0)
@@ -415,6 +440,20 @@ export function usePokeAlbum() {
   lastSpinAtRef.current = lastSpinAt
   pendingSpinRef.current = pendingSpin
   dailyLoginRef.current = dailyLogin
+
+  useEffect(() => {
+    const stopDevToolsWatch = startDevToolsWatch(() => {
+      triggerCheatLock()
+      setCheatLockRemainingMs(getCheatLockRemainingMs())
+    })
+    const intervalId = window.setInterval(() => {
+      setCheatLockRemainingMs(getCheatLockRemainingMs())
+    }, 1000)
+    return () => {
+      stopDevToolsWatch()
+      window.clearInterval(intervalId)
+    }
+  }, [])
 
   const goToPokemonPage = useCallback((id: number) => {
     const index = POKEMON.findIndex((p) => p.id === id)
@@ -1064,5 +1103,7 @@ export function usePokeAlbum() {
     exportCode,
     setImportCode,
     importCode,
+    cheatLocked: cheatLockRemainingMs > 0,
+    cheatLockRemainingMs,
   }
 }
