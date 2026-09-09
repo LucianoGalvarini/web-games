@@ -10,6 +10,8 @@ import {
   POKEMON,
   RARE_PACK_POOL,
   RECYCLE_COST,
+  SHINY_ATTEMPT_COOLDOWN_MS,
+  SHINY_ATTEMPT_SKIP_COST,
   SHINY_CHALLENGE_DUPLICATES,
   SHINY_CHALLENGE_TIME_LIMITS_MS,
   SPIN_COOLDOWN_MS,
@@ -428,6 +430,7 @@ function writeDailyFreeTrivia(count: number): void {
 }
 
 const SPIN_KEY = 'pokealbum-roulette-last'
+const SHINY_LAST_ATTEMPT_KEY = 'pokealbum-shiny-last-attempt'
 const BONUS_QUESTIONS_KEY = 'pokealbum-bonus-questions'
 const WAGER_BOOST_KEY = 'pokealbum-wager-boost'
 const DAILY_LOGIN_KEY = 'pokealbum-daily-login'
@@ -455,9 +458,9 @@ function writeNumber(key: string, value: number): void {
   }
 }
 
-function readLastSpinAt(): number | null {
+function readTimestamp(key: string): number | null {
   try {
-    const raw = localStorage.getItem(SPIN_KEY)
+    const raw = localStorage.getItem(key)
     if (raw !== null) {
       const value = Number(raw)
       if (Number.isFinite(value)) {
@@ -470,16 +473,32 @@ function readLastSpinAt(): number | null {
   return null
 }
 
-function writeLastSpinAt(value: number | null): void {
+function writeTimestamp(key: string, value: number | null): void {
   try {
     if (value === null) {
-      localStorage.removeItem(SPIN_KEY)
+      localStorage.removeItem(key)
     } else {
-      localStorage.setItem(SPIN_KEY, String(value))
+      localStorage.setItem(key, String(value))
     }
   } catch {
     /* ignore quota */
   }
+}
+
+function readLastSpinAt(): number | null {
+  return readTimestamp(SPIN_KEY)
+}
+
+function writeLastSpinAt(value: number | null): void {
+  writeTimestamp(SPIN_KEY, value)
+}
+
+function readLastShinyAttemptAt(): number | null {
+  return readTimestamp(SHINY_LAST_ATTEMPT_KEY)
+}
+
+function writeLastShinyAttemptAt(value: number | null): void {
+  writeTimestamp(SHINY_LAST_ATTEMPT_KEY, value)
 }
 
 type DailyLoginState = { lastClaimDate: string | null; streak: number }
@@ -697,6 +716,7 @@ export function usePokeAlbum() {
   const [tieBugBonusGranted, setTieBugBonusGranted] = useState(false)
   const [wagerStreak, setWagerStreak] = useState(0)
   const [shinyChallenge, setShinyChallenge] = useState<ShinyChallengeState>({ status: 'closed' })
+  const [lastShinyAttemptAt, setLastShinyAttemptAt] = useState<number | null>(readLastShinyAttemptAt)
   const factsCache = useRef(new Map<number, Facts>())
   const moveNameCache = useRef(new Map<string, string>())
   const triviaRequest = useRef(0)
@@ -710,6 +730,7 @@ export function usePokeAlbum() {
   const bonusQuestionsRef = useRef(bonusQuestions)
   const wagerBoostRef = useRef(wagerBoost)
   const lastSpinAtRef = useRef(lastSpinAt)
+  const lastShinyAttemptAtRef = useRef(lastShinyAttemptAt)
   const pendingSpinRef = useRef(pendingSpin)
   const dailyLoginRef = useRef(dailyLogin)
   const triviaStatsRef = useRef(triviaStats)
@@ -723,6 +744,7 @@ export function usePokeAlbum() {
   bonusQuestionsRef.current = bonusQuestions
   wagerBoostRef.current = wagerBoost
   lastSpinAtRef.current = lastSpinAt
+  lastShinyAttemptAtRef.current = lastShinyAttemptAt
   pendingSpinRef.current = pendingSpin
   dailyLoginRef.current = dailyLogin
   triviaStatsRef.current = triviaStats
@@ -1470,8 +1492,18 @@ export function usePokeAlbum() {
 
   const resetTrivia = useCallback(() => setTrivia({ status: 'idle' }), [])
 
-  const startShinyChallenge = useCallback((pokemonId: number) => {
+  // Global cooldown across all species: without it, a stockpiled coin balance could buy enough
+  // packs to farm duplicates of every species and clear the whole shiny dex in one sitting.
+  // paySkip pays SHINY_ATTEMPT_SKIP_COST to ignore the cooldown for this one attempt — it doesn't
+  // grant extra free attempts afterward, the clock just restarts from now like any other attempt.
+  const startShinyChallenge = useCallback((pokemonId: number, paySkip: boolean = false) => {
     if (!canAttemptShiny(albumRef.current, pokemonId)) {
+      return
+    }
+    const now = Date.now()
+    const onCooldown =
+      lastShinyAttemptAtRef.current !== null && now - lastShinyAttemptAtRef.current < SHINY_ATTEMPT_COOLDOWN_MS
+    if (onCooldown && (!paySkip || albumRef.current.coins < SHINY_ATTEMPT_SKIP_COST)) {
       return
     }
     const requestId = shinyRequest.current + 1
@@ -1488,8 +1520,12 @@ export function usePokeAlbum() {
           return
         }
         // Paid only once we know the questions actually loaded — a network failure shouldn't
-        // burn the player's 5 duplicates for nothing.
-        const afterCost = consumeShinyAttempt(albumRef.current, pokemonId)
+        // burn the player's 5 duplicates (or the skip fee) for nothing.
+        const withSkipFee =
+          onCooldown && paySkip
+            ? { ...albumRef.current, coins: albumRef.current.coins - SHINY_ATTEMPT_SKIP_COST }
+            : albumRef.current
+        const afterCost = consumeShinyAttempt(withSkipFee, pokemonId)
         if (!afterCost) {
           setShinyChallenge({
             status: 'error',
@@ -1500,6 +1536,9 @@ export function usePokeAlbum() {
         }
         writeSave(afterCost)
         setAlbum(afterCost)
+        lastShinyAttemptAtRef.current = now
+        writeLastShinyAttemptAt(now)
+        setLastShinyAttemptAt(now)
         const questions = pickShinyChallengeQuestions(pool)
         setShinyChallenge({
           status: 'ready',
@@ -1622,6 +1661,9 @@ export function usePokeAlbum() {
   const spinReadyAt = lastSpinAt === null ? 0 : lastSpinAt + SPIN_COOLDOWN_MS
   const canSpin = Date.now() >= spinReadyAt
 
+  const shinyAttemptReadyAt =
+    lastShinyAttemptAt === null ? 0 : lastShinyAttemptAt + SHINY_ATTEMPT_COOLDOWN_MS
+
   const today = todayStr()
   const canClaimDailyLogin = dailyLogin.lastClaimDate !== today
   const dailyLoginNextDay = canClaimDailyLogin
@@ -1645,6 +1687,8 @@ export function usePokeAlbum() {
     trivia,
     shinyChallenge,
     shinyChallengeDuplicates: SHINY_CHALLENGE_DUPLICATES,
+    shinyAttemptReadyAt,
+    shinyAttemptSkipCost: SHINY_ATTEMPT_SKIP_COST,
     confirmingReset,
     importError,
     importCodeValue,

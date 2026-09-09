@@ -17,6 +17,12 @@ export const SHINY_CHALLENGE_QUESTION_COUNT = 5
 // (always the hardest available) gets the least time.
 export const SHINY_CHALLENGE_TIME_LIMITS_MS = [18000, 13000, 10000, 7000, 5000]
 
+// Global cooldown between shiny attempts (any species) — without this, a player with a huge coin
+// stockpile could buy their way to duplicates of every species and clear the whole shiny dex in
+// one sitting. Paying SHINY_ATTEMPT_SKIP_COST skips the wait for that one attempt instead.
+export const SHINY_ATTEMPT_COOLDOWN_MS = 20 * 60 * 1000
+export const SHINY_ATTEMPT_SKIP_COST = 100000
+
 export const DUPLICATE_SELL_VALUE: Record<Rarity, number> = {
   common: 10,
   uncommon: 25,

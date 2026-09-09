@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { DUPLICATE_SELL_VALUE, RARITY_LABEL, SHINY_CHALLENGE_DUPLICATES } from '../../pokealbum'
 import type { AlbumEntry, PokedexEntry } from '../../pokealbum'
 import { heightToScale, usePokemonHeight } from '../../hooks/usePokemonHeight'
@@ -8,17 +9,52 @@ type AlbumSlotProps = {
   p: PokedexEntry
   entry: AlbumEntry
   pendingCount: number
+  coins: number
+  shinyAttemptReadyAt: number
+  shinyAttemptSkipCost: number
   onSell: (id: number) => void
   onStick: (id: number) => void
   onOpenPokedex: (id: number) => void
-  onAttemptShiny: (id: number) => void
+  onAttemptShiny: (id: number, paySkip?: boolean) => void
 }
 
-export function AlbumSlot({ p, entry, pendingCount, onSell, onStick, onOpenPokedex, onAttemptShiny }: AlbumSlotProps) {
+function formatCooldown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
+  const m = Math.floor(totalSeconds / 60)
+  const s = totalSeconds % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+export function AlbumSlot({
+  p,
+  entry,
+  pendingCount,
+  coins,
+  shinyAttemptReadyAt,
+  shinyAttemptSkipCost,
+  onSell,
+  onStick,
+  onOpenPokedex,
+  onAttemptShiny,
+}: AlbumSlotProps) {
   const hasPending = pendingCount > 0
   const heightM = usePokemonHeight(p.id)
   const scale = entry.owned || hasPending ? heightToScale(heightM) : 1
   const canAttemptShiny = entry.owned && !entry.shiny && entry.duplicates >= SHINY_CHALLENGE_DUPLICATES
+
+  // Only ticks while this slot could actually show the shiny button — no point running a timer
+  // on every slot in the grid when at most a couple ever qualify at once.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!canAttemptShiny) {
+      return
+    }
+    const id = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [canAttemptShiny])
+
+  const shinyOnCooldown = canAttemptShiny && now < shinyAttemptReadyAt
+  const canSkipCooldown = coins >= shinyAttemptSkipCost
 
   return (
     <div
@@ -62,7 +98,7 @@ export function AlbumSlot({ p, entry, pendingCount, onSell, onStick, onOpenPoked
               Vender ×1 (+{DUPLICATE_SELL_VALUE[p.rarity]})
             </button>
           )}
-          {canAttemptShiny && (
+          {canAttemptShiny && !shinyOnCooldown && (
             <button
               type="button"
               className="btn btn-gold pokealbum-shiny-attempt"
@@ -71,6 +107,23 @@ export function AlbumSlot({ p, entry, pendingCount, onSell, onStick, onOpenPoked
             >
               ✨ Intentar Shiny
             </button>
+          )}
+          {canAttemptShiny && shinyOnCooldown && (
+            <>
+              <span className="pokealbum-shiny-cooldown">
+                ✨ Próximo intento libre: {formatCooldown(shinyAttemptReadyAt - now)}
+              </span>
+              <button
+                type="button"
+                className="btn btn-gold pokealbum-shiny-attempt is-skip"
+                onMouseEnter={() => canSkipCooldown && playSfx('hover')}
+                onClick={() => onAttemptShiny(p.id, true)}
+                disabled={!canSkipCooldown}
+                title={`Pagá ${shinyAttemptSkipCost} monedas para intentarlo ahora mismo`}
+              >
+                Pagar {shinyAttemptSkipCost} y probar ahora
+              </button>
+            </>
           )}
         </div>
       )}

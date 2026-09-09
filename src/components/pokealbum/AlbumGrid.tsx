@@ -13,11 +13,14 @@ type AlbumGridProps = {
   // Bumped by the parent whenever "Ir a pegar"/"Ir a repetidas" jumps to a page — those buttons
   // navigate the unfiltered album, so the rarity filter must clear or the jump has nowhere to land.
   clearFilterSignal?: number
+  coins: number
+  shinyAttemptReadyAt: number
+  shinyAttemptSkipCost: number
   onPageChange: (page: number) => void
   onSell: (id: number) => void
   onStick: (id: number) => void
   onOpenPokedex: (id: number) => void
-  onAttemptShiny: (id: number) => void
+  onAttemptShiny: (id: number, paySkip?: boolean) => void
 }
 
 const ALL_RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'legendary']
@@ -29,6 +32,9 @@ export function AlbumGrid({
   pageSize,
   pendingCounts,
   clearFilterSignal,
+  coins,
+  shinyAttemptReadyAt,
+  shinyAttemptSkipCost,
   onPageChange,
   onSell,
   onStick,
@@ -107,6 +113,9 @@ export function AlbumGrid({
             p={p}
             entry={entries[p.id]}
             pendingCount={pendingCounts[p.id] ?? 0}
+            coins={coins}
+            shinyAttemptReadyAt={shinyAttemptReadyAt}
+            shinyAttemptSkipCost={shinyAttemptSkipCost}
             onSell={onSell}
             onStick={onStick}
             onOpenPokedex={onOpenPokedex}

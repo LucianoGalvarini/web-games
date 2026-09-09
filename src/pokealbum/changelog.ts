@@ -1,8 +1,15 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.19.0'
+export const CURRENT_VERSION = '1.20.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.20.0',
+    date: '2026-09-09',
+    changes: [
+      'El desafío Shiny ahora tiene un enfriamiento de 20 minutos entre intentos (de cualquier Pokémon), para que no se pueda desbloquear todo el dex shiny de una sola sentada. Si no querés esperar, podés pagar 100000 monedas para intentarlo al instante.',
+    ],
+  },
   {
     version: '1.19.0',
     date: '2026-09-09',
