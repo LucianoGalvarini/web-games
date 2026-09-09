@@ -16,12 +16,16 @@ export const RARITY_LABEL: Record<Rarity, string> = {
   legendary: 'Legendario',
 }
 
+// Self-hosted instead of hotlinked from raw.githubusercontent.com: that host rate-limits and
+// occasionally 503s under concurrent load (exactly what a page full of sprites triggers), which is
+// why sprites used to fail to load or silently stay stuck on the static fallback. Serving them
+// from the same origin as everything else makes loads fast and consistent.
 export function spriteUrl(id: number): string {
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
+  return `/pokealbum/images/pokemon/static/${id}.png`
 }
 
 export function animatedSpriteUrl(id: number): string {
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`
+  return `/pokealbum/images/pokemon/animated/${id}.gif`
 }
 
 export const STAT_KEYS = ['hp', 'attack', 'defense', 'special-attack', 'special-defense', 'speed'] as const

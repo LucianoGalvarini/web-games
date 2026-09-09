@@ -1,8 +1,15 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.14.0'
+export const CURRENT_VERSION = '1.15.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.15.0',
+    date: '2026-09-09',
+    changes: [
+      'Se solucionó que algunas figuritas no cargaran, o cargaran la imagen fija en vez de la animada: las imágenes se pedían a un servidor externo que se satura seguido. Ahora viven en el propio juego, así que cargan rápido y siempre andan.',
+    ],
+  },
   {
     version: '1.14.0',
     date: '2026-09-08',
