@@ -248,3 +248,9 @@ export const POKEMON: PokedexEntry[] = [
   { id: 150, name: 'Mewtwo', type: 'Psíquico', rarity: 'legendary' },
   { id: 151, name: 'Mew', type: 'Psíquico', rarity: 'legendary' },
 ]
+
+// Restricted pools for the premium boosters: a rare pack only pulls from rare/legendary
+// species, a legendary pack only from legendary ones — the base RARITY_WEIGHT still decides
+// the odds between them, it's just applied over a smaller pool.
+export const RARE_PACK_POOL = POKEMON.filter((p) => p.rarity === 'rare' || p.rarity === 'legendary')
+export const LEGENDARY_PACK_POOL = POKEMON.filter((p) => p.rarity === 'legendary')

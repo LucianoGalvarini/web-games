@@ -89,7 +89,15 @@ export function PackReveal({ reveal, onClose }: PackRevealProps) {
         {rarity === 'legendary' && <div className="pokealbum-rays" aria-hidden="true" />}
         {isBig && <Confetti rarity={rarity} count={rarity === 'legendary' ? 32 : 20} />}
         <p className="eyebrow">
-          {reveal.kind === 'pack' ? 'Nuevo sobre' : reveal.kind === 'freePack' ? 'Sobre gratis' : 'Reciclaje'}
+          {reveal.kind === 'pack'
+            ? 'Nuevo sobre'
+            : reveal.kind === 'freePack'
+              ? 'Sobre gratis'
+              : reveal.kind === 'rarePack'
+                ? 'Sobre de raras'
+                : reveal.kind === 'legendaryPack'
+                  ? 'Sobre de legendarias'
+                  : 'Reciclaje'}
         </p>
         <h2 id="pack-title">Obtuviste:</h2>
         <div className="pokealbum-reveal-grid">

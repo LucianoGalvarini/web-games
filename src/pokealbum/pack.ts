@@ -1,6 +1,6 @@
 import { POKEMON, RARITY_WEIGHT } from './data'
 import { DUPLICATE_SELL_VALUE, PACK_SIZE, RECYCLE_COST } from './economy'
-import type { AlbumEntry, AlbumState, PackResult } from './types'
+import type { AlbumEntry, AlbumState, PackResult, PokedexEntry } from './types'
 
 export type SellAllResult = { state: AlbumState; total: number }
 
@@ -14,15 +14,16 @@ export function createInitialAlbum(coins: number): AlbumState {
 
 const TOTAL_WEIGHT = POKEMON.reduce((sum, p) => sum + RARITY_WEIGHT[p.rarity], 0)
 
-export function weightedPick(rng: () => number): number {
-  let roll = rng() * TOTAL_WEIGHT
-  for (const p of POKEMON) {
+export function weightedPick(rng: () => number, pool: PokedexEntry[] = POKEMON): number {
+  const totalWeight = pool === POKEMON ? TOTAL_WEIGHT : pool.reduce((sum, p) => sum + RARITY_WEIGHT[p.rarity], 0)
+  let roll = rng() * totalWeight
+  for (const p of pool) {
     roll -= RARITY_WEIGHT[p.rarity]
     if (roll <= 0) {
       return p.id
     }
   }
-  return POKEMON[POKEMON.length - 1].id
+  return pool[pool.length - 1].id
 }
 
 export function applySticker(state: AlbumState, item: { id: number; isNew: boolean }): AlbumState {
@@ -38,11 +39,15 @@ export function creditDuplicate(state: AlbumState, id: number): AlbumState {
   return { ...state, entries: { ...state.entries, [id]: { ...entry, duplicates: entry.duplicates + 1 } } }
 }
 
-export function openPack(state: AlbumState, rng: () => number): { state: AlbumState; result: PackResult } {
+export function openPack(
+  state: AlbumState,
+  rng: () => number,
+  pool: PokedexEntry[] = POKEMON,
+): { state: AlbumState; result: PackResult } {
   let entries = state.entries
   const result: PackResult = []
   for (let i = 0; i < PACK_SIZE; i += 1) {
-    const id = weightedPick(rng)
+    const id = weightedPick(rng, pool)
     const isNew = !entries[id].owned
     const withItem = applySticker({ coins: state.coins, entries }, { id, isNew })
     entries = withItem.entries

@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePokeAlbum } from '../hooks/usePokeAlbum'
-import { ACHIEVEMENTS, DUPLICATE_SELL_VALUE, PACK_COST, PACK_SIZE, POKEMON, RARITY_LABEL } from '../pokealbum'
+import {
+  ACHIEVEMENTS,
+  DUPLICATE_SELL_VALUE,
+  PACK_COST,
+  PACK_LEGENDARY_COST,
+  PACK_RARE_COST,
+  PACK_SIZE,
+  POKEMON,
+  RARITY_LABEL,
+} from '../pokealbum'
 import type { Rarity } from '../pokealbum'
 import { POKEALBUM_MANUAL } from '../shared/manuals'
 import {
@@ -49,7 +58,22 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
   const [justImported, setJustImported] = useState(false)
   const [musicMuted, setMusicMuted] = useState(() => isMusicMuted())
   const [trackName, setTrackName] = useState(() => getMusicTrackName())
+  const [clearFilterSignal, setClearFilterSignal] = useState(0)
   const prevCoins = useRef(game.coins)
+
+  // "Ir a pegar"/"Ir a repetidas" jump to a page in the *unfiltered* album, but AlbumGrid pages
+  // through its own filtered list whenever a rarity checkbox is off — so the jump silently did
+  // nothing unless every checkbox happened to be checked. Clearing the filter first guarantees
+  // the target page lines up with what these buttons actually navigate.
+  const goToNextPending = () => {
+    setClearFilterSignal((n) => n + 1)
+    game.goToNextPending()
+  }
+
+  const goToNextDuplicate = () => {
+    setClearFilterSignal((n) => n + 1)
+    game.goToNextDuplicate()
+  }
 
   const toggleMusic = () => {
     setMusicMuted(toggleMusicMuted())
@@ -116,6 +140,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
       {game.cheatLocked && <CheatLockOverlay remainingMs={game.cheatLockRemainingMs} />}
       <AchievementToast queue={game.achievementQueue} onDismiss={game.dismissAchievement} />
       <TableHud onManual={() => setRulesOpen(true)} />
+      <OverworldParade ownedIds={ownedIds} />
       <div className="shell pokealbum-shell">
         <aside className="panel panel-controls" data-manual="controls">
           <header className="panel-header">
@@ -165,6 +190,32 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             </button>
           </div>
 
+          <div className="field">
+            <span>Sobre de raras: {PACK_RARE_COST} monedas · solo figuritas raras y legendarias</span>
+            <button
+              type="button"
+              className="btn btn-gold pokealbum-premium-pack"
+              onMouseEnter={() => game.canOpenRarePack && playSfx('hover')}
+              onClick={game.openRarePack}
+              disabled={!game.canOpenRarePack}
+            >
+              Abrir sobre de raras
+            </button>
+          </div>
+
+          <div className="field">
+            <span>Sobre de legendarias: {PACK_LEGENDARY_COST} monedas · solo legendarias</span>
+            <button
+              type="button"
+              className="btn btn-gold pokealbum-premium-pack is-legendary"
+              onMouseEnter={() => game.canOpenLegendaryPack && playSfx('hover')}
+              onClick={game.openLegendaryPack}
+              disabled={!game.canOpenLegendaryPack}
+            >
+              Abrir sobre de legendarias
+            </button>
+          </div>
+
           <TriviaCard
             trivia={game.trivia}
             coins={game.coins}
@@ -174,9 +225,6 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             wagerBoost={game.wagerBoost}
             triviaStreak={game.triviaStreak}
             bestTriviaStreak={game.bestTriviaStreak}
-            nextWagerDifficultyTier={game.nextWagerDifficultyTier}
-            maxWagerDifficultyTier={game.maxWagerDifficultyTier}
-            wagerDifficultyCoinThreshold={game.wagerDifficultyCoinThreshold}
             onStart={game.startTrivia}
             onNewQuestion={game.resetTrivia}
             onExpire={game.expireTrivia}
@@ -216,7 +264,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
                 type="button"
                 className="btn btn-gold"
                 onMouseEnter={() => playSfx('hover')}
-                onClick={game.goToNextPending}
+                onClick={goToNextPending}
               >
                 Ir a pegar
               </button>
@@ -228,6 +276,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             pageCount={game.pageCount}
             pageSize={game.pageSize}
             pendingCounts={game.pendingCounts}
+            clearFilterSignal={clearFilterSignal}
             onPageChange={game.goToPage}
             onSell={game.sellDuplicate}
             onStick={game.stickPending}
@@ -255,7 +304,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
                   type="button"
                   className="btn"
                   onMouseEnter={() => playSfx('hover')}
-                  onClick={game.goToNextDuplicate}
+                  onClick={goToNextDuplicate}
                 >
                   Ir a repetidas
                 </button>
@@ -306,8 +355,6 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
           </ul>
         </aside>
       </div>
-
-      <OverworldParade ownedIds={ownedIds} />
 
       <ManualTour open={rulesOpen} steps={POKEALBUM_MANUAL} onClose={() => setRulesOpen(false)} />
       <PackReveal reveal={game.reveal} onClose={game.dismissReveal} />

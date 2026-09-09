@@ -1,8 +1,20 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.15.0'
+export const CURRENT_VERSION = '1.16.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.16.0',
+    date: '2026-09-09',
+    changes: [
+      'Nuevos sobres premium: sobre de raras (10000 monedas, solo figuritas raras y legendarias) y sobre de legendarias (50000 monedas, solo legendarias).',
+      'La ruleta ahora se puede girar cada 30 minutos en vez de cada 4 horas.',
+      'Snorlax, Voltorb y Electrode en la ruleta ahora muestran su sprite real en vez de un emoji.',
+      'La trivia con apuestas ya no avisa qué dificultad viene antes de responder: solo se ve la racha actual.',
+      'La tira de Pokémon caminando ahora aparece arriba del álbum en vez de abajo.',
+      'Se corrigió "Ir a pegar" (y "Ir a repetidas"): con el filtro de rareza activo no llevaba a ningún lado salvo que estuvieran todas las casillas tildadas. Ahora funciona sin importar el filtro.',
+    ],
+  },
   {
     version: '1.15.0',
     date: '2026-09-09',

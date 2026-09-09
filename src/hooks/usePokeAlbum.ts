@@ -3,8 +3,12 @@ import {
   DAILY_LOGIN_COINS,
   DAILY_LOGIN_STREAK_LENGTH,
   FREE_TRIVIA_DAILY_LIMIT,
+  LEGENDARY_PACK_POOL,
   PACK_COST,
+  PACK_LEGENDARY_COST,
+  PACK_RARE_COST,
   POKEMON,
+  RARE_PACK_POOL,
   RECYCLE_COST,
   SPIN_COOLDOWN_MS,
   STARTING_COINS,
@@ -107,7 +111,7 @@ const COMMON_MOVE_SLUGS = [
 ]
 
 export type PendingSticker = { id: number; isNew: boolean }
-type RevealKind = 'pack' | 'recycle' | 'freePack'
+type RevealKind = 'pack' | 'recycle' | 'freePack' | 'rarePack' | 'legendaryPack'
 export type RevealState =
   | { phase: 'closed' }
   | { phase: 'opening'; kind: RevealKind; rarity: Rarity }
@@ -825,8 +829,8 @@ export function usePokeAlbum() {
   }, [])
 
   const runPackReveal = useCallback(
-    (afterCost: AlbumState, kind: RevealKind) => {
-      const { result: rawResult } = openPack(afterCost, Math.random)
+    (afterCost: AlbumState, kind: RevealKind, pool?: typeof POKEMON) => {
+      const { result: rawResult } = openPack(afterCost, Math.random, pool)
       const result = reclassifyAgainstPending(rawResult)
       const withDuplicates = applyDuplicatesFrom(afterCost, result)
       writeSave(withDuplicates)
@@ -856,6 +860,24 @@ export function usePokeAlbum() {
     }
     const afterCost = { ...prev, coins: prev.coins - PACK_COST }
     runPackReveal(afterCost, 'pack')
+  }, [runPackReveal])
+
+  const openRarePack = useCallback(() => {
+    const prev = albumRef.current
+    if (prev.coins < PACK_RARE_COST) {
+      return
+    }
+    const afterCost = { ...prev, coins: prev.coins - PACK_RARE_COST }
+    runPackReveal(afterCost, 'rarePack', RARE_PACK_POOL)
+  }, [runPackReveal])
+
+  const openLegendaryPack = useCallback(() => {
+    const prev = albumRef.current
+    if (prev.coins < PACK_LEGENDARY_COST) {
+      return
+    }
+    const afterCost = { ...prev, coins: prev.coins - PACK_LEGENDARY_COST }
+    runPackReveal(afterCost, 'legendaryPack', LEGENDARY_PACK_POOL)
   }, [runPackReveal])
 
   const openFreePack = useCallback(() => {
@@ -1488,6 +1510,8 @@ export function usePokeAlbum() {
     importCodeValue,
     stats,
     canOpenPack: album.coins >= PACK_COST,
+    canOpenRarePack: album.coins >= PACK_RARE_COST,
+    canOpenLegendaryPack: album.coins >= PACK_LEGENDARY_COST,
     recycleCost: RECYCLE_COST,
     freeTriviaUsed,
     freeTriviaLimit: FREE_TRIVIA_DAILY_LIMIT,
@@ -1506,6 +1530,8 @@ export function usePokeAlbum() {
     claimSpin,
     claimDailyLogin,
     openBooster,
+    openRarePack,
+    openLegendaryPack,
     dismissReveal,
     stickPending,
     goToNextPending,

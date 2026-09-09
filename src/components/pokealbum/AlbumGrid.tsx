@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { POKEMON, RARITY_LABEL } from '../../pokealbum'
 import type { AlbumEntry, Rarity } from '../../pokealbum'
 import { playSfx } from '../../shared/sfx'
@@ -10,6 +10,9 @@ type AlbumGridProps = {
   pageCount: number
   pageSize: number
   pendingCounts: Record<number, number>
+  // Bumped by the parent whenever "Ir a pegar"/"Ir a repetidas" jumps to a page — those buttons
+  // navigate the unfiltered album, so the rarity filter must clear or the jump has nowhere to land.
+  clearFilterSignal?: number
   onPageChange: (page: number) => void
   onSell: (id: number) => void
   onStick: (id: number) => void
@@ -24,6 +27,7 @@ export function AlbumGrid({
   pageCount,
   pageSize,
   pendingCounts,
+  clearFilterSignal,
   onPageChange,
   onSell,
   onStick,
@@ -31,6 +35,14 @@ export function AlbumGrid({
 }: AlbumGridProps) {
   const [activeRarities, setActiveRarities] = useState<Set<Rarity>>(new Set(ALL_RARITIES))
   const [filterPage, setFilterPage] = useState(0)
+
+  useEffect(() => {
+    if (clearFilterSignal !== undefined) {
+      setActiveRarities(new Set(ALL_RARITIES))
+      setFilterPage(0)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearFilterSignal])
 
   const isFiltering = activeRarities.size < ALL_RARITIES.length
   const filteredItems = POKEMON.filter((p) => activeRarities.has(p.rarity))

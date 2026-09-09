@@ -23,6 +23,7 @@ export type RouletteSegment = {
 }
 
 const ITEM_IMG = '/pokealbum/images/items/'
+const SPRITE_IMG = '/pokealbum/images/pokemon/static/'
 
 export const ROULETTE_SEGMENTS: RouletteSegment[] = [
   {
@@ -107,6 +108,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: 'Snorlax',
     description: 'Snorlax se durmió en el medio de la ruleta. No pasa nada.',
     icon: '😴',
+    image: `${SPRITE_IMG}143.png`,
     kind: 'nothing',
     weight: 12,
   },
@@ -115,6 +117,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: 'Voltorb',
     description: 'Voltorb explota y te hace perder 10 monedas.',
     icon: '💥',
+    image: `${SPRITE_IMG}100.png`,
     kind: 'loseCoins',
     weight: 6,
     amount: 10,
@@ -124,6 +127,7 @@ export const ROULETTE_SEGMENTS: RouletteSegment[] = [
     label: 'Electrode',
     description: 'Electrode explota fuerte: perdés 20 monedas.',
     icon: '⚡',
+    image: `${SPRITE_IMG}101.png`,
     kind: 'loseCoins',
     weight: 3,
     amount: 20,
