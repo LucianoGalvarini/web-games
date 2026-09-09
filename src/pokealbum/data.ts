@@ -28,6 +28,14 @@ export function animatedSpriteUrl(id: number): string {
   return `/pokealbum/images/pokemon/animated/${id}.gif`
 }
 
+export function shinySpriteUrl(id: number): string {
+  return `/pokealbum/images/pokemon/shiny-static/${id}.png`
+}
+
+export function shinyAnimatedSpriteUrl(id: number): string {
+  return `/pokealbum/images/pokemon/shiny-animated/${id}.gif`
+}
+
 export const STAT_KEYS = ['hp', 'attack', 'defense', 'special-attack', 'special-defense', 'speed'] as const
 export type StatKey = (typeof STAT_KEYS)[number]
 export const STAT_LABEL: Record<StatKey, string> = {

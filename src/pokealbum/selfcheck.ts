@@ -1,6 +1,6 @@
 import { ACHIEVEMENTS, evaluateNewAchievements } from './achievements'
 import { POKEMON, RARITY_WEIGHT, TOTAL_POKEMON, bestRarity } from './data'
-import { DUPLICATE_SELL_VALUE, RECYCLE_COST } from './economy'
+import { DUPLICATE_SELL_VALUE, RECYCLE_COST, SHINY_CHALLENGE_DUPLICATES } from './economy'
 import {
   applySticker,
   createInitialAlbum,
@@ -14,6 +14,9 @@ import {
 } from './pack'
 import { ROULETTE_SEGMENTS, rollSegmentAmount, spinRoulette } from './roulette'
 import { decodeSave, encodeSave, wasSignatureTampered } from './save'
+import { canAttemptShiny, consumeShinyAttempt, unlockShiny } from './shiny'
+import { pickShinyChallengeQuestions } from './shinyQuestions'
+import type { ShinyQuestion } from './shinyQuestions'
 import { TRAINER_TRIVIA } from './trainerTrivia'
 import type { AlbumState, Rarity } from './types'
 
@@ -302,5 +305,72 @@ for (const item of TRAINER_TRIVIA) {
 }
 const trainerPrompts = new Set(TRAINER_TRIVIA.map((item) => item.prompt))
 assert(trainerPrompts.size === TRAINER_TRIVIA.length, 'Las preguntas de entrenadores no se repiten.')
+
+const shinyTarget = POKEMON[5].id
+const belowThreshold: AlbumState = {
+  coins: 0,
+  entries: { ...createInitialAlbum(0).entries, [shinyTarget]: { owned: true, duplicates: SHINY_CHALLENGE_DUPLICATES - 1 } },
+}
+assert(canAttemptShiny(belowThreshold, shinyTarget) === false, 'canAttemptShiny es falso por debajo del umbral de repetidas.')
+assert(consumeShinyAttempt(belowThreshold, shinyTarget) === null, 'consumeShinyAttempt devuelve null por debajo del umbral.')
+
+const atThreshold: AlbumState = {
+  coins: 0,
+  entries: { ...createInitialAlbum(0).entries, [shinyTarget]: { owned: true, duplicates: SHINY_CHALLENGE_DUPLICATES + 2 } },
+}
+assert(canAttemptShiny(atThreshold, shinyTarget) === true, 'canAttemptShiny es verdadero con suficientes repetidas.')
+const afterAttempt = consumeShinyAttempt(atThreshold, shinyTarget)
+assert(afterAttempt !== null, 'consumeShinyAttempt funciona con suficientes repetidas.')
+assert(
+  afterAttempt.entries[shinyTarget].duplicates === 2,
+  'consumeShinyAttempt resta exactamente SHINY_CHALLENGE_DUPLICATES repetidas.',
+)
+assert(afterAttempt.entries[shinyTarget].shiny !== true, 'consumeShinyAttempt no desbloquea shiny por sí solo.')
+
+const unlocked = unlockShiny(afterAttempt, shinyTarget)
+assert(unlocked.entries[shinyTarget].shiny === true, 'unlockShiny marca la especie como shiny.')
+assert(canAttemptShiny(unlocked, shinyTarget) === false, 'Una especie ya shiny no puede volver a intentarse.')
+
+const shinyEntryRoundtrip: AlbumState = { coins: 10, entries: { ...unlocked.entries } }
+const shinyCode = encodeSave(shinyEntryRoundtrip)
+const shinyDecoded = decodeSave(shinyCode)
+assert(shinyDecoded !== null, 'Un guardado con una especie shiny se decodifica igual.')
+assert(shinyDecoded.entries[shinyTarget].shiny === true, 'El roundtrip de guardado conserva el flag shiny.')
+assert(
+  wasSignatureTampered(shinyCode) === false,
+  'Guardar el flag shiny no afecta la firma anti-trampa (no forma parte del canónico firmado).',
+)
+
+function mockShinyQuestion(difficulty: ShinyQuestion['difficulty'], n: number): ShinyQuestion {
+  return {
+    id: `${difficulty}_${n}`,
+    category: 'tipo',
+    difficulty,
+    question: `pregunta ${difficulty} ${n}`,
+    options: ['a', 'b', 'c', 'd'],
+    answerIndex: 0,
+    explanation: 'x',
+  }
+}
+const mockPool: ShinyQuestion[] = [
+  ...Array.from({ length: 2 }, (_, i) => mockShinyQuestion('fácil', i)),
+  ...Array.from({ length: 6 }, (_, i) => mockShinyQuestion('media', i)),
+  ...Array.from({ length: 4 }, (_, i) => mockShinyQuestion('difícil', i)),
+]
+const shinySelection = pickShinyChallengeQuestions(mockPool, rng)
+assert(shinySelection.length === 5, 'Un desafío shiny selecciona exactamente 5 preguntas.')
+assert(
+  shinySelection.map((q) => q.difficulty).join(',') === 'fácil,media,media,difícil,difícil',
+  'La selección va de fácil a difícil, terminando en dos preguntas difíciles.',
+)
+assert(
+  new Set(shinySelection.map((q) => q.id)).size === 5,
+  'Un desafío shiny no repite la misma pregunta dos veces.',
+)
+const shinySelection2 = pickShinyChallengeQuestions(mockPool, () => 0)
+assert(
+  shinySelection2.every((q) => mockPool.some((p) => p.id === q.id)),
+  'La selección siempre viene del pool recibido.',
+)
 
 console.log('pokealbum selfcheck ok')

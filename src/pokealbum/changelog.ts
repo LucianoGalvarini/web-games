@@ -1,8 +1,31 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.16.0'
+export const CURRENT_VERSION = '1.19.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.19.0',
+    date: '2026-09-09',
+    changes: [
+      'Se cambió la tipografía pixelada de todo el álbum por una letra normal mucho más legible (se mantiene un toque retro solo en los títulos). La anterior, además de costar de leer, dibujaba el número "5" casi idéntico a una "S".',
+    ],
+  },
+  {
+    version: '1.18.0',
+    date: '2026-09-09',
+    changes: [
+      'La trivia normal (no el desafío shiny) ahora aparece en una ventana grande, con la pregunta y las respuestas en letra mucho más grande — antes era una tarjetita chica en el costado difícil de leer.',
+      'Más tiempo para responder las preguntas normales: 25s en la más fácil (antes 15s), bajando menos abruptamente en las apuestas más difíciles.',
+    ],
+  },
+  {
+    version: '1.17.0',
+    date: '2026-09-09',
+    changes: [
+      'Desafío Shiny: al juntar 5 repetidas de un mismo Pokémon aparece "✨ Intentar Shiny" en su figurita. Respondiendo 5 preguntas específicas de esa especie (tipos, ventajas, evoluciones, movimientos, entrenadores, y más), cada vez más difíciles y con menos tiempo para responder, desbloqueás su versión shiny para siempre.',
+      'Si fallás cualquiera de las 5 preguntas (o se acaba el tiempo), perdés el desafío: las 5 repetidas usadas se pierden y hay que juntar 5 nuevas para reintentar.',
+    ],
+  },
   {
     version: '1.16.0',
     date: '2026-09-09',

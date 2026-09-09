@@ -61,7 +61,12 @@ function isEntry(value: unknown): value is AlbumEntry {
     return false
   }
   const entry = value as Record<string, unknown>
-  return typeof entry.owned === 'boolean' && typeof entry.duplicates === 'number' && entry.duplicates >= 0
+  return (
+    typeof entry.owned === 'boolean' &&
+    typeof entry.duplicates === 'number' &&
+    entry.duplicates >= 0 &&
+    (entry.shiny === undefined || typeof entry.shiny === 'boolean')
+  )
 }
 
 export function decodeSave(code: string): AlbumState | null {
@@ -86,7 +91,7 @@ export function decodeSave(code: string): AlbumState | null {
       if (!VALID_IDS.has(id) || !isEntry(value)) {
         return null
       }
-      entries[id] = { owned: value.owned, duplicates: value.duplicates }
+      entries[id] = { owned: value.owned, duplicates: value.duplicates, shiny: value.shiny === true }
     }
     return { coins: data.coins, entries }
   } catch {

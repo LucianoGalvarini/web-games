@@ -10,6 +10,8 @@ import {
   POKEMON,
   RARE_PACK_POOL,
   RECYCLE_COST,
+  SHINY_CHALLENGE_DUPLICATES,
+  SHINY_CHALLENGE_TIME_LIMITS_MS,
   SPIN_COOLDOWN_MS,
   STARTING_COINS,
   STAT_KEYS,
@@ -20,13 +22,17 @@ import {
   TYPE_ES_BY_SLUG,
   applySticker,
   bestRarity,
+  canAttemptShiny,
+  consumeShinyAttempt,
   createInitialAlbum,
   creditDuplicate,
   decodeSave,
   encodeSave,
   evaluateNewAchievements,
   hasSignature,
+  loadShinyQuestions,
   openPack,
+  pickShinyChallengeQuestions,
   prettyLabel,
   progress,
   recycleDuplicates,
@@ -35,9 +41,19 @@ import {
   sellDuplicate,
   signPayload,
   spinRoulette,
+  unlockShiny,
   wasSignatureTampered,
 } from '../pokealbum'
-import type { Achievement, AchievementContext, AlbumState, PackResult, Rarity, RouletteSegment, StatKey } from '../pokealbum'
+import type {
+  Achievement,
+  AchievementContext,
+  AlbumState,
+  PackResult,
+  Rarity,
+  RouletteSegment,
+  ShinyQuestion,
+  StatKey,
+} from '../pokealbum'
 import { getCheatLockRemainingMs, startDevToolsWatch, triggerCheatLock } from '../shared/anticheat'
 import { playPackOpenSound, playPokemonCry, playSfx, stopPackOpenSound } from '../shared/sfx'
 
@@ -182,6 +198,22 @@ export type TriviaState =
       reward?: number
       timedOut?: boolean
     }
+
+export type ShinyChallengeState =
+  | { status: 'closed' }
+  | { status: 'loading'; pokemonId: number }
+  | { status: 'error'; pokemonId: number; message: string }
+  | {
+      status: 'ready' | 'answered'
+      pokemonId: number
+      questions: ShinyQuestion[]
+      index: number
+      deadline: number
+      picked?: number
+      correct?: boolean
+      timedOut?: boolean
+    }
+  | { status: 'finished'; pokemonId: number; won: boolean }
 
 function readSave(): AlbumState {
   try {
@@ -567,11 +599,11 @@ function timeLimitForTier(tier: number): number {
     case 0:
       return TRIVIA_TIME_LIMIT_MS
     case 1:
-      return Math.round(TRIVIA_TIME_LIMIT_MS * 0.8)
+      return Math.round(TRIVIA_TIME_LIMIT_MS * 0.85)
     case 2:
-      return Math.round(TRIVIA_TIME_LIMIT_MS * 0.65)
+      return Math.round(TRIVIA_TIME_LIMIT_MS * 0.7)
     default:
-      return Math.max(6000, Math.round(TRIVIA_TIME_LIMIT_MS * 0.45))
+      return Math.max(12000, Math.round(TRIVIA_TIME_LIMIT_MS * 0.55))
   }
 }
 
@@ -664,10 +696,13 @@ export function usePokeAlbum() {
   const [achievementQueue, setAchievementQueue] = useState<Achievement[]>([])
   const [tieBugBonusGranted, setTieBugBonusGranted] = useState(false)
   const [wagerStreak, setWagerStreak] = useState(0)
+  const [shinyChallenge, setShinyChallenge] = useState<ShinyChallengeState>({ status: 'closed' })
   const factsCache = useRef(new Map<number, Facts>())
   const moveNameCache = useRef(new Map<string, string>())
   const triviaRequest = useRef(0)
+  const shinyRequest = useRef(0)
   const albumRef = useRef(album)
+  const shinyChallengeRef = useRef(shinyChallenge)
   const triviaRef = useRef(trivia)
   const revealRef = useRef(reveal)
   const pendingRef = useRef(pending)
@@ -680,6 +715,7 @@ export function usePokeAlbum() {
   const triviaStatsRef = useRef(triviaStats)
   const wagerStreakRef = useRef(wagerStreak)
   albumRef.current = album
+  shinyChallengeRef.current = shinyChallenge
   triviaRef.current = trivia
   revealRef.current = reveal
   pendingRef.current = pending
@@ -1434,6 +1470,108 @@ export function usePokeAlbum() {
 
   const resetTrivia = useCallback(() => setTrivia({ status: 'idle' }), [])
 
+  const startShinyChallenge = useCallback((pokemonId: number) => {
+    if (!canAttemptShiny(albumRef.current, pokemonId)) {
+      return
+    }
+    const requestId = shinyRequest.current + 1
+    shinyRequest.current = requestId
+    setShinyChallenge({ status: 'loading', pokemonId })
+    loadShinyQuestions()
+      .then((dataset) => {
+        if (shinyRequest.current !== requestId) {
+          return
+        }
+        const pool = dataset.get(pokemonId)
+        if (!pool || pool.length < 5) {
+          setShinyChallenge({ status: 'error', pokemonId, message: 'No hay suficientes preguntas para este Pokémon.' })
+          return
+        }
+        // Paid only once we know the questions actually loaded — a network failure shouldn't
+        // burn the player's 5 duplicates for nothing.
+        const afterCost = consumeShinyAttempt(albumRef.current, pokemonId)
+        if (!afterCost) {
+          setShinyChallenge({
+            status: 'error',
+            pokemonId,
+            message: 'Ya no tenés suficientes repetidas para este desafío.',
+          })
+          return
+        }
+        writeSave(afterCost)
+        setAlbum(afterCost)
+        const questions = pickShinyChallengeQuestions(pool)
+        setShinyChallenge({
+          status: 'ready',
+          pokemonId,
+          questions,
+          index: 0,
+          deadline: Date.now() + SHINY_CHALLENGE_TIME_LIMITS_MS[0],
+        })
+      })
+      .catch(() => {
+        if (shinyRequest.current !== requestId) {
+          return
+        }
+        setShinyChallenge({ status: 'error', pokemonId, message: 'No se pudo cargar el desafío shiny. Probá de nuevo.' })
+      })
+  }, [])
+
+  const finishShinyChallenge = useCallback((pokemonId: number, won: boolean) => {
+    if (won) {
+      const next = unlockShiny(albumRef.current, pokemonId)
+      writeSave(next)
+      setAlbum(next)
+      playSfx('legendary')
+    }
+    setShinyChallenge({ status: 'finished', pokemonId, won })
+  }, [])
+
+  const answerShinyQuestion = useCallback((picked: number) => {
+    const prev = shinyChallengeRef.current
+    if (prev.status !== 'ready') {
+      return
+    }
+    const question = prev.questions[prev.index]
+    const correct = picked === question.answerIndex
+    playSfx(correct ? 'wagerWin' : 'wagerLose')
+    setShinyChallenge({ ...prev, status: 'answered', picked, correct })
+  }, [])
+
+  const expireShinyQuestion = useCallback(() => {
+    const prev = shinyChallengeRef.current
+    if (prev.status !== 'ready') {
+      return
+    }
+    playSfx('wagerLose')
+    setShinyChallenge({ ...prev, status: 'answered', correct: false, timedOut: true })
+  }, [])
+
+  const continueShinyChallenge = useCallback(() => {
+    const prev = shinyChallengeRef.current
+    if (prev.status !== 'answered') {
+      return
+    }
+    if (!prev.correct) {
+      finishShinyChallenge(prev.pokemonId, false)
+      return
+    }
+    const nextIndex = prev.index + 1
+    if (nextIndex >= prev.questions.length) {
+      finishShinyChallenge(prev.pokemonId, true)
+      return
+    }
+    setShinyChallenge({
+      status: 'ready',
+      pokemonId: prev.pokemonId,
+      questions: prev.questions,
+      index: nextIndex,
+      deadline: Date.now() + SHINY_CHALLENGE_TIME_LIMITS_MS[nextIndex],
+    })
+  }, [finishShinyChallenge])
+
+  const closeShinyChallenge = useCallback(() => setShinyChallenge({ status: 'closed' }), [])
+
   const requestReset = useCallback(() => {
     setConfirmingReset(true)
     playSfx('resetWarn')
@@ -1505,6 +1643,8 @@ export function usePokeAlbum() {
     pending,
     pendingCounts,
     trivia,
+    shinyChallenge,
+    shinyChallengeDuplicates: SHINY_CHALLENGE_DUPLICATES,
     confirmingReset,
     importError,
     importCodeValue,
@@ -1547,6 +1687,11 @@ export function usePokeAlbum() {
     answerTrueFalse,
     answerMultipleChoice,
     answerTrainer,
+    startShinyChallenge,
+    answerShinyQuestion,
+    expireShinyQuestion,
+    continueShinyChallenge,
+    closeShinyChallenge,
     wagerStreak,
     nextWagerDifficultyTier,
     maxWagerDifficultyTier: MAX_DIFFICULTY_TIER,

@@ -17,6 +17,7 @@ type AlbumGridProps = {
   onSell: (id: number) => void
   onStick: (id: number) => void
   onOpenPokedex: (id: number) => void
+  onAttemptShiny: (id: number) => void
 }
 
 const ALL_RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'legendary']
@@ -32,6 +33,7 @@ export function AlbumGrid({
   onSell,
   onStick,
   onOpenPokedex,
+  onAttemptShiny,
 }: AlbumGridProps) {
   const [activeRarities, setActiveRarities] = useState<Set<Rarity>>(new Set(ALL_RARITIES))
   const [filterPage, setFilterPage] = useState(0)
@@ -108,6 +110,7 @@ export function AlbumGrid({
             onSell={onSell}
             onStick={onStick}
             onOpenPokedex={onOpenPokedex}
+            onAttemptShiny={onAttemptShiny}
           />
         ))}
       </div>

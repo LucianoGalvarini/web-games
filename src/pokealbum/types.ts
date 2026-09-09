@@ -10,6 +10,9 @@ export type PokedexEntry = {
 export type AlbumEntry = {
   owned: boolean
   duplicates: number
+  // Not covered by the save signature (see save.ts) — same trust tier as achievements/pending,
+  // it's a cosmetic unlock rather than an economy value worth anti-cheat coverage.
+  shiny?: boolean
 }
 
 export type AlbumState = {

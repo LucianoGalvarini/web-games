@@ -12,6 +12,8 @@ export {
   animatedSpriteUrl,
   bestRarity,
   prettyLabel,
+  shinyAnimatedSpriteUrl,
+  shinySpriteUrl,
   spriteUrl,
 } from './data'
 export {
@@ -24,6 +26,9 @@ export {
   PACK_RARE_COST,
   PACK_SIZE,
   RECYCLE_COST,
+  SHINY_CHALLENGE_DUPLICATES,
+  SHINY_CHALLENGE_QUESTION_COUNT,
+  SHINY_CHALLENGE_TIME_LIMITS_MS,
   SPIN_COOLDOWN_MS,
   STARTING_COINS,
   TRIVIA_REWARD,
@@ -40,6 +45,9 @@ export {
   sellDuplicate,
   weightedPick,
 } from './pack'
+export { canAttemptShiny, consumeShinyAttempt, unlockShiny } from './shiny'
+export { loadShinyQuestions, pickShinyChallengeQuestions } from './shinyQuestions'
+export type { ShinyDataset, ShinyDifficulty, ShinyQuestion } from './shinyQuestions'
 export { ACHIEVEMENTS, evaluateNewAchievements } from './achievements'
 export { decodeSave, encodeSave, hasSignature, wasSignatureTampered } from './save'
 export { signPayload, verifyPayload } from './anticheat'

@@ -30,10 +30,12 @@ import { CheatLockOverlay } from './pokealbum/CheatLockOverlay'
 import { OverworldParade } from './pokealbum/OverworldParade'
 import { PackReveal } from './pokealbum/PackReveal'
 import { PokedexModal } from './pokealbum/PokedexModal'
+import { ShinyChallengeModal } from './pokealbum/ShinyChallengeModal'
 import { RouletteModal } from './pokealbum/RouletteModal'
 import { SettingsMenu } from './pokealbum/SettingsMenu'
 import { TieBugBonusModal } from './pokealbum/TieBugBonusModal'
 import { TriviaCard } from './pokealbum/TriviaCard'
+import { TriviaModal } from './pokealbum/TriviaModal'
 import { ManualTour } from './ManualTour'
 import { TableHud } from './TableHud'
 
@@ -217,7 +219,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
           </div>
 
           <TriviaCard
-            trivia={game.trivia}
+            active={game.trivia.status !== 'idle'}
             coins={game.coins}
             freeTriviaUsed={game.freeTriviaUsed}
             freeTriviaLimit={game.freeTriviaLimit}
@@ -226,12 +228,6 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             triviaStreak={game.triviaStreak}
             bestTriviaStreak={game.bestTriviaStreak}
             onStart={game.startTrivia}
-            onNewQuestion={game.resetTrivia}
-            onExpire={game.expireTrivia}
-            onAnswerStatPair={game.answerStatPair}
-            onAnswerTrueFalse={game.answerTrueFalse}
-            onAnswerMultipleChoice={game.answerMultipleChoice}
-            onAnswerTrainer={game.answerTrainer}
           />
 
           <button
@@ -281,6 +277,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             onSell={game.sellDuplicate}
             onStick={game.stickPending}
             onOpenPokedex={setPokedexId}
+            onAttemptShiny={game.startShinyChallenge}
           />
         </main>
 
@@ -359,6 +356,26 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
       <ManualTour open={rulesOpen} steps={POKEALBUM_MANUAL} onClose={() => setRulesOpen(false)} />
       <PackReveal reveal={game.reveal} onClose={game.dismissReveal} />
       <PokedexModal id={pokedexId} onClose={() => setPokedexId(null)} />
+      <TriviaModal
+        trivia={game.trivia}
+        triviaStreak={game.triviaStreak}
+        bestTriviaStreak={game.bestTriviaStreak}
+        onRetry={() => game.startTrivia(0)}
+        onNewQuestion={game.resetTrivia}
+        onExpire={game.expireTrivia}
+        onAnswerStatPair={game.answerStatPair}
+        onAnswerTrueFalse={game.answerTrueFalse}
+        onAnswerMultipleChoice={game.answerMultipleChoice}
+        onAnswerTrainer={game.answerTrainer}
+      />
+      <ShinyChallengeModal
+        challenge={game.shinyChallenge}
+        onAnswer={game.answerShinyQuestion}
+        onExpire={game.expireShinyQuestion}
+        onContinue={game.continueShinyChallenge}
+        onClose={game.closeShinyChallenge}
+        onRetryLoad={game.startShinyChallenge}
+      />
       <ChangelogModal open={changelogOpen} onClose={() => setChangelogOpen(false)} />
       <SettingsMenu
         open={menuOpen}

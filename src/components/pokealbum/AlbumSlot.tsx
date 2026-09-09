@@ -1,4 +1,4 @@
-import { DUPLICATE_SELL_VALUE, RARITY_LABEL } from '../../pokealbum'
+import { DUPLICATE_SELL_VALUE, RARITY_LABEL, SHINY_CHALLENGE_DUPLICATES } from '../../pokealbum'
 import type { AlbumEntry, PokedexEntry } from '../../pokealbum'
 import { heightToScale, usePokemonHeight } from '../../hooks/usePokemonHeight'
 import { playSfx } from '../../shared/sfx'
@@ -11,19 +11,26 @@ type AlbumSlotProps = {
   onSell: (id: number) => void
   onStick: (id: number) => void
   onOpenPokedex: (id: number) => void
+  onAttemptShiny: (id: number) => void
 }
 
-export function AlbumSlot({ p, entry, pendingCount, onSell, onStick, onOpenPokedex }: AlbumSlotProps) {
+export function AlbumSlot({ p, entry, pendingCount, onSell, onStick, onOpenPokedex, onAttemptShiny }: AlbumSlotProps) {
   const hasPending = pendingCount > 0
   const heightM = usePokemonHeight(p.id)
   const scale = entry.owned || hasPending ? heightToScale(heightM) : 1
+  const canAttemptShiny = entry.owned && !entry.shiny && entry.duplicates >= SHINY_CHALLENGE_DUPLICATES
 
   return (
     <div
       data-rarity={p.rarity}
-      className={`pokealbum-slot${entry.owned ? ' is-owned' : ''}${hasPending ? ' has-pending' : ''}`}
+      className={`pokealbum-slot${entry.owned ? ' is-owned' : ''}${hasPending ? ' has-pending' : ''}${entry.shiny ? ' is-shiny' : ''}`}
       onMouseEnter={() => (entry.owned || hasPending) && playSfx('hover')}
     >
+      {entry.shiny && (
+        <span className="pokealbum-shiny-badge" title="Shiny desbloqueado" aria-hidden="true">
+          ✨
+        </span>
+      )}
       {hasPending ? (
         <button type="button" className="pokealbum-stick-btn" onClick={() => onStick(p.id)}>
           <span className="pokealbum-stick-silhouette">
@@ -36,7 +43,7 @@ export function AlbumSlot({ p, entry, pendingCount, onSell, onStick, onOpenPoked
         </button>
       ) : entry.owned ? (
         <button type="button" className="pokealbum-dex-open" onClick={() => onOpenPokedex(p.id)}>
-          <PokeSprite id={p.id} name={p.name} scale={scale} />
+          <PokeSprite id={p.id} name={p.name} scale={scale} shiny={entry.shiny} />
         </button>
       ) : (
         <span className="pokealbum-unknown" aria-hidden="true">
@@ -48,11 +55,23 @@ export function AlbumSlot({ p, entry, pendingCount, onSell, onStick, onOpenPoked
         <strong>{entry.owned || hasPending ? p.name : `N.º ${p.id}`}</strong>
         <span>{RARITY_LABEL[p.rarity]}</span>
       </div>
-      {entry.duplicates > 0 && (
+      {(entry.duplicates > 0 || canAttemptShiny) && (
         <div className="pokealbum-slot-actions">
-          <button type="button" className="btn" onMouseEnter={() => playSfx('hover')} onClick={() => onSell(p.id)}>
-            Vender ×1 (+{DUPLICATE_SELL_VALUE[p.rarity]})
-          </button>
+          {entry.duplicates > 0 && (
+            <button type="button" className="btn" onMouseEnter={() => playSfx('hover')} onClick={() => onSell(p.id)}>
+              Vender ×1 (+{DUPLICATE_SELL_VALUE[p.rarity]})
+            </button>
+          )}
+          {canAttemptShiny && (
+            <button
+              type="button"
+              className="btn btn-gold pokealbum-shiny-attempt"
+              onMouseEnter={() => playSfx('hover')}
+              onClick={() => onAttemptShiny(p.id)}
+            >
+              ✨ Intentar Shiny
+            </button>
+          )}
         </div>
       )}
     </div>
