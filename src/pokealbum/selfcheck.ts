@@ -218,6 +218,38 @@ assert(
   'Un id fuera de rango es rechazado.',
 )
 
+// decodeSave must reject anything whose signature doesn't match its own contents — this is the
+// exact hole the old "importar código" screen had: it decoded first and never checked the sig,
+// so a coins-edited code (with the wrong sig, or no sig at all) got accepted and then re-signed.
+assert(
+  decodeSave(btoa(encodeURIComponent(JSON.stringify({ version: 1, coins: 200000, entries: {} })))) === null,
+  'Un código estructuralmente válido pero sin firma es rechazado (ya no hay import que lo acepte igual).',
+)
+assert(
+  decodeSave(
+    btoa(encodeURIComponent(JSON.stringify({ version: 1, coins: 200000, entries: {}, sig: 'firma-inventada' }))),
+  ) === null,
+  'Un código con una firma que no coincide con su contenido es rechazado.',
+)
+assert(
+  decodeSave(
+    btoa(encodeURIComponent('{"version":1,"coins":0,"entries":{"1":{"owned":true,"duplicates":1e309}}}')),
+  ) === null,
+  'Un contador de repetidas que desborda a Infinity (duplicates: 1e309) es rechazado.',
+)
+assert(
+  decodeSave(
+    btoa(
+      encodeURIComponent(JSON.stringify({ version: 1, coins: 0, entries: { '1': { owned: true, duplicates: 1.5 } } })),
+    ),
+  ) === null,
+  'Un contador de repetidas fraccionario es rechazado.',
+)
+assert(
+  decodeSave(btoa(encodeURIComponent(JSON.stringify({ version: 1, coins: 10.5, entries: {} })))) === null,
+  'Un saldo de monedas fraccionario es rechazado.',
+)
+
 assert(wasSignatureTampered(code) === false, 'Un código de guardado recién generado no se marca como manipulado.')
 const tamperedCode = btoa(
   encodeURIComponent(JSON.stringify({ ...JSON.parse(decodeURIComponent(atob(code))), coins: 999999 })),

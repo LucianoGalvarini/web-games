@@ -4,6 +4,7 @@ import {
   DAILY_LOGIN_STREAK_LENGTH,
   FREE_TRIVIA_DAILY_LIMIT,
   LEGENDARY_PACK_POOL,
+  ROULETTE_SEGMENTS,
   PACK_COST,
   PACK_LEGENDARY_COST,
   PACK_RARE_COST,
@@ -56,7 +57,13 @@ import type {
   ShinyQuestion,
   StatKey,
 } from '../pokealbum'
-import { getCheatLockRemainingMs, startDevToolsWatch, triggerCheatLock } from '../shared/anticheat'
+import {
+  consumeCheatWipeNotice,
+  getCheatLockRemainingMs,
+  startDevToolsWatch,
+  triggerCheatLock,
+  wipeAccountForCheating,
+} from '../shared/anticheat'
 import { playPackOpenSound, playPokemonCry, playSfx, stopPackOpenSound } from '../shared/sfx'
 
 const SAVE_KEY = 'pokealbum-save'
@@ -224,7 +231,7 @@ function readSave(): AlbumState {
       const sigWasActive = localStorage.getItem(SIG_ACTIVE_KEY) === '1'
       const tampered = wasSignatureTampered(raw) || (sigWasActive && !hasSignature(raw))
       if (tampered) {
-        triggerCheatLock()
+        wipeAccountForCheating()
         return createInitialAlbum(STARTING_COINS)
       }
       const decoded = decodeSave(raw)
@@ -273,8 +280,8 @@ function readTieBugBonusClaimed(): boolean {
     }
     if (parsed.sig !== undefined && parsed.sig !== signPayload(`tieBugBonus|${parsed.claimed}`)) {
       // Tampered claim record (e.g. flipped back to false to re-claim) — treat as already
-      // claimed so it can't be farmed, and let the shared cheat-lock catch the tamper attempt.
-      triggerCheatLock()
+      // claimed so it can't be farmed, and wipe the account for the confirmed tamper attempt.
+      wipeAccountForCheating()
       return true
     }
     return parsed.claimed
@@ -362,7 +369,7 @@ function readTriviaStats(): TriviaStatsState {
           unlocked: parsed.unlocked.filter((id): id is string => typeof id === 'string'),
         }
         if (parsed.sig !== undefined && parsed.sig !== triviaStatsSig(state) && parsed.sig !== triviaStatsSigLegacy(state)) {
-          triggerCheatLock()
+          wipeAccountForCheating()
           return initialTriviaStats()
         }
         return state
@@ -406,13 +413,21 @@ function todayStr(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+function dailyTriviaSig(date: string, count: number): string {
+  return signPayload(`dailyTrivia|${date}|${count}`)
+}
+
 function readDailyFreeTrivia(): number {
   try {
     const raw = localStorage.getItem(DAILY_TRIVIA_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw) as { date?: string; count?: number }
-      if (parsed.date === todayStr() && typeof parsed.count === 'number') {
-        return parsed.count
+      const parsed = JSON.parse(raw) as { date?: string; count?: number; sig?: string }
+      if (parsed.date === todayStr() && typeof parsed.count === 'number' && Number.isSafeInteger(parsed.count)) {
+        if (parsed.sig !== undefined && parsed.sig !== dailyTriviaSig(parsed.date, parsed.count)) {
+          wipeAccountForCheating()
+          return 0
+        }
+        return Math.max(0, parsed.count)
       }
     }
   } catch {
@@ -423,7 +438,8 @@ function readDailyFreeTrivia(): number {
 
 function writeDailyFreeTrivia(count: number): void {
   try {
-    localStorage.setItem(DAILY_TRIVIA_KEY, JSON.stringify({ date: todayStr(), count }))
+    const date = todayStr()
+    localStorage.setItem(DAILY_TRIVIA_KEY, JSON.stringify({ date, count, sig: dailyTriviaSig(date, count) }))
   } catch {
     /* ignore quota */
   }
@@ -435,36 +451,26 @@ const BONUS_QUESTIONS_KEY = 'pokealbum-bonus-questions'
 const WAGER_BOOST_KEY = 'pokealbum-wager-boost'
 const DAILY_LOGIN_KEY = 'pokealbum-daily-login'
 
-function readNumber(key: string): number {
+// Signed replacement for what used to be a bare number/timestamp in localStorage (bonus
+// questions, wager boost, roulette/shiny cooldown timestamps) — those were the exact kind of
+// value a player could edit straight from DevTools with no detection at all. A legacy bare value
+// (or anything not shaped like {value, sig}) is treated as absent, not as tampering — only a
+// present-but-wrong signature counts as confirmed evidence and wipes the account.
+function signedValueSig(key: string, value: number): string {
+  return signPayload(`${key}|${value}`)
+}
+
+function readSignedValue(key: string): number | null {
   try {
     const raw = localStorage.getItem(key)
     if (raw !== null) {
-      const value = Number(raw)
-      if (Number.isFinite(value)) {
-        return value
-      }
-    }
-  } catch {
-    /* privacy mode / corrupt data, fall through */
-  }
-  return 0
-}
-
-function writeNumber(key: string, value: number): void {
-  try {
-    localStorage.setItem(key, String(value))
-  } catch {
-    /* ignore quota */
-  }
-}
-
-function readTimestamp(key: string): number | null {
-  try {
-    const raw = localStorage.getItem(key)
-    if (raw !== null) {
-      const value = Number(raw)
-      if (Number.isFinite(value)) {
-        return value
+      const parsed = JSON.parse(raw) as { value?: number; sig?: string }
+      if (typeof parsed.value === 'number' && Number.isSafeInteger(parsed.value)) {
+        if (parsed.sig !== signedValueSig(key, parsed.value)) {
+          wipeAccountForCheating()
+          return null
+        }
+        return parsed.value
       }
     }
   } catch {
@@ -473,32 +479,89 @@ function readTimestamp(key: string): number | null {
   return null
 }
 
-function writeTimestamp(key: string, value: number | null): void {
+function writeSignedValue(key: string, value: number | null): void {
   try {
     if (value === null) {
       localStorage.removeItem(key)
     } else {
-      localStorage.setItem(key, String(value))
+      localStorage.setItem(key, JSON.stringify({ value, sig: signedValueSig(key, value) }))
     }
   } catch {
     /* ignore quota */
   }
 }
 
+function readNumber(key: string): number {
+  return Math.max(0, readSignedValue(key) ?? 0)
+}
+
+function writeNumber(key: string, value: number): void {
+  writeSignedValue(key, value)
+}
+
 function readLastSpinAt(): number | null {
-  return readTimestamp(SPIN_KEY)
+  return readSignedValue(SPIN_KEY)
 }
 
 function writeLastSpinAt(value: number | null): void {
-  writeTimestamp(SPIN_KEY, value)
+  writeSignedValue(SPIN_KEY, value)
 }
 
 function readLastShinyAttemptAt(): number | null {
-  return readTimestamp(SHINY_LAST_ATTEMPT_KEY)
+  return readSignedValue(SHINY_LAST_ATTEMPT_KEY)
 }
 
 function writeLastShinyAttemptAt(value: number | null): void {
-  writeTimestamp(SHINY_LAST_ATTEMPT_KEY, value)
+  writeSignedValue(SHINY_LAST_ATTEMPT_KEY, value)
+}
+
+type PendingSpin = { segment: RouletteSegment; amount: number }
+const PENDING_SPIN_KEY = 'pokealbum-roulette-pending'
+
+function pendingSpinSig(segmentId: string, amount: number): string {
+  return signPayload(`pendingSpin|${segmentId}|${amount}`)
+}
+
+// Used to live only in memory: reloading before hitting "Reclamar" made a bad result vanish and
+// left the spin free to try again. Persisting it means a reload recovers the exact same result —
+// you can still claim it, you just can't reroll a landing you don't like by refreshing the page.
+function readPendingSpin(): PendingSpin | null {
+  try {
+    const raw = localStorage.getItem(PENDING_SPIN_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as { segmentId?: string; amount?: number; sig?: string }
+      if (
+        typeof parsed.segmentId === 'string' &&
+        typeof parsed.amount === 'number' &&
+        Number.isSafeInteger(parsed.amount)
+      ) {
+        if (parsed.sig !== pendingSpinSig(parsed.segmentId, parsed.amount)) {
+          wipeAccountForCheating()
+          return null
+        }
+        const segment = ROULETTE_SEGMENTS.find((seg) => seg.id === parsed.segmentId)
+        return segment ? { segment, amount: parsed.amount } : null
+      }
+    }
+  } catch {
+    /* privacy mode / corrupt data, fall through */
+  }
+  return null
+}
+
+function writePendingSpin(value: PendingSpin | null): void {
+  try {
+    if (value === null) {
+      localStorage.removeItem(PENDING_SPIN_KEY)
+    } else {
+      localStorage.setItem(
+        PENDING_SPIN_KEY,
+        JSON.stringify({ segmentId: value.segment.id, amount: value.amount, sig: pendingSpinSig(value.segment.id, value.amount) }),
+      )
+    }
+  } catch {
+    /* ignore quota */
+  }
 }
 
 type DailyLoginState = { lastClaimDate: string | null; streak: number }
@@ -515,7 +578,7 @@ function readDailyLogin(): DailyLoginState {
       if (typeof parsed.streak === 'number') {
         const lastClaimDate = parsed.lastClaimDate ?? null
         if (parsed.sig !== undefined && parsed.sig !== dailyLoginSig(parsed.streak, lastClaimDate)) {
-          triggerCheatLock()
+          wipeAccountForCheating()
           return { lastClaimDate: null, streak: 0 }
         }
         return { lastClaimDate, streak: parsed.streak }
@@ -554,13 +617,28 @@ function isPendingSticker(value: unknown): value is PendingSticker {
   return typeof item.id === 'number' && VALID_IDS.has(item.id) && typeof item.isNew === 'boolean'
 }
 
+function pendingSig(items: PendingSticker[]): string {
+  const canonical = items.map((item) => `${item.id}:${item.isNew ? 1 : 0}`).join(',')
+  return signPayload(`pending|${canonical}`)
+}
+
+// This used to be a bare unsigned array — exactly the hole that let a fabricated "pending
+// Mewtwo, isNew: true" entry be planted from DevTools and then legitimately stuck into the album.
+// The new signed shape doesn't recognize that old bare-array format at all (rather than trusting
+// it), so it's discarded on the one release that migrates — a small, one-time cost (a not-yet-
+// stuck new species from right before the update) worth paying to close the hole for good.
 function readPending(): PendingSticker[] {
   try {
     const raw = localStorage.getItem(PENDING_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw) as unknown
-      if (Array.isArray(parsed)) {
-        return parsed.filter(isPendingSticker)
+      const parsed = JSON.parse(raw) as { items?: unknown; sig?: string }
+      if (Array.isArray(parsed.items)) {
+        const items = (parsed.items as unknown[]).filter(isPendingSticker)
+        if (parsed.sig !== pendingSig(items)) {
+          wipeAccountForCheating()
+          return []
+        }
+        return items
       }
     }
   } catch {
@@ -571,7 +649,7 @@ function readPending(): PendingSticker[] {
 
 function writePending(items: PendingSticker[]): void {
   try {
-    localStorage.setItem(PENDING_KEY, JSON.stringify(items))
+    localStorage.setItem(PENDING_KEY, JSON.stringify({ items, sig: pendingSig(items) }))
   } catch {
     /* ignore quota */
   }
@@ -701,13 +779,11 @@ export function usePokeAlbum() {
   const [pending, setPending] = useState<PendingSticker[]>(readPending)
   const [trivia, setTrivia] = useState<TriviaState>({ status: 'idle' })
   const [confirmingReset, setConfirmingReset] = useState(false)
-  const [importError, setImportError] = useState<string | null>(null)
-  const [importCodeValue, setImportCodeValue] = useState('')
   const [freeTriviaUsed, setFreeTriviaUsed] = useState(readDailyFreeTrivia)
   const [bonusQuestions, setBonusQuestions] = useState(() => readNumber(BONUS_QUESTIONS_KEY))
   const [wagerBoost, setWagerBoost] = useState(() => readNumber(WAGER_BOOST_KEY))
   const [lastSpinAt, setLastSpinAt] = useState<number | null>(readLastSpinAt)
-  const [pendingSpin, setPendingSpin] = useState<{ segment: RouletteSegment; amount: number } | null>(null)
+  const [pendingSpin, setPendingSpin] = useState<PendingSpin | null>(readPendingSpin)
   const [lastSpinResult, setLastSpinResult] = useState<{ segment: RouletteSegment; amount: number } | null>(null)
   const [dailyLogin, setDailyLogin] = useState<DailyLoginState>(readDailyLogin)
   const [cheatLockRemainingMs, setCheatLockRemainingMs] = useState<number>(getCheatLockRemainingMs)
@@ -717,6 +793,9 @@ export function usePokeAlbum() {
   const [wagerStreak, setWagerStreak] = useState(0)
   const [shinyChallenge, setShinyChallenge] = useState<ShinyChallengeState>({ status: 'closed' })
   const [lastShinyAttemptAt, setLastShinyAttemptAt] = useState<number | null>(readLastShinyAttemptAt)
+  // Placed after every read*() call above so this reflects a wipe triggered by any of them during
+  // this same initial render — module-level flag set synchronously, read once here.
+  const [cheatWiped, setCheatWiped] = useState<boolean>(consumeCheatWipeNotice)
   const factsCache = useRef(new Map<number, Facts>())
   const moveNameCache = useRef(new Map<string, string>())
   const triviaRequest = useRef(0)
@@ -735,6 +814,7 @@ export function usePokeAlbum() {
   const dailyLoginRef = useRef(dailyLogin)
   const triviaStatsRef = useRef(triviaStats)
   const wagerStreakRef = useRef(wagerStreak)
+  const cheatLockedRef = useRef(false)
   albumRef.current = album
   shinyChallengeRef.current = shinyChallenge
   triviaRef.current = trivia
@@ -749,6 +829,7 @@ export function usePokeAlbum() {
   dailyLoginRef.current = dailyLogin
   triviaStatsRef.current = triviaStats
   wagerStreakRef.current = wagerStreak
+  cheatLockedRef.current = cheatLockRemainingMs > 0 || cheatWiped
 
   useEffect(() => {
     const stopDevToolsWatch = startDevToolsWatch(() => {
@@ -837,6 +918,28 @@ export function usePokeAlbum() {
       writeTieBugBonusClaimed()
       setTieBugBonusGranted(true)
     }
+    if (consumeCheatWipeNotice()) {
+      // wipeAccountForCheating() already cleared every pokealbum-* localStorage key — mirror that
+      // in the in-memory state too so the screen reflects the wipe immediately, not just after the
+      // player's next reload.
+      currentAlbum = createInitialAlbum(STARTING_COINS)
+      setAlbum(currentAlbum)
+      setPending([])
+      setTrivia({ status: 'idle' })
+      setPage(0)
+      setFreeTriviaUsed(0)
+      setBonusQuestions(0)
+      setWagerBoost(0)
+      setLastSpinAt(null)
+      setPendingSpin(null)
+      setLastSpinResult(null)
+      setDailyLogin({ lastClaimDate: null, streak: 0 })
+      setTriviaStats(initialTriviaStats())
+      setShinyChallenge({ status: 'closed' })
+      setLastShinyAttemptAt(null)
+      setConfirmingReset(false)
+      setCheatWiped(true)
+    }
     // Covers save codes imported from elsewhere, or players updating into this feature with an
     // album/trivia history that already satisfies some achievements.
     checkAchievements(currentAlbum)
@@ -912,6 +1015,9 @@ export function usePokeAlbum() {
   )
 
   const openBooster = useCallback(() => {
+    if (cheatLockedRef.current) {
+      return
+    }
     const prev = albumRef.current
     if (prev.coins < PACK_COST) {
       return
@@ -921,6 +1027,9 @@ export function usePokeAlbum() {
   }, [runPackReveal])
 
   const openRarePack = useCallback(() => {
+    if (cheatLockedRef.current) {
+      return
+    }
     const prev = albumRef.current
     if (prev.coins < PACK_RARE_COST) {
       return
@@ -930,6 +1039,9 @@ export function usePokeAlbum() {
   }, [runPackReveal])
 
   const openLegendaryPack = useCallback(() => {
+    if (cheatLockedRef.current) {
+      return
+    }
     const prev = albumRef.current
     if (prev.coins < PACK_LEGENDARY_COST) {
       return
@@ -939,10 +1051,16 @@ export function usePokeAlbum() {
   }, [runPackReveal])
 
   const openFreePack = useCallback(() => {
+    if (cheatLockedRef.current) {
+      return
+    }
     runPackReveal(albumRef.current, 'freePack')
   }, [runPackReveal])
 
   const spin = useCallback(() => {
+    if (cheatLockedRef.current) {
+      return
+    }
     const now = Date.now()
     if (lastSpinAtRef.current !== null && now - lastSpinAtRef.current < SPIN_COOLDOWN_MS) {
       return
@@ -955,9 +1073,13 @@ export function usePokeAlbum() {
     setLastSpinResult(null)
     setPendingSpin({ segment, amount })
     pendingSpinRef.current = { segment, amount }
+    writePendingSpin({ segment, amount })
   }, [])
 
   const claimSpin = useCallback(() => {
+    if (cheatLockedRef.current) {
+      return
+    }
     const landed = pendingSpinRef.current
     if (!landed) {
       return
@@ -1002,10 +1124,14 @@ export function usePokeAlbum() {
     }
     pendingSpinRef.current = null
     setPendingSpin(null)
+    writePendingSpin(null)
     setLastSpinResult({ segment, amount })
   }, [openFreePack])
 
   const claimDailyLogin = useCallback(() => {
+    if (cheatLockedRef.current) {
+      return
+    }
     const current = dailyLoginRef.current
     const today = todayStr()
     if (current.lastClaimDate === today) {
@@ -1043,6 +1169,9 @@ export function usePokeAlbum() {
   }, [goToPokemonPage])
 
   const stickPending = useCallback((id: number) => {
+    if (cheatLockedRef.current) {
+      return
+    }
     const current = pendingRef.current
     const index = current.findIndex((item) => item.id === id)
     if (index === -1) {
@@ -1113,6 +1242,9 @@ export function usePokeAlbum() {
   }, [])
 
   const sellDup = useCallback((id: number) => {
+    if (cheatLockedRef.current) {
+      return
+    }
     const next = sellDuplicate(albumRef.current, id)
     if (!next) {
       return
@@ -1123,6 +1255,9 @@ export function usePokeAlbum() {
   }, [])
 
   const sellAllDup = useCallback(() => {
+    if (cheatLockedRef.current) {
+      return
+    }
     const outcome = sellAllDuplicates(albumRef.current)
     if (!outcome) {
       return
@@ -1134,6 +1269,9 @@ export function usePokeAlbum() {
 
   const recycleDup = useCallback(
     () => {
+      if (cheatLockedRef.current) {
+        return
+      }
       const outcome = recycleDuplicates(albumRef.current, Math.random)
       if (!outcome) {
         return
@@ -1162,8 +1300,11 @@ export function usePokeAlbum() {
 
   const startTrivia = useCallback(
     (wager: number) => {
+      if (cheatLockedRef.current) {
+        return
+      }
       const coins = albumRef.current.coins
-      if (!Number.isFinite(wager) || wager < 0 || wager > coins) {
+      if (!Number.isSafeInteger(wager) || wager < 0 || wager > coins) {
         return
       }
       if (wager === 0) {
@@ -1444,9 +1585,12 @@ export function usePokeAlbum() {
       if (prev.status !== 'ready' || prev.mode !== 'statPair') {
         return
       }
-      const isCorrect = picked === prev.correct
+      // Re-checked here, not just trusted from the visual countdown — a paused tab or a deferred
+      // click otherwise lets an answer land (and pay out) well past when it should have expired.
+      const isLate = Date.now() > prev.deadline
+      const isCorrect = !isLate && picked === prev.correct
       const reward = applyTriviaOutcome(isCorrect, prev.wager, prev.mode)
-      setTrivia({ ...prev, status: 'answered', picked, reward })
+      setTrivia({ ...prev, status: 'answered', picked, reward, timedOut: isLate })
     },
     [applyTriviaOutcome],
   )
@@ -1457,9 +1601,10 @@ export function usePokeAlbum() {
       if (prev.status !== 'ready' || prev.mode !== 'trueFalse') {
         return
       }
-      const isCorrect = picked === prev.isTrue
+      const isLate = Date.now() > prev.deadline
+      const isCorrect = !isLate && picked === prev.isTrue
       const reward = applyTriviaOutcome(isCorrect, prev.wager, prev.mode)
-      setTrivia({ ...prev, status: 'answered', picked, reward })
+      setTrivia({ ...prev, status: 'answered', picked, reward, timedOut: isLate })
     },
     [applyTriviaOutcome],
   )
@@ -1470,9 +1615,10 @@ export function usePokeAlbum() {
       if (prev.status !== 'ready' || prev.mode !== 'multipleChoice') {
         return
       }
-      const isCorrect = picked === prev.correctIndex
+      const isLate = Date.now() > prev.deadline
+      const isCorrect = !isLate && picked === prev.correctIndex
       const reward = applyTriviaOutcome(isCorrect, prev.wager, prev.mode)
-      setTrivia({ ...prev, status: 'answered', picked, reward })
+      setTrivia({ ...prev, status: 'answered', picked, reward, timedOut: isLate })
     },
     [applyTriviaOutcome],
   )
@@ -1483,9 +1629,10 @@ export function usePokeAlbum() {
       if (prev.status !== 'ready' || prev.mode !== 'trainer') {
         return
       }
-      const isCorrect = picked === prev.correctIndex
+      const isLate = Date.now() > prev.deadline
+      const isCorrect = !isLate && picked === prev.correctIndex
       const reward = applyTriviaOutcome(isCorrect, prev.wager, prev.mode)
-      setTrivia({ ...prev, status: 'answered', picked, reward })
+      setTrivia({ ...prev, status: 'answered', picked, reward, timedOut: isLate })
     },
     [applyTriviaOutcome],
   )
@@ -1497,6 +1644,9 @@ export function usePokeAlbum() {
   // paySkip pays SHINY_ATTEMPT_SKIP_COST to ignore the cooldown for this one attempt — it doesn't
   // grant extra free attempts afterward, the clock just restarts from now like any other attempt.
   const startShinyChallenge = useCallback((pokemonId: number, paySkip: boolean = false) => {
+    if (cheatLockedRef.current) {
+      return
+    }
     if (!canAttemptShiny(albumRef.current, pokemonId)) {
       return
     }
@@ -1572,9 +1722,10 @@ export function usePokeAlbum() {
       return
     }
     const question = prev.questions[prev.index]
-    const correct = picked === question.answerIndex
+    const isLate = Date.now() > prev.deadline
+    const correct = !isLate && picked === question.answerIndex
     playSfx(correct ? 'wagerWin' : 'wagerLose')
-    setShinyChallenge({ ...prev, status: 'answered', picked, correct })
+    setShinyChallenge({ ...prev, status: 'answered', picked, correct, timedOut: isLate })
   }, [])
 
   const expireShinyQuestion = useCallback(() => {
@@ -1630,28 +1781,6 @@ export function usePokeAlbum() {
 
   const exportCode = useCallback(() => encodeSave(album), [album])
 
-  const setImportCode = useCallback((value: string) => {
-    setImportCodeValue(value)
-    setImportError(null)
-  }, [])
-
-  const importCode = useCallback((): boolean => {
-    const sanitized = importCodeValue.replace(/[\s-]/g, '')
-    const decoded = decodeSave(sanitized)
-    if (!decoded) {
-      setImportError('Ese código no es válido. Revisá que esté completo y sin espacios de más.')
-      playSfx('error')
-      return false
-    }
-    setAlbum(decoded)
-    writeSave(decoded)
-    setImportError(null)
-    setImportCodeValue('')
-    setPage(0)
-    playSfx('importOk')
-    return true
-  }, [importCodeValue])
-
   const stats = progress(album)
   const pendingCounts: Record<number, number> = {}
   for (const item of pending) {
@@ -1690,8 +1819,6 @@ export function usePokeAlbum() {
     shinyAttemptReadyAt,
     shinyAttemptSkipCost: SHINY_ATTEMPT_SKIP_COST,
     confirmingReset,
-    importError,
-    importCodeValue,
     stats,
     canOpenPack: album.coins >= PACK_COST,
     canOpenRarePack: album.coins >= PACK_RARE_COST,
@@ -1744,10 +1871,10 @@ export function usePokeAlbum() {
     cancelReset,
     confirmReset,
     exportCode,
-    setImportCode,
-    importCode,
     cheatLocked: cheatLockRemainingMs > 0,
     cheatLockRemainingMs,
+    cheatWiped,
+    dismissCheatWiped: () => setCheatWiped(false),
     triviaStreak: triviaStats.streak,
     bestTriviaStreak: triviaStats.bestStreak,
     unlockedAchievements: triviaStats.unlocked,

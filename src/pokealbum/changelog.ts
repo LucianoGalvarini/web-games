@@ -1,8 +1,19 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.20.0'
+export const CURRENT_VERSION = '1.21.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.21.0',
+    date: '2026-09-09',
+    changes: [
+      'Seguridad: se sacó la opción de "importar" un código de guardado — era la puerta de entrada para meter un guardado editado a mano y quedarse con monedas de la nada.',
+      'Todos los contadores del juego (preguntas gratis del día, bonus, cooldowns de ruleta/shiny, figuritas por pegar) ahora están firmados como el resto del guardado: editarlos desde la consola ya no pasa desapercibido.',
+      'Si se detecta que se tocó el guardado o un contador por fuera del juego, se borra toda la cuenta (monedas, colección, rachas, premios) en vez de solo bloquear un rato.',
+      'La ruleta ya no se puede "reintentar gratis" recargando la página después de un resultado que no gustó: al volver, se recupera el mismo giro pendiente.',
+      'Contestar una pregunta después de que se acabó el tiempo (por ejemplo dejando la pestaña en pausa) ya no cuenta como acierto.',
+    ],
+  },
   {
     version: '1.20.0',
     date: '2026-09-09',

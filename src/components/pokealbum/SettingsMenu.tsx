@@ -9,11 +9,6 @@ type SettingsMenuProps = {
   onNextTrack: () => void
   justCopied: boolean
   onCopyCode: () => void
-  importCodeValue: string
-  onSetImportCode: (value: string) => void
-  justImported: boolean
-  onImportCode: () => void
-  importError: string | null
   confirmingReset: boolean
   onRequestReset: () => void
   onConfirmReset: () => void
@@ -31,11 +26,6 @@ export function SettingsMenu({
   onNextTrack,
   justCopied,
   onCopyCode,
-  importCodeValue,
-  onSetImportCode,
-  justImported,
-  onImportCode,
-  importError,
   confirmingReset,
   onRequestReset,
   onConfirmReset,
@@ -83,21 +73,11 @@ export function SettingsMenu({
           >
             {justCopied ? '¡Copiado! ✓' : 'Copiar código'}
           </button>
-          <input
-            type="text"
-            placeholder="Pegá un código para importar"
-            value={importCodeValue}
-            onChange={(event) => onSetImportCode(event.target.value)}
-          />
-          <button
-            type="button"
-            className={`btn${justImported ? ' btn-gold' : ''}`}
-            onMouseEnter={() => playSfx('hover')}
-            onClick={onImportCode}
-          >
-            {justImported ? '¡Importado! ✓' : 'Importar'}
-          </button>
-          {importError && <p className="pokealbum-error">{importError}</p>}
+          <p className="pokealbum-menu-hint">
+            Es solo de referencia: por seguridad ya no se puede volver a importar un código. Si
+            alguien te ofrece "editarte" el código para sumar monedas, es mentira y el resultado va
+            a ser que te borren la cuenta.
+          </p>
         </section>
 
         <section className="pokealbum-menu-section actions">

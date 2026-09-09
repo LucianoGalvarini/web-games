@@ -64,11 +64,15 @@ function isEntry(value: unknown): value is AlbumEntry {
   return (
     typeof entry.owned === 'boolean' &&
     typeof entry.duplicates === 'number' &&
+    Number.isSafeInteger(entry.duplicates) &&
     entry.duplicates >= 0 &&
     (entry.shiny === undefined || typeof entry.shiny === 'boolean')
   )
 }
 
+// Decoding and signature verification are the same decision now — there is no path left that
+// accepts a structurally-valid but unsigned/mis-signed code, which is exactly how a coins-edited
+// save used to get re-legitimized by the old "import" flow (decode first, check signature never).
 export function decodeSave(code: string): AlbumState | null {
   try {
     const json = decodeURIComponent(atob(code.trim()))
@@ -76,7 +80,7 @@ export function decodeSave(code: string): AlbumState | null {
     if (data.version !== 1) {
       return null
     }
-    if (typeof data.coins !== 'number' || !Number.isFinite(data.coins) || data.coins < 0) {
+    if (typeof data.coins !== 'number' || !Number.isSafeInteger(data.coins) || data.coins < 0) {
       return null
     }
     if (typeof data.entries !== 'object' || data.entries === null) {
@@ -92,6 +96,9 @@ export function decodeSave(code: string): AlbumState | null {
         return null
       }
       entries[id] = { owned: value.owned, duplicates: value.duplicates, shiny: value.shiny === true }
+    }
+    if (typeof data.sig !== 'string' || data.sig !== computeSig(1, data.coins, entries)) {
+      return null
     }
     return { coins: data.coins, entries }
   } catch {

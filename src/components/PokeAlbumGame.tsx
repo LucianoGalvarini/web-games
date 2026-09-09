@@ -27,6 +27,7 @@ import { AchievementToast } from './pokealbum/AchievementToast'
 import { AlbumGrid } from './pokealbum/AlbumGrid'
 import { ChangelogModal } from './pokealbum/ChangelogModal'
 import { CheatLockOverlay } from './pokealbum/CheatLockOverlay'
+import { CheatWipeOverlay } from './pokealbum/CheatWipeOverlay'
 import { OverworldParade } from './pokealbum/OverworldParade'
 import { PackReveal } from './pokealbum/PackReveal'
 import { PokedexModal } from './pokealbum/PokedexModal'
@@ -57,7 +58,6 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
   const [coinPopups, setCoinPopups] = useState<{ id: number; delta: number }[]>([])
   const [pokedexId, setPokedexId] = useState<number | null>(null)
   const [justCopied, setJustCopied] = useState(false)
-  const [justImported, setJustImported] = useState(false)
   const [musicMuted, setMusicMuted] = useState(() => isMusicMuted())
   const [trackName, setTrackName] = useState(() => getMusicTrackName())
   const [clearFilterSignal, setClearFilterSignal] = useState(0)
@@ -97,12 +97,6 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
       .catch(() => {})
   }
 
-  const importCode = () => {
-    if (game.importCode()) {
-      setJustImported(true)
-      window.setTimeout(() => setJustImported(false), 1600)
-    }
-  }
 
   useEffect(() => {
     playSfx('enter')
@@ -139,7 +133,8 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
 
   return (
     <div className="app pokealbum-app">
-      {game.cheatLocked && <CheatLockOverlay remainingMs={game.cheatLockRemainingMs} />}
+      {game.cheatWiped && <CheatWipeOverlay onDismiss={game.dismissCheatWiped} />}
+      {!game.cheatWiped && game.cheatLocked && <CheatLockOverlay remainingMs={game.cheatLockRemainingMs} />}
       <AchievementToast queue={game.achievementQueue} onDismiss={game.dismissAchievement} />
       <TableHud onManual={() => setRulesOpen(true)} />
       <OverworldParade ownedIds={ownedIds} />
@@ -389,11 +384,6 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
         onNextTrack={nextTrack}
         justCopied={justCopied}
         onCopyCode={copyCode}
-        importCodeValue={game.importCodeValue}
-        onSetImportCode={game.setImportCode}
-        justImported={justImported}
-        onImportCode={importCode}
-        importError={game.importError}
         confirmingReset={game.confirmingReset}
         onRequestReset={game.requestReset}
         onConfirmReset={game.confirmReset}

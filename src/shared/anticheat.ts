@@ -30,7 +30,9 @@ function writeLockRecord(until: number): void {
   }
 }
 
-// Starts (or restarts) the penalty timer, LOCK_HOURS from now.
+// Starts (or restarts) the penalty timer, LOCK_HOURS from now. This is the SOFT response to a
+// mere suspicion signal (DevTools looks open) — not proof anyone touched saved data, so it's
+// temporary and reversible by waiting it out, unlike wipeAccountForCheating below.
 export function triggerCheatLock(): void {
   writeLockRecord(Date.now() + CHEAT_LOCK_MS)
 }
@@ -83,4 +85,67 @@ export function startDevToolsWatch(onDetect: () => void): () => void {
     window.clearInterval(intervalId)
     window.removeEventListener('resize', check)
   }
+}
+
+// ---- Hard response: confirmed tampering wipes the account ----
+//
+// This is the ceiling of what a browser-only game can enforce: there is no server to hold an
+// unforgeable signing key, so a sufficiently technical attacker (or anyone who reads this file's
+// source, e.g. from the public repo) can still forge a signature. What signing DOES catch — and
+// what this responds to — is any save/counter that was edited without going through the app, which
+// covers hand-editing localStorage from DevTools and pasting a doctored/AI-edited code back in.
+// On that confirmed signal, the whole pokealbum-* account is wiped rather than temporarily locked.
+let wipedThisLoad = false
+const WIPE_NOTICE_KEY = 'pokealbum-cheat-wipe-notice'
+
+export const CHEAT_TAUNTS = [
+  'JAJAJAJ DALE PAJERO',
+  'QUERÉS MONEDITAS PELOTUDIN?',
+  'JAAAAAAAAAAAAAAAAAAAA, DALE SOS BUENISIMO',
+  'JAJAJ POR QUÉ CHITEAS PAJERO?',
+]
+
+export function randomCheatTaunt(): string {
+  return CHEAT_TAUNTS[Math.floor(Math.random() * CHEAT_TAUNTS.length)]
+}
+
+export function wipeAccountForCheating(): void {
+  try {
+    const keysToRemove: string[] = []
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith('pokealbum-')) {
+        keysToRemove.push(key)
+      }
+    }
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key)
+    }
+  } catch {
+    /* ignore quota / privacy mode */
+  }
+  wipedThisLoad = true
+  try {
+    localStorage.setItem(WIPE_NOTICE_KEY, '1')
+  } catch {
+    /* ignore quota */
+  }
+}
+
+// One-shot: true the first time it's called after a wipe (this load, or a still-pending notice
+// left over from a wipe that happened without a full page reload in between).
+export function consumeCheatWipeNotice(): boolean {
+  if (wipedThisLoad) {
+    wipedThisLoad = false
+    return true
+  }
+  try {
+    if (localStorage.getItem(WIPE_NOTICE_KEY) === '1') {
+      localStorage.removeItem(WIPE_NOTICE_KEY)
+      return true
+    }
+  } catch {
+    /* ignore */
+  }
+  return false
 }
