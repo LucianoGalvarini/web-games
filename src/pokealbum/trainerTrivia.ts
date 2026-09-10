@@ -106,7 +106,7 @@ export const TRAINER_TRIVIA: TrainerTriviaItem[] = [
     correctIndex: 0,
   },
   {
-    prompt: '¿En qué ciudad se encuentra la Liga Pokémon de Kanto (Meseta Añil)?',
+    prompt: '¿En qué lugar de Kanto se disputa el desafío contra el Alto Mando y el Campeón?',
     options: ['Meseta Añil', 'Ciudad Azafrán', 'Ciudad Carmín', 'Pueblo Paleta'],
     correctIndex: 0,
   },

@@ -1,8 +1,24 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.22.0'
+export const CURRENT_VERSION = '1.23.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.23.0',
+    date: '2026-09-10',
+    changes: [
+      'Doble o nada: después de ganar tu primera apuesta, las siguientes preguntas son siempre de "quién tiene más/menos estadística" o "qué movimiento puede aprender" — nada de entrenadores ni verdadero/falso apostando. Esto no se desactiva recargando la página, perdiendo o volviendo a jugar gratis.',
+      'La apuesta ahora se descuenta apenas aparece la pregunta (no al responder): recargar la página para esquivar una apuesta que no te gusta ya no funciona — al volver a entrar te encontrás con la misma pregunta pendiente.',
+      'La dificultad de doble o nada ahora también sube con el monto apostado (en monto absoluto y como porcentaje de tu saldo), no solo con la racha — apostar más nunca la baja.',
+      'Se corrigió un bug donde ganar una apuesta también sumaba el bonus de racha de la trivia gratuita, pagando de más.',
+      '"¿Quién tiene más estadística?" ahora también puede preguntar "¿quién tiene menos?" — antes solo existía la versión "más".',
+      'El orden de las opciones en trivia y en el desafío Shiny ahora se mezcla con un shuffle real (antes usaba un método sesgado que no distribuye parejo).',
+      'El desafío Shiny nunca hace más de una pregunta de evolución/preevolución por intento.',
+      'Se corrigió la pregunta de Meseta Añil, que tenía la respuesta escrita en el propio enunciado entre paréntesis.',
+      'Se sacó la repetición de "Gen I" / "primera generación" de cada pregunta del banco Shiny — ahora las reglas se aclaran una sola vez al empezar el desafío.',
+      'Pagar para saltar la espera del desafío Shiny ahora sale más caro cada vez que lo hacés dentro de la misma ventana de 20 minutos: 100000, luego 200000, luego 400000... Al pasar los 20 minutos vuelve a costar 100000.',
+    ],
+  },
   {
     version: '1.22.0',
     date: '2026-09-09',

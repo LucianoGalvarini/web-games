@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react'
-import { DUPLICATE_SELL_VALUE, RARITY_LABEL, SHINY_CHALLENGE_DUPLICATES, SHINY_CHALLENGE_QUESTION_COUNT } from '../../pokealbum'
+import {
+  DUPLICATE_SELL_VALUE,
+  RARITY_LABEL,
+  SHINY_CHALLENGE_DUPLICATES,
+  SHINY_CHALLENGE_QUESTION_COUNT,
+  shinySkipCostForPaidCount,
+} from '../../pokealbum'
 import type { AlbumEntry, PokedexEntry } from '../../pokealbum'
 import { heightToScale, usePokemonHeight } from '../../hooks/usePokemonHeight'
 import { playSfx } from '../../shared/sfx'
@@ -11,7 +17,7 @@ type AlbumSlotProps = {
   pendingCount: number
   coins: number
   shinyAttemptReadyAt: number
-  shinyAttemptSkipCost: number
+  shinySkipsPaid: number
   onSell: (id: number) => void
   onStick: (id: number) => void
   onOpenPokedex: (id: number) => void
@@ -31,7 +37,7 @@ export function AlbumSlot({
   pendingCount,
   coins,
   shinyAttemptReadyAt,
-  shinyAttemptSkipCost,
+  shinySkipsPaid,
   onSell,
   onStick,
   onOpenPokedex,
@@ -54,7 +60,11 @@ export function AlbumSlot({
   }, [canAttemptShiny])
 
   const shinyOnCooldown = canAttemptShiny && now < shinyAttemptReadyAt
-  const canSkipCooldown = coins >= shinyAttemptSkipCost
+  // Doubles with every skip already paid inside this cooldown window (100k, 200k, 400k...) — see
+  // shinySkipCostForPaidCount. null means the price outgrew what can be charged safely, which is
+  // treated as "no more skips this window" rather than silently wrapping to a tiny number.
+  const skipCost = shinySkipCostForPaidCount(shinySkipsPaid)
+  const canSkipCooldown = skipCost !== null && coins >= skipCost
 
   return (
     <div
@@ -120,9 +130,13 @@ export function AlbumSlot({
                 onMouseEnter={() => canSkipCooldown && playSfx('hover')}
                 onClick={() => onAttemptShiny(p.id, true)}
                 disabled={!canSkipCooldown}
-                title={`Pagá ${shinyAttemptSkipCost} monedas para intentarlo ahora mismo`}
+                title={
+                  skipCost === null
+                    ? 'Ya no se puede pagar otro salto en esta ventana'
+                    : `Pagá ${skipCost} monedas para intentarlo ahora mismo (el precio se duplica en cada salto pagado dentro de esta espera)`
+                }
               >
-                Pagar {shinyAttemptSkipCost} y probar ahora
+                {skipCost === null ? 'Ya no se puede saltar' : `Pagar ${skipCost} y probar ahora`}
               </button>
             </>
           )}

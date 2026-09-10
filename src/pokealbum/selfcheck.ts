@@ -1,6 +1,6 @@
 import { ACHIEVEMENTS, evaluateNewAchievements } from './achievements'
 import { POKEMON, RARITY_WEIGHT, TOTAL_POKEMON, bestRarity } from './data'
-import { DUPLICATE_SELL_VALUE, RECYCLE_COST, SHINY_CHALLENGE_DUPLICATES } from './economy'
+import { DUPLICATE_SELL_VALUE, RECYCLE_COST, SHINY_CHALLENGE_DUPLICATES, shinySkipCostForPaidCount } from './economy'
 import {
   applySticker,
   createInitialAlbum,
@@ -329,6 +329,10 @@ assert(
 )
 
 assert(TRAINER_TRIVIA.length >= 10, 'Hay una cantidad razonable de preguntas de entrenadores.')
+// One-time editorial pass (not a standing automated check — a same-word-family match like "Mew"
+// inside "Mewtwo" is a false positive, not a real leak, and would need human judgment every time):
+// reviewed every TRAINER_TRIVIA prompt for an option's exact text embedded in it. The only real
+// leak found was Meseta Añil naming its own answer in a parenthetical, now fixed above.
 for (const item of TRAINER_TRIVIA) {
   assert(item.options.length === 4, `"${item.prompt}" tiene exactamente 4 opciones.`)
   assert(
@@ -405,6 +409,36 @@ const shinySelection2 = pickShinyChallengeQuestions(mockPool, () => 0)
 assert(
   shinySelection2.every((q) => mockPool.some((p) => p.id === q.id)),
   'La selección siempre viene del pool recibido.',
+)
+assert(
+  shinySelection.every((q) => q.options[q.answerIndex] === 'a'),
+  'Barajar las opciones de una pregunta shiny mantiene la respuesta correcta apuntando al valor correcto.',
+)
+
+function mockEvoQuestion(difficulty: ShinyQuestion['difficulty'], n: number, category: string): ShinyQuestion {
+  return { ...mockShinyQuestion(difficulty, n), id: `${category}_${difficulty}_${n}`, category }
+}
+const evoPool: ShinyQuestion[] = [
+  ...Array.from({ length: 2 }, (_, i) => mockShinyQuestion('fácil', i)),
+  ...Array.from({ length: 3 }, (_, i) => mockEvoQuestion('media', i, 'evoluciones')),
+  ...Array.from({ length: 3 }, (_, i) => mockShinyQuestion('media', i + 10)),
+  ...Array.from({ length: 4 }, (_, i) => mockShinyQuestion('difícil', i)),
+]
+const evoSelection = pickShinyChallengeQuestions(evoPool, rng)
+assert(
+  evoSelection.filter((q) => q.category === 'evoluciones').length <= 1,
+  'Un desafío shiny nunca incluye más de una pregunta de evolución/preevolución/línea evolutiva.',
+)
+
+const skipCost0 = shinySkipCostForPaidCount(0)
+const skipCost1 = shinySkipCostForPaidCount(1)
+const skipCost2 = shinySkipCostForPaidCount(2)
+assert(skipCost0 === 100000, 'El primer salto shiny pagado en una ventana cuesta el precio base (100000).')
+assert(skipCost1 === 200000, 'El segundo salto pagado en la misma ventana duplica el precio (200000).')
+assert(skipCost2 === 400000, 'El tercer salto pagado en la misma ventana vuelve a duplicar el precio (400000).')
+assert(
+  shinySkipCostForPaidCount(60) === null,
+  'Un precio de salto que desbordaría el rango seguro de enteros se rechaza (null) en vez de envolver a un número inválido.',
 )
 
 console.log('pokealbum selfcheck ok')

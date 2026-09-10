@@ -15,7 +15,7 @@ type AlbumGridProps = {
   clearFilterSignal?: number
   coins: number
   shinyAttemptReadyAt: number
-  shinyAttemptSkipCost: number
+  shinySkipsPaid: number
   onPageChange: (page: number) => void
   onSell: (id: number) => void
   onStick: (id: number) => void
@@ -34,7 +34,7 @@ export function AlbumGrid({
   clearFilterSignal,
   coins,
   shinyAttemptReadyAt,
-  shinyAttemptSkipCost,
+  shinySkipsPaid,
   onPageChange,
   onSell,
   onStick,
@@ -115,7 +115,7 @@ export function AlbumGrid({
             pendingCount={pendingCounts[p.id] ?? 0}
             coins={coins}
             shinyAttemptReadyAt={shinyAttemptReadyAt}
-            shinyAttemptSkipCost={shinyAttemptSkipCost}
+            shinySkipsPaid={shinySkipsPaid}
             onSell={onSell}
             onStick={onStick}
             onOpenPokedex={onOpenPokedex}

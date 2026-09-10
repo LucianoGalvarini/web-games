@@ -130,6 +130,9 @@ export function ShinyChallengeModal({ challenge, onAnswer, onExpire, onContinue,
     <div className="modal-backdrop result-backdrop" role="presentation">
       <div className="modal result-modal pokealbum-shiny-modal" role="dialog" aria-modal="true">
         <p className="eyebrow">✨ Desafío shiny · {nameOf(challenge.pokemonId)}</p>
+        {challenge.index === 0 && !answered && (
+          <p className="pokealbum-shiny-ruleset">Reglas: Pokémon Rojo/Azul/Amarillo, la primera generación (Kanto).</p>
+        )}
         <div className="pokealbum-shiny-progress">
           <span>
             Pregunta {challenge.index + 1} de {challenge.questions.length}

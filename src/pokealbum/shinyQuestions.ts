@@ -104,13 +104,61 @@ function shuffle<T>(items: T[], rng: () => number): T[] {
   return arr
 }
 
+// Evolution/pre-evolution/evolutionary-line questions all lean on the same handful of facts about
+// a species — asking several per attempt made the challenge feel repetitive. At most one gets
+// through; if a candidate slot lands on a second one, it's swapped for a same-difficulty
+// non-evolution question when one is available (and just left in place otherwise, rather than
+// shrinking the challenge below its intended length).
+const EVOLUTION_CATEGORIES = new Set(['evoluciones', 'involuciones', 'linea_evolutiva', 'nivel_o_metodo_evolucion'])
+
+function enforceEvolutionQuota(picked: ShinyQuestion[], pool: ShinyQuestion[], rng: () => number): ShinyQuestion[] {
+  const evoIndices = picked.reduce<number[]>((acc, q, i) => {
+    if (EVOLUTION_CATEGORIES.has(q.category)) acc.push(i)
+    return acc
+  }, [])
+  if (evoIndices.length <= 1) {
+    return picked
+  }
+  const result = [...picked]
+  const usedIds = new Set(picked.map((q) => q.id))
+  for (const idx of evoIndices.slice(1)) {
+    const tier = result[idx].difficulty
+    const candidates = shuffle(
+      pool.filter((q) => q.difficulty === tier && !EVOLUTION_CATEGORIES.has(q.category) && !usedIds.has(q.id)),
+      rng,
+    )
+    const replacement = candidates[0]
+    if (replacement) {
+      usedIds.add(replacement.id)
+      result[idx] = replacement
+    }
+  }
+  return result
+}
+
+// Options are authored in a fixed order in the static dataset, so without this, the correct
+// answer's position for a given question is the same every single time it's asked — a pattern a
+// player could simply memorize across playthroughs. Shuffled once per pick, then stable for the
+// rest of that attempt (re-render, countdown ticking, resuming after a reload all reuse this).
+function shuffleQuestionOptions(question: ShinyQuestion, rng: () => number): ShinyQuestion {
+  const order = shuffle(
+    question.options.map((_, i) => i),
+    rng,
+  )
+  return {
+    ...question,
+    options: order.map((i) => question.options[i]),
+    answerIndex: order.indexOf(question.answerIndex),
+  }
+}
+
 export function pickShinyChallengeQuestions(
   pool: ShinyQuestion[],
   rng: () => number = Math.random,
   total = 5,
 ): ShinyQuestion[] {
   const plan = TIER_PLAN_BY_TOTAL[total] ?? TIER_PLAN_BY_TOTAL[5]
-  const picked: ShinyQuestion[] = []
+  let picked: ShinyQuestion[] = []
   for (const tier of plan) {
     const candidates = shuffle(
       pool.filter((q) => q.difficulty === tier.difficulty),
@@ -126,5 +174,6 @@ export function pickShinyChallengeQuestions(
     )
     picked.push(...leftovers.slice(0, total - picked.length))
   }
-  return picked
+  picked = enforceEvolutionQuota(picked, pool, rng)
+  return picked.map((q) => shuffleQuestionOptions(q, rng))
 }

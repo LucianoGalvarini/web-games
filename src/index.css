@@ -8388,6 +8388,14 @@ body.is-liga-wide {
   text-align: center;
 }
 
+.pokealbum-shiny-ruleset {
+  margin: -4px 0 0;
+  font-size: 12px;
+  text-align: center;
+  color: var(--fr-ink);
+  opacity: 0.65;
+}
+
 .pokealbum-shiny-progress {
   display: flex;
   align-items: center;

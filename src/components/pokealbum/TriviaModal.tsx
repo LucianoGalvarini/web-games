@@ -128,10 +128,11 @@ export function TriviaModal({
   let body: ReactNode
   if (trivia.mode === 'statPair') {
     const label = STAT_LABEL[trivia.statKey]
+    const comparatorWord = trivia.comparator === 'less' ? 'menos' : 'más'
     body = (
       <>
         <p className="pokealbum-trivia-modal-question">
-          ¿Cuál de estos dos Pokémon tiene más <strong>{label}</strong>?
+          ¿Cuál de estos dos Pokémon tiene {comparatorWord} <strong>{label}</strong>?
         </p>
         <div className="pokealbum-trivia-pair pokealbum-trivia-modal-pair">
           {(['a', 'b'] as const).map((side) => {

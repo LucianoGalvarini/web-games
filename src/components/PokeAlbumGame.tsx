@@ -270,7 +270,7 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
             clearFilterSignal={clearFilterSignal}
             coins={game.coins}
             shinyAttemptReadyAt={game.shinyAttemptReadyAt}
-            shinyAttemptSkipCost={game.shinyAttemptSkipCost}
+            shinySkipsPaid={game.shinySkipsPaid}
             onPageChange={game.goToPage}
             onSell={game.sellDuplicate}
             onStick={game.stickPending}

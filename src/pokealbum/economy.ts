@@ -38,9 +38,20 @@ export const SHINY_CHALLENGE_TIME_LIMITS_MS: Record<Rarity, number[]> = {
 
 // Global cooldown between shiny attempts (any species) — without this, a player with a huge coin
 // stockpile could buy their way to duplicates of every species and clear the whole shiny dex in
-// one sitting. Paying SHINY_ATTEMPT_SKIP_COST skips the wait for that one attempt instead.
+// one sitting. Paying a skip fee ignores the wait for that one attempt instead, without moving the
+// cooldown's own end time: every skip paid inside the same 20-minute window doubles the price
+// (100k, 200k, 400k...), so stacking skips back to back gets expensive fast. The window itself
+// doesn't stretch — it still ends 20 minutes after whichever attempt opened it — and paying it
+// forward never refunds/regenerates the duplicates a paid attempt consumes.
 export const SHINY_ATTEMPT_COOLDOWN_MS = 20 * 60 * 1000
-export const SHINY_ATTEMPT_SKIP_COST = 100000
+export const SHINY_ATTEMPT_SKIP_BASE_COST = 100000
+
+// null means the price has grown past what can be represented/charged safely — treated as "no
+// more skips available this window" rather than silently wrapping into a tiny or negative number.
+export function shinySkipCostForPaidCount(paidSkipsInWindow: number): number | null {
+  const cost = SHINY_ATTEMPT_SKIP_BASE_COST * 2 ** paidSkipsInWindow
+  return Number.isSafeInteger(cost) ? cost : null
+}
 
 export const DUPLICATE_SELL_VALUE: Record<Rarity, number> = {
   common: 10,

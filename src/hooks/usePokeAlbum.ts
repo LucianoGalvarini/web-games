@@ -12,7 +12,6 @@ import {
   RARE_PACK_POOL,
   RECYCLE_COST,
   SHINY_ATTEMPT_COOLDOWN_MS,
-  SHINY_ATTEMPT_SKIP_COST,
   SHINY_CHALLENGE_DUPLICATES,
   SHINY_CHALLENGE_QUESTION_COUNT,
   SHINY_CHALLENGE_TIME_LIMITS_MS,
@@ -43,6 +42,7 @@ import {
   rollSegmentAmount,
   sellAllDuplicates,
   sellDuplicate,
+  shinySkipCostForPaidCount,
   signPayload,
   spinRoulette,
   unlockShiny,
@@ -150,6 +150,7 @@ const PENDING_KEY = 'pokealbum-pending'
 const REVEAL_STAGGER = 220
 
 type TriviaSide = 'a' | 'b'
+type StatComparator = 'more' | 'less'
 export type TriviaMode = 'statPair' | 'trueFalse' | 'multipleChoice' | 'trainer'
 
 type Facts = { stats: Record<StatKey, number>; types: string[]; moves: string[] }
@@ -166,6 +167,7 @@ export type TriviaState =
       aId: number
       bId: number
       statKey: StatKey
+      comparator: StatComparator
       aValue?: number
       bValue?: number
       correct?: TriviaSide
@@ -476,6 +478,9 @@ function writeDailyFreeTrivia(count: number): void {
 
 const SPIN_KEY = 'pokealbum-roulette-last'
 const SHINY_LAST_ATTEMPT_KEY = 'pokealbum-shiny-last-attempt'
+// Paid skips inside the current 20-minute cooldown window (see startShinyChallenge) — resets to 0
+// the moment a normal (unpaid) attempt opens a fresh window, not on a fixed schedule.
+const SHINY_SKIP_PAID_KEY = 'pokealbum-shiny-skip-paid'
 const BONUS_QUESTIONS_KEY = 'pokealbum-bonus-questions'
 const WAGER_BOOST_KEY = 'pokealbum-wager-boost'
 const DAILY_LOGIN_KEY = 'pokealbum-daily-login'
@@ -542,6 +547,84 @@ function readLastShinyAttemptAt(): number | null {
 
 function writeLastShinyAttemptAt(value: number | null): void {
   writeSignedValue(SHINY_LAST_ATTEMPT_KEY, value)
+}
+
+const WAGER_RESTRICTED_MODES_KEY = 'pokealbum-wager-restricted-modes'
+
+// Once the player wins their first wager (any mode), every wager after that is restricted to
+// "quién tiene más/menos" and "qué movimientos puede aprender" only — no more trainer trivia or
+// verdadero/falso for money. This flag persists forever once set: failing a bet, reloading, or
+// answering free questions never un-sets it, so it can't be farmed back down to the easy pool.
+function readWagerRestrictedModesUnlocked(): boolean {
+  return readNumber(WAGER_RESTRICTED_MODES_KEY) > 0
+}
+
+function writeWagerRestrictedModesUnlocked(): void {
+  writeNumber(WAGER_RESTRICTED_MODES_KEY, 1)
+}
+
+// A generic alias with a naked type parameter is what makes this distribute over TriviaState's
+// union: each idle/loading/error member fails the `status` check and drops out to `never`, while
+// each of the four trivia-mode members matches and comes through with `status` narrowed to the
+// literal 'ready' (Extract can't do this directly, since every real member's status is the union
+// 'ready' | 'answered', not the literal 'ready' alone).
+type ReadyOf<T> = T extends { status: 'ready' | 'answered'; wager: number } ? Omit<T, 'status'> & { status: 'ready' } : never
+type ReadyWagerTrivia = ReadyOf<TriviaState>
+const PENDING_WAGER_TRIVIA_KEY = 'pokealbum-wager-trivia-pending'
+
+// Signs over a canonical (key-sorted) JSON string, not the object's natural field order, so the
+// signature doesn't depend on which order the fields happened to be written in.
+function pendingWagerTriviaSig(state: ReadyWagerTrivia): string {
+  return signPayload(`wagerTrivia|${JSON.stringify(state, Object.keys(state).sort())}`)
+}
+
+// Persists an in-progress wagered question (not free ones — those have nothing at risk) so that
+// reloading the page mid-question recovers the exact same question instead of silently discarding
+// it. The wager is charged the moment the question becomes visible (see reserveWager below), so
+// discarding it on reload would otherwise be a free way to dodge a bet you regret making.
+function readPendingWagerTrivia(): TriviaState | null {
+  try {
+    const raw = localStorage.getItem(PENDING_WAGER_TRIVIA_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as { state?: ReadyWagerTrivia; sig?: string }
+      if (parsed.state && typeof parsed.state === 'object' && parsed.state.status === 'ready') {
+        if (parsed.sig !== pendingWagerTriviaSig(parsed.state)) {
+          wipeAccountForCheating()
+          return null
+        }
+        return parsed.state
+      }
+    }
+  } catch {
+    /* privacy mode / corrupt data, fall through */
+  }
+  return null
+}
+
+function writePendingWagerTrivia(state: ReadyWagerTrivia | null): void {
+  try {
+    if (state === null) {
+      localStorage.removeItem(PENDING_WAGER_TRIVIA_KEY)
+    } else {
+      localStorage.setItem(PENDING_WAGER_TRIVIA_KEY, JSON.stringify({ state, sig: pendingWagerTriviaSig(state) }))
+    }
+  } catch {
+    /* ignore quota */
+  }
+}
+
+// Deducts the wager immediately, before the question is ever shown to the player — reloading
+// after seeing a question you don't like can no longer dodge a bet you already committed to.
+// Returns the updated album, or null if the balance no longer covers it (re-checked here, not
+// just trusted from the click that started the request).
+function reserveWagerFrom(album: AlbumState, wager: number): AlbumState | null {
+  if (wager <= 0) {
+    return album
+  }
+  if (album.coins < wager) {
+    return null
+  }
+  return { ...album, coins: album.coins - wager }
 }
 
 type PendingSpin = { segment: RouletteSegment; amount: number }
@@ -684,6 +767,17 @@ function writePending(items: PendingSticker[]): void {
   }
 }
 
+// Real Fisher–Yates — `array.sort(() => Math.random() - 0.5)` is a biased shuffle (some
+// permutations come out more often than others), which is exactly the kind of "predictable
+// pattern" this is meant to eliminate from option ordering.
+function shuffleInPlace<T>(items: T[]): T[] {
+  for (let i = items.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[items[i], items[j]] = [items[j], items[i]]
+  }
+  return items
+}
+
 function randomId(exclude?: number): number {
   let id = 1 + Math.floor(Math.random() * POKEMON.length)
   while (id === exclude) {
@@ -699,45 +793,72 @@ function pickNonTiedStat(a: Facts, b: Facts, preferredKey: StatKey): StatKey {
   if (a.stats[preferredKey] !== b.stats[preferredKey]) {
     return preferredKey
   }
-  const shuffled = [...STAT_KEYS].sort(() => Math.random() - 0.5)
+  const shuffled = shuffleInPlace([...STAT_KEYS])
   return shuffled.find((key) => a.stats[key] !== b.stats[key]) ?? preferredKey
 }
 
-// "Doble o nada" gets sharper the more times in a row it's played, and a coin-inflated balance (a
-// side effect of playing a lot) forces the hardest tier outright — otherwise stacking wins gets
-// too easy once coins pile up. Tier 0 is the baseline (a free question, or the very first wager in
-// a streak); each extra consecutive wager climbs one tier, capped at 3.
-const WAGER_DIFFICULTY_COIN_THRESHOLD = 3000
-const MAX_DIFFICULTY_TIER = 3
+// Hidden difficulty for "doble o nada", on a 0-5 scale. Never shown to the player — no badge, no
+// warning, just harder pairs and a tighter clock. It's the max of three independent signals (a
+// bigger bet always pushes the level up, never down, at equal history):
+//  - how much is being staked in absolute coins
+//  - what fraction of the player's balance that represents
+//  - once the "modalidades restringidas" mode has kicked in (see wagerRestrictedModesUnlocked),
+//    a floor of 1 — the exigent mode never falls back to the easiest questions
+// ...plus streak pressure (consecutive wager wins) added on top. A dedicated rolling "N bets in
+// the last 10 minutes" counter is deliberately not tracked here (it would need its own persisted,
+// signed timestamp log): streak pressure already captures the case that actually matters — a
+// player repeatedly winning wagers back to back — without the extra state and attack surface.
+const WAGER_LEVEL_MAX = 5
 
-function computeDifficultyTier(priorWagerStreak: number, coins: number, wager: number): number {
+function amountLevel(wager: number): number {
+  if (wager < 100) return 0
+  if (wager < 500) return 1
+  if (wager < 2000) return 2
+  if (wager < 10000) return 3
+  if (wager < 50000) return 4
+  return 5
+}
+
+function proportionLevel(wager: number, coinsBeforeReserve: number): number {
+  if (coinsBeforeReserve <= 0) return 0
+  const pct = wager / coinsBeforeReserve
+  if (pct < 0.1) return 0
+  if (pct < 0.25) return 1
+  if (pct < 0.5) return 2
+  if (pct < 0.75) return 3
+  return 4
+}
+
+function streakPressure(priorWagerStreak: number): number {
+  if (priorWagerStreak <= 1) return 0
+  if (priorWagerStreak <= 3) return 1
+  if (priorWagerStreak <= 6) return 2
+  return 3
+}
+
+function computeWagerLevel(
+  priorWagerStreak: number,
+  coinsBeforeReserve: number,
+  wager: number,
+  restrictedModesUnlocked: boolean,
+): number {
   if (wager <= 0) {
     return 0
   }
-  if (coins > WAGER_DIFFICULTY_COIN_THRESHOLD) {
-    return MAX_DIFFICULTY_TIER
-  }
-  return Math.min(MAX_DIFFICULTY_TIER, priorWagerStreak)
+  const base = Math.max(amountLevel(wager), proportionLevel(wager, coinsBeforeReserve), restrictedModesUnlocked ? 1 : 0)
+  return Math.min(WAGER_LEVEL_MAX, base + streakPressure(priorWagerStreak))
 }
 
-function timeLimitForTier(tier: number): number {
-  switch (tier) {
-    case 0:
-      return TRIVIA_TIME_LIMIT_MS
-    case 1:
-      return Math.round(TRIVIA_TIME_LIMIT_MS * 0.85)
-    case 2:
-      return Math.round(TRIVIA_TIME_LIMIT_MS * 0.7)
-    default:
-      return Math.max(12000, Math.round(TRIVIA_TIME_LIMIT_MS * 0.55))
-  }
+function timeLimitForLevel(level: number): number {
+  const factor = [1, 0.9, 0.8, 0.7, 0.62, 0.55][level] ?? 0.55
+  return Math.max(12000, Math.round(TRIVIA_TIME_LIMIT_MS * factor))
 }
 
 // Easy: pit an iconic (rare/legendary) Pokémon against a common one, so the stat gap tends to be
 // obvious. Hard: restrict both sides to common/uncommon Pokémon, so there's no "it's a legendary,
 // it must be bigger" shortcut and the numbers alone decide it.
-function pickPairForDifficulty(tier: number): [number, number] {
-  if (tier <= 0) {
+function pickPairForLevel(level: number): [number, number] {
+  if (level <= 0) {
     const iconicPool = POKEMON.filter((p) => p.rarity === 'legendary' || p.rarity === 'rare')
     const commonPool = POKEMON.filter((p) => p.rarity === 'common')
     if (iconicPool.length > 0 && commonPool.length > 0) {
@@ -745,7 +866,7 @@ function pickPairForDifficulty(tier: number): [number, number] {
       const common = commonPool[Math.floor(Math.random() * commonPool.length)].id
       return Math.random() < 0.5 ? [iconic, common] : [common, iconic]
     }
-  } else if (tier >= 2) {
+  } else if (level >= 3) {
     const pool = POKEMON.filter((p) => p.rarity === 'common' || p.rarity === 'uncommon')
     if (pool.length >= 2) {
       const a = pool[Math.floor(Math.random() * pool.length)]
@@ -806,7 +927,8 @@ export function usePokeAlbum() {
   const [page, setPage] = useState(0)
   const [reveal, setReveal] = useState<RevealState>({ phase: 'closed' })
   const [pending, setPending] = useState<PendingSticker[]>(readPending)
-  const [trivia, setTrivia] = useState<TriviaState>({ status: 'idle' })
+  const [trivia, setTrivia] = useState<TriviaState>(() => readPendingWagerTrivia() ?? { status: 'idle' })
+  const [wagerRestrictedModesUnlocked, setWagerRestrictedModesUnlocked] = useState(readWagerRestrictedModesUnlocked)
   const [confirmingReset, setConfirmingReset] = useState(false)
   const [freeTriviaUsed, setFreeTriviaUsed] = useState(readDailyFreeTrivia)
   const [bonusQuestions, setBonusQuestions] = useState(() => readNumber(BONUS_QUESTIONS_KEY))
@@ -822,6 +944,7 @@ export function usePokeAlbum() {
   const [wagerStreak, setWagerStreak] = useState(0)
   const [shinyChallenge, setShinyChallenge] = useState<ShinyChallengeState>({ status: 'closed' })
   const [lastShinyAttemptAt, setLastShinyAttemptAt] = useState<number | null>(readLastShinyAttemptAt)
+  const [shinySkipsPaid, setShinySkipsPaid] = useState(() => readNumber(SHINY_SKIP_PAID_KEY))
   // Placed after every read*() call above so this reflects a wipe triggered by any of them during
   // this same initial render — module-level flag set synchronously, read once here.
   const [cheatWiped, setCheatWiped] = useState<boolean>(consumeCheatWipeNotice)
@@ -839,10 +962,12 @@ export function usePokeAlbum() {
   const wagerBoostRef = useRef(wagerBoost)
   const lastSpinAtRef = useRef(lastSpinAt)
   const lastShinyAttemptAtRef = useRef(lastShinyAttemptAt)
+  const shinySkipsPaidRef = useRef(shinySkipsPaid)
   const pendingSpinRef = useRef(pendingSpin)
   const dailyLoginRef = useRef(dailyLogin)
   const triviaStatsRef = useRef(triviaStats)
   const wagerStreakRef = useRef(wagerStreak)
+  const wagerRestrictedModesUnlockedRef = useRef(wagerRestrictedModesUnlocked)
   const cheatLockedRef = useRef(false)
   albumRef.current = album
   shinyChallengeRef.current = shinyChallenge
@@ -854,10 +979,12 @@ export function usePokeAlbum() {
   wagerBoostRef.current = wagerBoost
   lastSpinAtRef.current = lastSpinAt
   lastShinyAttemptAtRef.current = lastShinyAttemptAt
+  shinySkipsPaidRef.current = shinySkipsPaid
   pendingSpinRef.current = pendingSpin
   dailyLoginRef.current = dailyLogin
   triviaStatsRef.current = triviaStats
   wagerStreakRef.current = wagerStreak
+  wagerRestrictedModesUnlockedRef.current = wagerRestrictedModesUnlocked
   cheatLockedRef.current = cheatLockRemainingMs > 0 || cheatWiped
 
   useEffect(() => {
@@ -967,6 +1094,8 @@ export function usePokeAlbum() {
       setTriviaStats(initialTriviaStats())
       setShinyChallenge({ status: 'closed' })
       setLastShinyAttemptAt(null)
+      setShinySkipsPaid(0)
+      setWagerRestrictedModesUnlocked(false)
       setConfirmingReset(false)
       setCheatWiped(true)
     }
@@ -1333,8 +1462,8 @@ export function usePokeAlbum() {
       if (cheatLockedRef.current) {
         return
       }
-      const coins = albumRef.current.coins
-      if (!Number.isSafeInteger(wager) || wager < 0 || wager > coins) {
+      const coinsBeforeReserve = albumRef.current.coins
+      if (!Number.isSafeInteger(wager) || wager < 0 || wager > coinsBeforeReserve) {
         return
       }
       if (wager === 0) {
@@ -1352,25 +1481,46 @@ export function usePokeAlbum() {
           setFreeTriviaUsed(nextUsed)
         }
       }
-      const tier = computeDifficultyTier(wagerStreakRef.current, coins, wager)
+      const restricted = wager > 0 && wagerRestrictedModesUnlockedRef.current
+      const level = computeWagerLevel(wagerStreakRef.current, coinsBeforeReserve, wager, restricted)
       const nextWagerStreak = wager > 0 ? wagerStreakRef.current + 1 : 0
       wagerStreakRef.current = nextWagerStreak
       setWagerStreak(nextWagerStreak)
-      const timeLimit = timeLimitForTier(tier)
+      const timeLimit = timeLimitForLevel(level)
 
       const requestId = triviaRequest.current + 1
       triviaRequest.current = requestId
       setTrivia({ status: 'loading' })
 
-      const modePool: TriviaMode[] =
-        tier >= 2
+      // Charges the wager (if any) the instant the question actually becomes visible, and — for a
+      // wager — persists it so a reload recovers this exact question instead of letting the player
+      // dodge a bet they've already seen. Returns false (and surfaces an error) if the balance no
+      // longer covers it, which is re-checked here rather than trusted from the click.
+      const commitReady = (state: ReadyWagerTrivia): boolean => {
+        const reserved = reserveWagerFrom(albumRef.current, state.wager)
+        if (!reserved) {
+          setTrivia({ status: 'error', message: 'Ya no tenés suficientes monedas para esa apuesta.' })
+          return false
+        }
+        if (state.wager > 0) {
+          writeSave(reserved)
+          setAlbum(reserved)
+          writePendingWagerTrivia(state)
+        }
+        setTrivia(state)
+        return true
+      }
+
+      const modePool: TriviaMode[] = restricted
+        ? ['statPair', 'multipleChoice']
+        : level >= 3
           ? ['statPair', 'trueFalse', 'multipleChoice', 'trainer']
           : ['statPair', 'trueFalse', 'multipleChoice']
       const mode: TriviaMode = modePool[Math.floor(Math.random() * modePool.length)]
 
       if (mode === 'trainer') {
         const item = TRAINER_TRIVIA[Math.floor(Math.random() * TRAINER_TRIVIA.length)]
-        setTrivia({
+        commitReady({
           status: 'ready',
           mode: 'trainer',
           wager,
@@ -1383,8 +1533,9 @@ export function usePokeAlbum() {
       }
 
       if (mode === 'statPair') {
-        const [aId, bId] = pickPairForDifficulty(tier)
+        const [aId, bId] = pickPairForLevel(level)
         const statKey = STAT_KEYS[Math.floor(Math.random() * STAT_KEYS.length)]
+        const comparator: StatComparator = Math.random() < 0.5 ? 'more' : 'less'
         Promise.all([fetchFactsCached(aId), fetchFactsCached(bId)])
           .then(([a, b]) => {
             if (triviaRequest.current !== requestId) {
@@ -1393,7 +1544,8 @@ export function usePokeAlbum() {
             const resolvedStatKey = pickNonTiedStat(a, b, statKey)
             const aValue = a.stats[resolvedStatKey]
             const bValue = b.stats[resolvedStatKey]
-            setTrivia({
+            const aIsMore = aValue > bValue
+            commitReady({
               status: 'ready',
               mode: 'statPair',
               wager,
@@ -1401,9 +1553,10 @@ export function usePokeAlbum() {
               aId,
               bId,
               statKey: resolvedStatKey,
+              comparator,
               aValue,
               bValue,
-              correct: aValue > bValue ? 'a' : 'b',
+              correct: (comparator === 'more' ? aIsMore : !aIsMore) ? 'a' : 'b',
             })
           })
           .catch(() => {
@@ -1435,7 +1588,7 @@ export function usePokeAlbum() {
               }
               const claimedLabel = TYPE_ES_BY_SLUG[claimedSlug] ?? claimedSlug
               const name = POKEMON.find((p) => p.id === aId)?.name ?? `#${aId}`
-              setTrivia({
+              commitReady({
                 status: 'ready',
                 mode: 'trueFalse',
                 wager,
@@ -1451,7 +1604,7 @@ export function usePokeAlbum() {
               setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
             })
         } else {
-          const [aId2, bId] = pickPairForDifficulty(tier)
+          const [aId2, bId] = pickPairForLevel(level)
           const statKey = STAT_KEYS[Math.floor(Math.random() * STAT_KEYS.length)]
           Promise.all([fetchFactsCached(aId2), fetchFactsCached(bId)])
             .then(([a, b]) => {
@@ -1466,7 +1619,7 @@ export function usePokeAlbum() {
               const nameB = POKEMON.find((p) => p.id === bId)?.name ?? `#${bId}`
               const label = STAT_LABEL[resolvedStatKey]
               const actuallyMore = aValue > bValue
-              setTrivia({
+              commitReady({
                 status: 'ready',
                 mode: 'trueFalse',
                 wager,
@@ -1492,7 +1645,7 @@ export function usePokeAlbum() {
             return
           }
           const ownMoves = a.moves
-          const hardDistractors = tier >= 2
+          const hardDistractors = level >= 3
           const buildOptions = (distractorPool: string[]) => {
             if (ownMoves.length === 0 || distractorPool.length < 3) {
               setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
@@ -1509,7 +1662,7 @@ export function usePokeAlbum() {
               setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
               return
             }
-            const slugs = [realMove, ...distractors].sort(() => Math.random() - 0.5)
+            const slugs = shuffleInPlace([realMove, ...distractors])
             const correctIndex = slugs.indexOf(realMove)
             const name = POKEMON.find((p) => p.id === aId)?.name ?? `#${aId}`
             Promise.all(slugs.map(fetchMoveNameEsCached))
@@ -1517,7 +1670,14 @@ export function usePokeAlbum() {
                 if (triviaRequest.current !== requestId) {
                   return
                 }
-                setTrivia({
+                // Two different move slugs can occasionally translate to the same displayed
+                // Spanish name — that would silently create a second "correct-looking" option, so
+                // bail out to a retryable error instead of serving an ambiguous question.
+                if (new Set(options).size !== options.length) {
+                  setTrivia({ status: 'error', message: 'Error: no se pudo conectar con la PokeAPI. Intenta de nuevo.' })
+                  return
+                }
+                commitReady({
                   status: 'ready',
                   mode: 'multipleChoice',
                   wager,
@@ -1567,7 +1727,9 @@ export function usePokeAlbum() {
 
       const prevStats = triviaStatsRef.current
       const nextStreak = isCorrect ? prevStats.streak + 1 : 0
-      const streakCoinBonus = isCorrect ? streakBonus(nextStreak) : 0
+      // The free-trivia streak bonus is a reward for playing free questions well — a wager already
+      // pays out its own win/loss, so it shouldn't also collect this on top (that was double-dipping).
+      const streakCoinBonus = wager === 0 && isCorrect ? streakBonus(nextStreak) : 0
       const nextStats: TriviaStatsState = {
         ...prevStats,
         streak: nextStreak,
@@ -1582,20 +1744,33 @@ export function usePokeAlbum() {
       writeTriviaStats(nextStats)
       setTriviaStats(nextStats)
 
-      const baseDelta = wager > 0 ? (isCorrect ? wager * (boosted ? 2 : 1) : -wager) : isCorrect ? TRIVIA_REWARD : 0
-      const delta = baseDelta + streakCoinBonus
-      const currentAlbum = delta !== 0 ? { ...albumRef.current, coins: albumRef.current.coins + delta } : albumRef.current
-      if (delta !== 0) {
+      // The wager (if any) was already deducted the moment the question became visible (see
+      // commitReady in startTrivia), so a win now credits back the stake plus its profit — not
+      // just the profit — and a loss credits back nothing (the stake is already gone). `reward`
+      // is what the UI shows ("ganaste/perdiste N monedas") and stays the net win/loss either way;
+      // `coinsDelta` is the actual adjustment applied on top of the already-reserved balance.
+      const reward = wager > 0 ? (isCorrect ? wager * (boosted ? 2 : 1) : -wager) : isCorrect ? TRIVIA_REWARD : 0
+      const coinsDelta =
+        wager > 0 ? (isCorrect ? wager + wager * (boosted ? 2 : 1) : 0) : reward + streakCoinBonus
+      const currentAlbum =
+        coinsDelta !== 0 ? { ...albumRef.current, coins: albumRef.current.coins + coinsDelta } : albumRef.current
+      if (coinsDelta !== 0) {
         writeSave(currentAlbum)
         setAlbum(currentAlbum)
       }
       if (wager > 0) {
+        writePendingWagerTrivia(null)
+        if (isCorrect && !wagerRestrictedModesUnlockedRef.current) {
+          wagerRestrictedModesUnlockedRef.current = true
+          writeWagerRestrictedModesUnlocked()
+          setWagerRestrictedModesUnlocked(true)
+        }
         playSfx(isCorrect ? 'wagerWin' : 'wagerLose')
       } else {
         playSfx(isCorrect ? 'coin' : 'error')
       }
       checkAchievements(currentAlbum)
-      return delta
+      return reward + (wager === 0 ? streakCoinBonus : 0)
     },
     [checkAchievements],
   )
@@ -1671,8 +1846,11 @@ export function usePokeAlbum() {
 
   // Global cooldown across all species: without it, a stockpiled coin balance could buy enough
   // packs to farm duplicates of every species and clear the whole shiny dex in one sitting.
-  // paySkip pays SHINY_ATTEMPT_SKIP_COST to ignore the cooldown for this one attempt — it doesn't
-  // grant extra free attempts afterward, the clock just restarts from now like any other attempt.
+  // paySkip pays to ignore the cooldown for this one attempt without moving when the cooldown
+  // itself ends — every skip paid inside that same window doubles the price (100k, 200k, 400k...).
+  // The cheap initial check below is just a fast-path UI gate; the real charge/cooldown check runs
+  // again right before spending anything, after the async question fetch, since the window can
+  // expire (or another attempt can land) while that fetch is in flight.
   const startShinyChallenge = useCallback((pokemonId: number, paySkip: boolean = false) => {
     if (cheatLockedRef.current) {
       return
@@ -1683,7 +1861,7 @@ export function usePokeAlbum() {
     const now = Date.now()
     const onCooldown =
       lastShinyAttemptAtRef.current !== null && now - lastShinyAttemptAtRef.current < SHINY_ATTEMPT_COOLDOWN_MS
-    if (onCooldown && (!paySkip || albumRef.current.coins < SHINY_ATTEMPT_SKIP_COST)) {
+    if (onCooldown && !paySkip) {
       return
     }
     const requestId = shinyRequest.current + 1
@@ -1700,12 +1878,39 @@ export function usePokeAlbum() {
           setShinyChallenge({ status: 'error', pokemonId, message: 'No hay suficientes preguntas para este Pokémon.' })
           return
         }
-        // Paid only once we know the questions actually loaded — a network failure shouldn't
-        // burn the player's 5 duplicates (or the skip fee) for nothing.
-        const withSkipFee =
-          onCooldown && paySkip
-            ? { ...albumRef.current, coins: albumRef.current.coins - SHINY_ATTEMPT_SKIP_COST }
-            : albumRef.current
+        // Re-check cooldown/price against the latest state right before charging anything — the
+        // fetch above is async, so the window may have ended (or another attempt may have already
+        // run) since the check above.
+        const chargeNow = Date.now()
+        const stillOnCooldown =
+          lastShinyAttemptAtRef.current !== null && chargeNow - lastShinyAttemptAtRef.current < SHINY_ATTEMPT_COOLDOWN_MS
+        let withSkipFee = albumRef.current
+        let nextSkipsPaid = shinySkipsPaidRef.current
+        if (stillOnCooldown) {
+          if (!paySkip) {
+            setShinyChallenge({ status: 'error', pokemonId, message: 'Todavía estás en el tiempo de espera del desafío.' })
+            return
+          }
+          const skipCost = shinySkipCostForPaidCount(shinySkipsPaidRef.current)
+          if (skipCost === null) {
+            setShinyChallenge({
+              status: 'error',
+              pokemonId,
+              message: 'Ya no se puede pagar otro salto en esta ventana. Esperá a que termine el tiempo.',
+            })
+            return
+          }
+          if (albumRef.current.coins < skipCost) {
+            setShinyChallenge({ status: 'error', pokemonId, message: 'Ya no tenés suficientes monedas para pagar el salto.' })
+            return
+          }
+          withSkipFee = { ...albumRef.current, coins: albumRef.current.coins - skipCost }
+          nextSkipsPaid = shinySkipsPaidRef.current + 1
+        } else {
+          nextSkipsPaid = 0
+        }
+        // Duplicates only, paid only once we know the questions actually loaded — a network
+        // failure shouldn't burn the player's 5 duplicates (or the skip fee) for nothing.
         const afterCost = consumeShinyAttempt(withSkipFee, pokemonId)
         if (!afterCost) {
           setShinyChallenge({
@@ -1717,9 +1922,16 @@ export function usePokeAlbum() {
         }
         writeSave(afterCost)
         setAlbum(afterCost)
-        lastShinyAttemptAtRef.current = now
-        writeLastShinyAttemptAt(now)
-        setLastShinyAttemptAt(now)
+        shinySkipsPaidRef.current = nextSkipsPaid
+        writeNumber(SHINY_SKIP_PAID_KEY, nextSkipsPaid)
+        setShinySkipsPaid(nextSkipsPaid)
+        // Only a normal (unpaid) attempt opens/renews the 20-minute window — a paid skip rides out
+        // the window that's already running, it doesn't restart the clock.
+        if (!stillOnCooldown) {
+          lastShinyAttemptAtRef.current = chargeNow
+          writeLastShinyAttemptAt(chargeNow)
+          setLastShinyAttemptAt(chargeNow)
+        }
         const questions = pickShinyChallengeQuestions(pool, Math.random, questionCount)
         setShinyChallenge({
           status: 'ready',
@@ -1815,6 +2027,7 @@ export function usePokeAlbum() {
     setPending([])
     writePending([])
     setTrivia({ status: 'idle' })
+    writePendingWagerTrivia(null)
     setPage(0)
   }, [])
 
@@ -1840,9 +2053,6 @@ export function usePokeAlbum() {
       : 1
     : null
 
-  // What tier the *next* wager would land on, shown to the player before they commit to it.
-  const nextWagerDifficultyTier = computeDifficultyTier(wagerStreak, album.coins, 1)
-
   return {
     coins: album.coins,
     entries: album.entries,
@@ -1856,7 +2066,7 @@ export function usePokeAlbum() {
     shinyChallenge,
     shinyChallengeDuplicates: SHINY_CHALLENGE_DUPLICATES,
     shinyAttemptReadyAt,
-    shinyAttemptSkipCost: SHINY_ATTEMPT_SKIP_COST,
+    shinySkipsPaid,
     confirmingReset,
     stats,
     canOpenPack: album.coins >= PACK_COST,
@@ -1903,9 +2113,6 @@ export function usePokeAlbum() {
     continueShinyChallenge,
     closeShinyChallenge,
     wagerStreak,
-    nextWagerDifficultyTier,
-    maxWagerDifficultyTier: MAX_DIFFICULTY_TIER,
-    wagerDifficultyCoinThreshold: WAGER_DIFFICULTY_COIN_THRESHOLD,
     requestReset,
     cancelReset,
     confirmReset,
