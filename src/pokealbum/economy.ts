@@ -20,13 +20,20 @@ export const SHINY_CHALLENGE_QUESTION_COUNT: Record<Rarity, number> = {
   legendary: 12,
 }
 // Response time budget per question, shrinking as the challenge escalates — the last question
-// (always the hardest available) gets the least time. Never drops below 6s: several questions in
-// the bank have long statements, and the point is a hard quiz, not an unreadable one.
+// (always the hardest available) gets the least time. Kept inside 10-15s: the questions and their
+// options read long, and anything shorter didn't leave enough time to actually read them.
+function rampMs(count: number, fromMs = 15000, toMs = 10000): number[] {
+  if (count <= 1) {
+    return [fromMs]
+  }
+  return Array.from({ length: count }, (_, i) => Math.round((fromMs + ((toMs - fromMs) * i) / (count - 1)) / 100) * 100)
+}
+
 export const SHINY_CHALLENGE_TIME_LIMITS_MS: Record<Rarity, number[]> = {
-  common: [18000, 13000, 10000, 7000, 6000],
-  uncommon: [18000, 14000, 11000, 9000, 8000, 7000, 6000],
-  rare: [18000, 15000, 12000, 10500, 9000, 8000, 7500, 7000, 6500, 6000],
-  legendary: [18000, 15000, 13000, 11500, 10500, 9500, 9000, 8500, 8000, 7500, 7000, 6000],
+  common: rampMs(SHINY_CHALLENGE_QUESTION_COUNT.common),
+  uncommon: rampMs(SHINY_CHALLENGE_QUESTION_COUNT.uncommon),
+  rare: rampMs(SHINY_CHALLENGE_QUESTION_COUNT.rare),
+  legendary: rampMs(SHINY_CHALLENGE_QUESTION_COUNT.legendary),
 }
 
 // Global cooldown between shiny attempts (any species) — without this, a player with a huge coin
