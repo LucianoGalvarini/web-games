@@ -13,6 +13,7 @@ export type AchievementContext = {
   bestTriviaStreak: number
   packsOpened: number
   recycleCount: number
+  shinyWins: number
 }
 
 export type Achievement = {
@@ -34,6 +35,10 @@ function ownedCount(album: AlbumState): number {
 function rarityComplete(album: AlbumState, rarity: Rarity): boolean {
   const ofRarity = POKEMON.filter((p) => p.rarity === rarity)
   return ofRarity.every((p) => album.entries[p.id]?.owned)
+}
+
+function shinyCount(album: AlbumState): number {
+  return POKEMON.reduce((sum, p) => sum + (album.entries[p.id]?.shiny ? 1 : 0), 0)
 }
 
 function hasCompletePage(album: AlbumState): boolean {
@@ -235,6 +240,51 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '♻️',
     reward: { coins: 20 },
     isMet: (ctx) => ctx.recycleCount >= 5,
+  },
+  {
+    id: 'shiny_first',
+    category: 'album',
+    title: 'Brillante',
+    description: 'Desbloqueá tu primer Pokémon shiny respondiendo el desafío.',
+    icon: '✨',
+    reward: { coins: 50 },
+    isMet: (ctx) => ctx.shinyWins >= 1,
+  },
+  {
+    id: 'shiny_5',
+    category: 'album',
+    title: 'Cazador de brillantes',
+    description: 'Desbloqueá 5 Pokémon shiny.',
+    icon: '✨',
+    reward: { coins: 150, bonusQuestions: 1 },
+    isMet: (ctx) => shinyCount(ctx.album) >= 5,
+  },
+  {
+    id: 'shiny_15',
+    category: 'album',
+    title: 'Coleccionista brillante',
+    description: 'Desbloqueá 15 Pokémon shiny.',
+    icon: '✨',
+    reward: { coins: 400, bonusQuestions: 2, wagerBoost: 1 },
+    isMet: (ctx) => shinyCount(ctx.album) >= 15,
+  },
+  {
+    id: 'shiny_legendary',
+    category: 'album',
+    title: 'Leyenda brillante',
+    description: 'Desbloqueá la versión shiny de un Pokémon legendario.',
+    icon: '👑',
+    reward: { coins: 300, wagerBoost: 1 },
+    isMet: (ctx) => POKEMON.some((p) => p.rarity === 'legendary' && ctx.album.entries[p.id]?.shiny),
+  },
+  {
+    id: 'shiny_full_dex',
+    category: 'album',
+    title: 'Shiny Dex completo',
+    description: 'Desbloqueá la versión shiny de los 151 Pokémon de Kanto.',
+    icon: '🌟',
+    reward: { coins: 1000, bonusQuestions: 5, wagerBoost: 3 },
+    isMet: (ctx) => shinyCount(ctx.album) === POKEMON.length,
   },
 ]
 

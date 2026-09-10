@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { DUPLICATE_SELL_VALUE, RARITY_LABEL, SHINY_CHALLENGE_DUPLICATES } from '../../pokealbum'
+import { DUPLICATE_SELL_VALUE, RARITY_LABEL, SHINY_CHALLENGE_DUPLICATES, SHINY_CHALLENGE_QUESTION_COUNT } from '../../pokealbum'
 import type { AlbumEntry, PokedexEntry } from '../../pokealbum'
 import { heightToScale, usePokemonHeight } from '../../hooks/usePokemonHeight'
 import { playSfx } from '../../shared/sfx'
@@ -104,8 +104,9 @@ export function AlbumSlot({
               className="btn btn-gold pokealbum-shiny-attempt"
               onMouseEnter={() => playSfx('hover')}
               onClick={() => onAttemptShiny(p.id)}
+              title={`${SHINY_CHALLENGE_QUESTION_COUNT[p.rarity]} preguntas, todas correctas`}
             >
-              ✨ Intentar Shiny
+              ✨ Intentar Shiny ({SHINY_CHALLENGE_QUESTION_COUNT[p.rarity]} preguntas)
             </button>
           )}
           {canAttemptShiny && shinyOnCooldown && (

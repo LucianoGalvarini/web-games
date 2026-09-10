@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { POKEMON, RARITY_LABEL, STAT_LABEL, TYPE_COLOR, TYPE_ES_BY_SLUG } from '../../pokealbum'
 import { usePokedexEntry } from '../../hooks/usePokedexEntry'
@@ -8,6 +8,7 @@ import { PokeSprite } from './PokeSprite'
 
 type PokedexModalProps = {
   id: number | null
+  isShinyUnlocked: boolean
   onClose: () => void
 }
 
@@ -46,8 +47,9 @@ function Sparkles({ count }: { count: number }) {
   )
 }
 
-export function PokedexModal({ id, onClose }: PokedexModalProps) {
+export function PokedexModal({ id, isShinyUnlocked, onClose }: PokedexModalProps) {
   const entry = usePokedexEntry(id)
+  const [showShiny, setShowShiny] = useState(false)
 
   const p = id !== null ? POKEMON.find((item) => item.id === id) : undefined
 
@@ -63,6 +65,13 @@ export function PokedexModal({ id, onClose }: PokedexModalProps) {
     }
     window.setTimeout(() => playPokemonCry(p.id, 0.8), 350)
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  // Every time a new card opens, default back to the normal sprite instead of remembering the
+  // last choice — otherwise opening a non-shiny species right after a shiny one would look broken
+  // (toggle stuck "on" for a Pokémon that has no shiny form to show).
+  useEffect(() => {
+    setShowShiny(false)
   }, [id])
 
   if (id === null || !p) {
@@ -98,8 +107,21 @@ export function PokedexModal({ id, onClose }: PokedexModalProps) {
         </div>
         <div className="pokealbum-dex-sprite-frame">
           <div className="pokealbum-dex-sprite-glow" aria-hidden="true" />
-          <PokeSprite id={p.id} name={p.name} className="pokealbum-dex-sprite" />
+          <PokeSprite id={p.id} name={p.name} className="pokealbum-dex-sprite" shiny={showShiny} />
         </div>
+        {isShinyUnlocked && (
+          <label className="pokealbum-dex-shiny-toggle">
+            <input
+              type="checkbox"
+              checked={showShiny}
+              onChange={(event) => {
+                setShowShiny(event.target.checked)
+                playSfx('hover')
+              }}
+            />
+            <span>✨ Ver versión shiny</span>
+          </label>
+        )}
 
         {entry.status === 'loading' && <p className="pokealbum-dex-status">Consultando la Pokédex...</p>}
         {entry.status === 'error' && (

@@ -6074,7 +6074,8 @@ body.is-liga-wide {
 .pokealbum-app .modal.pokealbum-menu,
 .pokealbum-app .modal.pokealbum-roulette-modal,
 .pokealbum-app .modal.pokealbum-achievements-modal,
-.pokealbum-app .modal.pokealbum-tie-bonus {
+.pokealbum-app .modal.pokealbum-tie-bonus,
+.pokealbum-app .modal.pokealbum-shiny-modal {
   /* Outfit, not a pixel font: these modals are full of numbers (stats, rewards, dex ids, day
      counts) and Pixelify Sans's "5" is easy to misread as "S" at these sizes. */
   font-family: Outfit, "Segoe UI", sans-serif;
@@ -6091,6 +6092,7 @@ body.is-liga-wide {
 .pokealbum-app .modal.pokealbum-roulette-modal h2,
 .pokealbum-app .modal.pokealbum-achievements-modal h2,
 .pokealbum-app .modal.pokealbum-tie-bonus h2,
+.pokealbum-app .modal.pokealbum-shiny-modal h2,
 .pokealbum-app .modal.pokealbum-opening p {
   color: var(--fr-red-dark);
 }
@@ -7226,6 +7228,23 @@ body.is-liga-wide {
   object-fit: contain;
   filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
   animation: pokealbum-dex-sprite-bounce 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) 0.15s both;
+}
+
+.pokealbum-dex-shiny-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: -4px 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fr-red-dark);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pokealbum-dex-shiny-toggle input {
+  cursor: pointer;
 }
 
 @keyframes pokealbum-dex-sprite-bounce {
@@ -8375,7 +8394,7 @@ body.is-liga-wide {
   justify-content: space-between;
   gap: 8px;
   font-size: 13px;
-  color: var(--gold-2);
+  color: var(--fr-red-dark);
 }
 
 .pokealbum-shiny-difficulty {
@@ -8383,26 +8402,26 @@ body.is-liga-wide {
   border-radius: 999px;
   font-weight: 700;
   font-size: 12px;
-  border: 1px solid rgba(228, 180, 90, 0.3);
-  background: rgba(228, 180, 90, 0.12);
+  border: 1px solid rgba(58, 40, 24, 0.3);
+  background: rgba(58, 40, 24, 0.08);
+  color: var(--fr-ink);
 }
 
-.pokealbum-shiny-difficulty.is-medium {
-  border-color: rgba(255, 173, 74, 0.4);
-  background: rgba(255, 173, 74, 0.14);
-  color: #ffad4a;
+.pokealbum-shiny-difficulty.is-medium,
+.pokealbum-shiny-difficulty.is-hard {
+  border-color: var(--fr-red);
+  background: rgba(192, 57, 43, 0.14);
+  color: var(--fr-red);
 }
 
 .pokealbum-shiny-difficulty.is-hard {
-  border-color: #e0745a;
-  background: rgba(224, 116, 90, 0.25);
-  color: #ff5a3d;
   animation: pokealbum-shake 1.6s ease-in-out infinite;
 }
 
 .pokealbum-shiny-question {
   font-weight: 700;
   font-size: 15px;
+  color: var(--fr-ink);
 }
 
 .pokealbum-shiny-result-line {
@@ -8414,12 +8433,13 @@ body.is-liga-wide {
 
 .pokealbum-shiny-explanation {
   font-size: 13px;
-  opacity: 0.85;
+  color: var(--fr-ink);
+  opacity: 0.8;
 }
 
 .pokealbum-shiny-fail-warn {
   font-size: 13px;
-  color: #ff5a3d;
+  color: var(--fr-red);
   font-weight: 700;
 }
 

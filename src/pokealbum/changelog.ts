@@ -1,8 +1,19 @@
 export type ChangelogEntry = { version: string; date?: string; changes: string[] }
 
-export const CURRENT_VERSION = '1.21.0'
+export const CURRENT_VERSION = '1.22.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.22.0',
+    date: '2026-09-09',
+    changes: [
+      'El desafío Shiny ahora exige más preguntas cuanto más rara es la figurita: 5 para comunes, 7 para poco comunes, 10 para raras y 12 para legendarias — todas correctas para desbloquear el shiny.',
+      'Se sumaron muchas preguntas nuevas y bien difíciles al banco del desafío Shiny (mecánicas ocultas y errores reales de la primera generación), para que cueste de verdad.',
+      'Se rehicieron los colores del desafío Shiny: estaba todo muy oscuro, sobre todo al responder una pregunta. Ahora usa la misma paleta clara que el resto del álbum.',
+      'Al abrir la ficha de un Pokémon, si ya tiene su versión shiny desbloqueada aparece un interruptor para ver la figurita normal o la shiny.',
+      'Nuevos logros por el desafío Shiny: primer shiny, 5 shinies, 15 shinies, un legendario shiny y el shiny dex completo (los 151).',
+    ],
+  },
   {
     version: '1.21.0',
     date: '2026-09-09',

@@ -28,7 +28,7 @@ export type ShinyDataset = Map<number, ShinyQuestion[]>
 
 let datasetPromise: Promise<ShinyDataset> | null = null
 
-// The dataset is ~1.1MB of JSON covering all 151 species — served as a static asset and fetched
+// The dataset is ~2.2MB of JSON covering all 151 species — served as a static asset and fetched
 // only the first time a player actually opens a shiny challenge, so it never touches the main
 // bundle for players who never use the feature. Cached module-wide so repeated challenges (or a
 // second usePokeAlbum consumer) don't refetch it.
@@ -68,13 +68,32 @@ export function loadShinyQuestions(): Promise<ShinyDataset> {
   return datasetPromise
 }
 
-// 1 easy, 2 medium, 2 hard, always in that order — a ramp that ends on the hardest question
-// available for the species, matching the escalating time limits in economy.ts.
-const TIER_PLAN: { difficulty: ShinyDifficulty; count: number }[] = [
-  { difficulty: 'fácil', count: 1 },
-  { difficulty: 'media', count: 2 },
-  { difficulty: 'difícil', count: 2 },
-]
+// Easy questions warm up the player, medium makes up the bulk, and it always ends on a run of
+// hard questions — a ramp that finishes on the hardest available for the species, matching the
+// escalating time limits in economy.ts. Every dataset entry has at least 2 easy / 6 medium / 4
+// hard questions, which is what caps how many of each tier a plan can safely ask for.
+const TIER_PLAN_BY_TOTAL: Record<number, { difficulty: ShinyDifficulty; count: number }[]> = {
+  5: [
+    { difficulty: 'fácil', count: 1 },
+    { difficulty: 'media', count: 2 },
+    { difficulty: 'difícil', count: 2 },
+  ],
+  7: [
+    { difficulty: 'fácil', count: 1 },
+    { difficulty: 'media', count: 3 },
+    { difficulty: 'difícil', count: 3 },
+  ],
+  10: [
+    { difficulty: 'fácil', count: 2 },
+    { difficulty: 'media', count: 4 },
+    { difficulty: 'difícil', count: 4 },
+  ],
+  12: [
+    { difficulty: 'fácil', count: 2 },
+    { difficulty: 'media', count: 6 },
+    { difficulty: 'difícil', count: 4 },
+  ],
+}
 
 function shuffle<T>(items: T[], rng: () => number): T[] {
   const arr = [...items]
@@ -85,22 +104,27 @@ function shuffle<T>(items: T[], rng: () => number): T[] {
   return arr
 }
 
-export function pickShinyChallengeQuestions(pool: ShinyQuestion[], rng: () => number = Math.random): ShinyQuestion[] {
+export function pickShinyChallengeQuestions(
+  pool: ShinyQuestion[],
+  rng: () => number = Math.random,
+  total = 5,
+): ShinyQuestion[] {
+  const plan = TIER_PLAN_BY_TOTAL[total] ?? TIER_PLAN_BY_TOTAL[5]
   const picked: ShinyQuestion[] = []
-  for (const tier of TIER_PLAN) {
+  for (const tier of plan) {
     const candidates = shuffle(
       pool.filter((q) => q.difficulty === tier.difficulty),
       rng,
     )
     picked.push(...candidates.slice(0, tier.count))
   }
-  if (picked.length < 5) {
+  if (picked.length < total) {
     const pickedIds = new Set(picked.map((q) => q.id))
     const leftovers = shuffle(
       pool.filter((q) => !pickedIds.has(q.id)),
       rng,
     )
-    picked.push(...leftovers.slice(0, 5 - picked.length))
+    picked.push(...leftovers.slice(0, total - picked.length))
   }
   return picked
 }

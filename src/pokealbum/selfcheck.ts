@@ -292,6 +292,7 @@ const emptyCtx = {
   bestTriviaStreak: 0,
   packsOpened: 0,
   recycleCount: 0,
+  shinyWins: 0,
 }
 assert(
   evaluateNewAchievements(emptyCtx, new Set()).length === 0,
@@ -300,7 +301,7 @@ assert(
 
 const fullAlbum = createInitialAlbum(0)
 for (const p of POKEMON) {
-  fullAlbum.entries[p.id] = { owned: true, duplicates: 0 }
+  fullAlbum.entries[p.id] = { owned: true, duplicates: 0, shiny: true }
 }
 const fullCtx = {
   album: fullAlbum,
@@ -309,6 +310,7 @@ const fullCtx = {
   bestTriviaStreak: 999,
   packsOpened: 999,
   recycleCount: 999,
+  shinyWins: 999,
 }
 assert(
   evaluateNewAchievements(fullCtx, new Set()).length === ACHIEVEMENTS.length,

@@ -353,7 +353,11 @@ export function PokeAlbumGame({ onBack }: PokeAlbumGameProps) {
 
       <ManualTour open={rulesOpen} steps={POKEALBUM_MANUAL} onClose={() => setRulesOpen(false)} />
       <PackReveal reveal={game.reveal} onClose={game.dismissReveal} />
-      <PokedexModal id={pokedexId} onClose={() => setPokedexId(null)} />
+      <PokedexModal
+        id={pokedexId}
+        isShinyUnlocked={pokedexId !== null && !!game.entries[pokedexId]?.shiny}
+        onClose={() => setPokedexId(null)}
+      />
       <TriviaModal
         trivia={game.trivia}
         triviaStreak={game.triviaStreak}

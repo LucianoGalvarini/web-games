@@ -14,6 +14,7 @@ import {
   SHINY_ATTEMPT_COOLDOWN_MS,
   SHINY_ATTEMPT_SKIP_COST,
   SHINY_CHALLENGE_DUPLICATES,
+  SHINY_CHALLENGE_QUESTION_COUNT,
   SHINY_CHALLENGE_TIME_LIMITS_MS,
   SPIN_COOLDOWN_MS,
   STARTING_COINS,
@@ -224,6 +225,18 @@ export type ShinyChallengeState =
     }
   | { status: 'finished'; pokemonId: number; won: boolean }
 
+function rarityOf(pokemonId: number): Rarity {
+  return POKEMON.find((p) => p.id === pokemonId)?.rarity ?? 'common'
+}
+
+function shinyQuestionCountFor(pokemonId: number): number {
+  return SHINY_CHALLENGE_QUESTION_COUNT[rarityOf(pokemonId)]
+}
+
+function shinyTimeLimitsFor(pokemonId: number): number[] {
+  return SHINY_CHALLENGE_TIME_LIMITS_MS[rarityOf(pokemonId)]
+}
+
 function readSave(): AlbumState {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
@@ -307,6 +320,7 @@ export type TriviaStatsState = {
   correctByMode: Record<TriviaMode, number>
   packsOpened: number
   recycleCount: number
+  shinyWins: number
   unlocked: string[]
 }
 
@@ -318,13 +332,14 @@ function initialTriviaStats(): TriviaStatsState {
     correctByMode: { statPair: 0, trueFalse: 0, multipleChoice: 0, trainer: 0 },
     packsOpened: 0,
     recycleCount: 0,
+    shinyWins: 0,
     unlocked: [],
   }
 }
 
 // Pre-"trainer mode" signature format, kept so save data signed before that field existed still
 // verifies correctly instead of being flagged as tampered. writeTriviaStats() always writes the
-// current (trainer-inclusive) format, so old saves self-heal on the next write.
+// current (shiny-inclusive) format, so old saves self-heal on the next write.
 function triviaStatsSigLegacy(state: TriviaStatsState): string {
   const unlockedCanonical = [...state.unlocked].sort().join(',')
   return signPayload(
@@ -332,10 +347,18 @@ function triviaStatsSigLegacy(state: TriviaStatsState): string {
   )
 }
 
-function triviaStatsSig(state: TriviaStatsState): string {
+// Pre-"shiny challenge" signature format (trainer mode included, shinyWins not yet tracked).
+function triviaStatsSigPreShiny(state: TriviaStatsState): string {
   const unlockedCanonical = [...state.unlocked].sort().join(',')
   return signPayload(
     `${state.streak}|${state.bestStreak}|${state.correctTotal}|${state.correctByMode.statPair}|${state.correctByMode.trueFalse}|${state.correctByMode.multipleChoice}|${state.correctByMode.trainer}|${state.packsOpened}|${state.recycleCount}|${unlockedCanonical}`,
+  )
+}
+
+function triviaStatsSig(state: TriviaStatsState): string {
+  const unlockedCanonical = [...state.unlocked].sort().join(',')
+  return signPayload(
+    `${state.streak}|${state.bestStreak}|${state.correctTotal}|${state.correctByMode.statPair}|${state.correctByMode.trueFalse}|${state.correctByMode.multipleChoice}|${state.correctByMode.trainer}|${state.packsOpened}|${state.recycleCount}|${state.shinyWins}|${unlockedCanonical}`,
   )
 }
 
@@ -366,9 +389,15 @@ function readTriviaStats(): TriviaStatsState {
           },
           packsOpened: parsed.packsOpened,
           recycleCount: parsed.recycleCount,
+          shinyWins: typeof parsed.shinyWins === 'number' ? parsed.shinyWins : 0,
           unlocked: parsed.unlocked.filter((id): id is string => typeof id === 'string'),
         }
-        if (parsed.sig !== undefined && parsed.sig !== triviaStatsSig(state) && parsed.sig !== triviaStatsSigLegacy(state)) {
+        if (
+          parsed.sig !== undefined &&
+          parsed.sig !== triviaStatsSig(state) &&
+          parsed.sig !== triviaStatsSigPreShiny(state) &&
+          parsed.sig !== triviaStatsSigLegacy(state)
+        ) {
           wipeAccountForCheating()
           return initialTriviaStats()
         }
@@ -895,6 +924,7 @@ export function usePokeAlbum() {
         bestTriviaStreak: triviaStatsRef.current.bestStreak,
         packsOpened: triviaStatsRef.current.packsOpened,
         recycleCount: triviaStatsRef.current.recycleCount,
+        shinyWins: triviaStatsRef.current.shinyWins,
       }
       const unlockedSet = new Set(triviaStatsRef.current.unlocked)
       const newlyUnlocked = evaluateNewAchievements(ctx, unlockedSet)
@@ -1665,7 +1695,8 @@ export function usePokeAlbum() {
           return
         }
         const pool = dataset.get(pokemonId)
-        if (!pool || pool.length < 5) {
+        const questionCount = shinyQuestionCountFor(pokemonId)
+        if (!pool || pool.length < questionCount) {
           setShinyChallenge({ status: 'error', pokemonId, message: 'No hay suficientes preguntas para este Pokémon.' })
           return
         }
@@ -1689,13 +1720,13 @@ export function usePokeAlbum() {
         lastShinyAttemptAtRef.current = now
         writeLastShinyAttemptAt(now)
         setLastShinyAttemptAt(now)
-        const questions = pickShinyChallengeQuestions(pool)
+        const questions = pickShinyChallengeQuestions(pool, Math.random, questionCount)
         setShinyChallenge({
           status: 'ready',
           pokemonId,
           questions,
           index: 0,
-          deadline: Date.now() + SHINY_CHALLENGE_TIME_LIMITS_MS[0],
+          deadline: Date.now() + shinyTimeLimitsFor(pokemonId)[0],
         })
       })
       .catch(() => {
@@ -1706,15 +1737,23 @@ export function usePokeAlbum() {
       })
   }, [])
 
-  const finishShinyChallenge = useCallback((pokemonId: number, won: boolean) => {
-    if (won) {
-      const next = unlockShiny(albumRef.current, pokemonId)
-      writeSave(next)
-      setAlbum(next)
-      playSfx('legendary')
-    }
-    setShinyChallenge({ status: 'finished', pokemonId, won })
-  }, [])
+  const finishShinyChallenge = useCallback(
+    (pokemonId: number, won: boolean) => {
+      if (won) {
+        const next = unlockShiny(albumRef.current, pokemonId)
+        writeSave(next)
+        setAlbum(next)
+        playSfx('legendary')
+        const nextStats = { ...triviaStatsRef.current, shinyWins: triviaStatsRef.current.shinyWins + 1 }
+        triviaStatsRef.current = nextStats
+        writeTriviaStats(nextStats)
+        setTriviaStats(nextStats)
+        checkAchievements(next)
+      }
+      setShinyChallenge({ status: 'finished', pokemonId, won })
+    },
+    [checkAchievements],
+  )
 
   const answerShinyQuestion = useCallback((picked: number) => {
     const prev = shinyChallengeRef.current
@@ -1756,7 +1795,7 @@ export function usePokeAlbum() {
       pokemonId: prev.pokemonId,
       questions: prev.questions,
       index: nextIndex,
-      deadline: Date.now() + SHINY_CHALLENGE_TIME_LIMITS_MS[nextIndex],
+      deadline: Date.now() + shinyTimeLimitsFor(prev.pokemonId)[nextIndex],
     })
   }, [finishShinyChallenge])
 

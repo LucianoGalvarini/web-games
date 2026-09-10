@@ -11,11 +11,23 @@ export const RECYCLE_COST = 5
 
 // Duplicates of one specific species required to attempt its shiny challenge.
 export const SHINY_CHALLENGE_DUPLICATES = 5
-// Questions to answer, all correct, to unlock the shiny form.
-export const SHINY_CHALLENGE_QUESTION_COUNT = 5
+// Questions to answer, all correct, to unlock the shiny form — scales with rarity so common/
+// uncommon species stay approachable while rare/legendary ones are a real gauntlet.
+export const SHINY_CHALLENGE_QUESTION_COUNT: Record<Rarity, number> = {
+  common: 5,
+  uncommon: 7,
+  rare: 10,
+  legendary: 12,
+}
 // Response time budget per question, shrinking as the challenge escalates — the last question
-// (always the hardest available) gets the least time.
-export const SHINY_CHALLENGE_TIME_LIMITS_MS = [18000, 13000, 10000, 7000, 5000]
+// (always the hardest available) gets the least time. Never drops below 6s: several questions in
+// the bank have long statements, and the point is a hard quiz, not an unreadable one.
+export const SHINY_CHALLENGE_TIME_LIMITS_MS: Record<Rarity, number[]> = {
+  common: [18000, 13000, 10000, 7000, 6000],
+  uncommon: [18000, 14000, 11000, 9000, 8000, 7000, 6000],
+  rare: [18000, 15000, 12000, 10500, 9000, 8000, 7500, 7000, 6500, 6000],
+  legendary: [18000, 15000, 13000, 11500, 10500, 9500, 9000, 8500, 8000, 7500, 7000, 6000],
+}
 
 // Global cooldown between shiny attempts (any species) — without this, a player with a huge coin
 // stockpile could buy their way to duplicates of every species and clear the whole shiny dex in
